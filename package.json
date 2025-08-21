@@ -5,8 +5,9 @@
   "main": "mintwaterfall-chart.js",
   "type": "module",
   "scripts": {
-    "start": "python -m http.server 8080",
-    "dev": "python -m http.server 8080"
+  "start": "python -m http.server 8080",
+  "dev": "python -m http.server 8080",
+  "lint": "eslint ."
   },
   "keywords": [
     "d3js",
