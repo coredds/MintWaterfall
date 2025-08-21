@@ -5,6 +5,8 @@
 
 A powerful, D3.js-compatible waterfall chart component with stacking capabilities.
 
+🚀 **[Live Demo](https://coredds.github.io/MintWaterfall/mintwaterfall-example.html)** - Try it out!
+
 ## Features
 
 - **D3.js Compatible**: Full integration with D3.js ecosystem
@@ -87,7 +89,7 @@ const data = [
 
 ## Example
 
-![MintWaterfall Demo](example.png)
+[![MintWaterfall Demo](example.png)](https://coredds.github.io/MintWaterfall/mintwaterfall-example.html)
 
 
 ## Browser Support
