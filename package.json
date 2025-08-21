@@ -1,0 +1,24 @@
+{
+  "name": "mintwaterfall",
+  "version": "1.0.0",
+  "description": "MintWaterfall - D3.js compatible waterfall chart component",
+  "main": "mintwaterfall-chart.js",
+  "type": "module",
+  "scripts": {
+    "start": "python -m http.server 8080",
+    "dev": "python -m http.server 8080"
+  },
+  "keywords": [
+    "d3js",
+    "waterfall",
+    "chart",
+    "visualization",
+    "stacked"
+  ],
+  "author": "MintWaterfall",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^9.33.0",
+    "typescript": "^5.9.2"
+  }
+}

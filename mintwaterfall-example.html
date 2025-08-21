@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MintWaterfall - D3.js Waterfall Chart Component</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 20px;
+            background: #147B58;
+            color: white;
+            min-height: 100vh;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            color: #333;
+        }
+
+        .waterfall-container {
+            background: white;
+        }
+
+        /* Grid and axis styling */
+        .grid-line {
+            stroke: #e0e0e0;
+            stroke-width: 1;
+        }
+
+        .y-axis, .x-axis {
+            font-size: 12px;
+            fill: #666;
+        }
+
+        .y-axis path, .x-axis path,
+        .y-axis line, .x-axis line {
+            stroke: #666;
+            stroke-width: 1;
+        }
+
+        /* Bar styling */
+        .stack, .waterfall-bar {
+            stroke: rgba(255, 255, 255, 0.8);
+            stroke-width: 1;
+            transition: opacity 0.2s ease;
+        }
+
+        .stack:hover, .waterfall-bar:hover {
+            opacity: 0.8;
+            cursor: pointer;
+        }
+
+        /* Label styling */
+        .total-label {
+            font-size: 12px;
+            font-weight: bold;
+            fill: #333;
+        }
+
+        .stack-label {
+            font-size: 10px;
+            fill: white;
+            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Connector styling */
+        .connector {
+            stroke: #666;
+            stroke-width: 1;
+            stroke-dasharray: 3,3;
+        }
+
+        /* Controls */
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        button {
+            background: linear-gradient(45deg, #147B58, #1a9d6b);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-family: 'Roboto', sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 8px rgba(20, 123, 88, 0.3);
+        }
+
+        button:hover {
+            background: linear-gradient(45deg, #1a9d6b, #20b377);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(20, 123, 88, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0px);
+            box-shadow: 0 2px 4px rgba(20, 123, 88, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-family: 'Roboto', sans-serif;
+            font-weight: 300;
+            font-size: 2.5em;
+            letter-spacing: 1px;
+        }
+
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #147B58;
+            padding-bottom: 10px;
+            font-family: 'Roboto', sans-serif;
+            font-weight: 400;
+        }
+    </style>
+</head>
+<body>
+    <h1>MintWaterfall - D3.js Chart Component</h1>
+    
+    <div class="chart-container">
+        <h2>Revenue Breakdown - Stacked Mode</h2>
+        <svg id="chart1" width="800" height="400"></svg>
+        <div class="controls">
+            <button onclick="toggleStacked('chart1')">Toggle Stacked/Waterfall</button>
+            <button onclick="toggleTotal('chart1')">Toggle Total Bar</button>
+            <button onclick="updateData('chart1')">Update Data</button>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <h2>Cost Analysis - Waterfall Mode</h2>
+        <svg id="chart2" width="800" height="400"></svg>
+        <div class="controls">
+            <button onclick="toggleStacked('chart2')">Toggle Stacked/Waterfall</button>
+            <button onclick="animateChart('chart2')">Animate</button>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <h2>Multi-Category Performance - Stacked</h2>
+        <svg id="chart3" width="800" height="400"></svg>
+        <div class="controls">
+            <button onclick="toggleStacked('chart3')">Toggle Stacked/Waterfall</button>
+            <button onclick="toggleTotal('chart3')">Toggle Total Bar</button>
+            <button onclick="updateData('chart3')">Update Data</button>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <h2>Project Timeline - Mixed Values</h2>
+        <svg id="chart4" width="800" height="400"></svg>
+        <div class="controls">
+            <button onclick="toggleStacked('chart4')">Toggle Stacked/Waterfall</button>
+            <button onclick="toggleTotal('chart4')">Toggle Total Bar</button>
+            <button onclick="animateChart('chart4')">Animate</button>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <h2>Complex Breakdown - Many Stacks</h2>
+        <svg id="chart5" width="800" height="400"></svg>
+        <div class="controls">
+            <button onclick="toggleStacked('chart5')">Toggle Stacked/Waterfall</button>
+            <button onclick="toggleTotal('chart5')">Toggle Total Bar</button>
+            <button onclick="updateData('chart5')">Random Update</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { waterfallChart } from './mintwaterfall-chart.js';
+
+        // Sample data 1 - Revenue breakdown
+        const revenueData = [
+            {
+                label: "Q1 Sales",
+                stacks: [
+                    { value: 45, color: "#3498db", label: "45" },
+                    { value: 25, color: "#2ecc71", label: "25" }
+                ]
+            },
+            {
+                label: "Q2 Growth",
+                stacks: [
+                    { value: 30, color: "#e74c3c", label: "30" }
+                ]
+            },
+            {
+                label: "Q3 Expansion",
+                stacks: [
+                    { value: 20, color: "#f39c12", label: "20" },
+                    { value: 15, color: "#9b59b6", label: "15" }
+                ]
+            },
+            {
+                label: "Q4 Holiday",
+                stacks: [
+                    { value: 40, color: "#1abc9c", label: "40" }
+                ]
+            }
+        ];
+
+        // Sample data 2 - Cost analysis
+        const costData = [
+            {
+                label: "Initial Budget",
+                stacks: [
+                    { value: 100, color: "#2ecc71", label: "100" }
+                ]
+            },
+            {
+                label: "Marketing",
+                stacks: [
+                    { value: -25, color: "#e74c3c", label: "-25" }
+                ]
+            },
+            {
+                label: "Development",
+                stacks: [
+                    { value: -35, color: "#e67e22", label: "-35" }
+                ]
+            },
+            {
+                label: "Operations",
+                stacks: [
+                    { value: -15, color: "#f39c12", label: "-15" }
+                ]
+            },
+            {
+                label: "Savings",
+                stacks: [
+                    { value: 10, color: "#27ae60", label: "10" }
+                ]
+            }
+        ];
+
+        // Sample data 3 - Multi-category performance
+        const performanceData = [
+            {
+                label: "Product A",
+                stacks: [
+                    { value: 35, color: "#3498db", label: "Sales: 35" },
+                    { value: 15, color: "#2ecc71", label: "Profit: 15" },
+                    { value: 8, color: "#f39c12", label: "Growth: 8" }
+                ]
+            },
+            {
+                label: "Product B",
+                stacks: [
+                    { value: 28, color: "#3498db", label: "Sales: 28" },
+                    { value: 22, color: "#2ecc71", label: "Profit: 22" },
+                    { value: 12, color: "#f39c12", label: "Growth: 12" }
+                ]
+            },
+            {
+                label: "Product C",
+                stacks: [
+                    { value: 45, color: "#3498db", label: "Sales: 45" },
+                    { value: 18, color: "#2ecc71", label: "Profit: 18" },
+                    { value: 6, color: "#f39c12", label: "Growth: 6" }
+                ]
+            },
+            {
+                label: "Product D",
+                stacks: [
+                    { value: 32, color: "#3498db", label: "Sales: 32" },
+                    { value: 14, color: "#2ecc71", label: "Profit: 14" },
+                    { value: 18, color: "#f39c12", label: "Growth: 18" }
+                ]
+            },
+            {
+                label: "Product E",
+                stacks: [
+                    { value: 41, color: "#3498db", label: "Sales: 41" },
+                    { value: 19, color: "#2ecc71", label: "Profit: 19" },
+                    { value: 15, color: "#f39c12", label: "Growth: 15" }
+                ]
+            },
+            {
+                label: "New Launch",
+                stacks: [
+                    { value: 20, color: "#3498db", label: "Sales: 20" },
+                    { value: 5, color: "#2ecc71", label: "Profit: 5" },
+                    { value: 25, color: "#f39c12", label: "Growth: 25" }
+                ]
+            }
+        ];
+
+        // Sample data 4 - Project timeline with mixed values
+        const projectData = [
+            {
+                label: "Planning",
+                stacks: [
+                    { value: 40, color: "#9b59b6", label: "Research: 40" },
+                    { value: 20, color: "#8e44ad", label: "Design: 20" }
+                ]
+            },
+            {
+                label: "Development",
+                stacks: [
+                    { value: -15, color: "#e74c3c", label: "Delays: -15" },
+                    { value: 50, color: "#27ae60", label: "Progress: 50" },
+                    { value: -8, color: "#c0392b", label: "Issues: -8" }
+                ]
+            },
+            {
+                label: "Testing",
+                stacks: [
+                    { value: 25, color: "#f39c12", label: "QA: 25" },
+                    { value: -12, color: "#d35400", label: "Bugs: -12" },
+                    { value: 18, color: "#f1c40f", label: "Fixes: 18" }
+                ]
+            },
+            {
+                label: "Launch",
+                stacks: [
+                    { value: 30, color: "#1abc9c", label: "Marketing: 30" },
+                    { value: 15, color: "#16a085", label: "Support: 15" }
+                ]
+            }
+        ];
+
+        // Sample data 5 - Complex breakdown with many stacks
+        const complexData = [
+            {
+                label: "Region A",
+                stacks: [
+                    { value: 12, color: "#e74c3c", label: "12" },
+                    { value: 8, color: "#e67e22", label: "8" },
+                    { value: 15, color: "#f39c12", label: "15" },
+                    { value: 10, color: "#f1c40f", label: "10" },
+                    { value: 6, color: "#2ecc71", label: "6" }
+                ]
+            },
+            {
+                label: "Region B",
+                stacks: [
+                    { value: 18, color: "#e74c3c", label: "18" },
+                    { value: 14, color: "#e67e22", label: "14" },
+                    { value: 9, color: "#f39c12", label: "9" },
+                    { value: 12, color: "#f1c40f", label: "12" },
+                    { value: 11, color: "#2ecc71", label: "11" }
+                ]
+            },
+            {
+                label: "Region C",
+                stacks: [
+                    { value: 22, color: "#e74c3c", label: "22" },
+                    { value: 7, color: "#e67e22", label: "7" },
+                    { value: 16, color: "#f39c12", label: "16" },
+                    { value: 8, color: "#f1c40f", label: "8" },
+                    { value: 13, color: "#2ecc71", label: "13" }
+                ]
+            },
+            {
+                label: "Online",
+                stacks: [
+                    { value: 25, color: "#e74c3c", label: "25" },
+                    { value: 19, color: "#e67e22", label: "19" },
+                    { value: 11, color: "#f39c12", label: "11" },
+                    { value: 14, color: "#f1c40f", label: "14" },
+                    { value: 9, color: "#2ecc71", label: "9" }
+                ]
+            }
+        ];
+
+        // Chart configurations
+        const charts = {
+            chart1: {
+                chart: d3.waterfallChart()
+                    .width(800)
+                    .height(400)
+                    .showTotal(true)
+                    .totalLabel('Total Revenue')
+                    .stacked(true),
+                data: revenueData
+            },
+            chart2: {
+                chart: d3.waterfallChart()
+                    .width(800)
+                    .height(400)
+                    .showTotal(true)
+                    .totalLabel('Remaining Budget')
+                    .stacked(false)
+                    .duration(1000),
+                data: costData
+            },
+            chart3: {
+                chart: d3.waterfallChart()
+                    .width(800)
+                    .height(400)
+                    .showTotal(true)
+                    .totalLabel('Total Performance')
+                    .stacked(true)
+                    .barPadding(0.15),
+                data: performanceData
+            },
+            chart4: {
+                chart: d3.waterfallChart()
+                    .width(800)
+                    .height(400)
+                    .showTotal(true)
+                    .totalLabel('Project Total')
+                    .stacked(true)
+                    .duration(500),
+                data: projectData
+            },
+            chart5: {
+                chart: d3.waterfallChart()
+                    .width(800)
+                    .height(400)
+                    .showTotal(true)
+                    .totalLabel('Grand Total')
+                    .stacked(true)
+                    .barPadding(0.05)
+                    .duration(800),
+                data: complexData
+            }
+        };
+
+        // Initialize charts
+        Object.keys(charts).forEach(chartId => {
+            const config = charts[chartId];
+            d3.select(`#${chartId}`)
+                .datum(config.data)
+                .call(config.chart);
+        });
+
+        // Make functions available globally for buttons
+        window.toggleStacked = function(chartId) {
+            const config = charts[chartId];
+            const isStacked = config.chart.stacked();
+            config.chart.stacked(!isStacked);
+            
+            d3.select(`#${chartId}`)
+                .datum(config.data)
+                .call(config.chart);
+        };
+
+        window.toggleTotal = function(chartId) {
+            const config = charts[chartId];
+            const showTotal = config.chart.showTotal();
+            config.chart.showTotal(!showTotal);
+            
+            d3.select(`#${chartId}`)
+                .datum(config.data)
+                .call(config.chart);
+        };
+
+        window.updateData = function(chartId) {
+            const config = charts[chartId];
+            
+            // Generate different types of random data based on chart
+            let newData;
+            if (chartId === 'chart1' || chartId === 'chart3') {
+                // Positive values only for revenue/performance charts
+                newData = config.data.map(item => ({
+                    ...item,
+                    stacks: item.stacks.map(stack => {
+                        const randomValue = Math.max(5, Math.abs(stack.value) + (Math.random() - 0.5) * 20);
+                        return {
+                            ...stack,
+                            value: randomValue,
+                            label: Math.round(randomValue).toString()
+                        };
+                    })
+                }));
+            } else if (chartId === 'chart4') {
+                // Mixed positive/negative for project data
+                newData = config.data.map(item => ({
+                    ...item,
+                    stacks: item.stacks.map(stack => {
+                        const baseValue = Math.abs(stack.value);
+                        const randomValue = baseValue + (Math.random() - 0.5) * 30;
+                        const finalValue = stack.value < 0 ? -Math.abs(randomValue) : Math.abs(randomValue);
+                        return {
+                            ...stack,
+                            value: finalValue,
+                            label: (finalValue > 0 ? '' : '') + Math.round(finalValue).toString()
+                        };
+                    })
+                }));
+            } else {
+                // Default random generation
+                newData = config.data.map(item => ({
+                    ...item,
+                    stacks: item.stacks.map(stack => {
+                        const randomValue = stack.value + (Math.random() - 0.5) * 20;
+                        return {
+                            ...stack,
+                            value: randomValue,
+                            label: Math.round(randomValue).toString()
+                        };
+                    })
+                }));
+            }
+            
+            config.data = newData;
+            
+            d3.select(`#${chartId}`)
+                .datum(newData)
+                .call(config.chart);
+        };
+
+        window.animateChart = function(chartId) {
+            const config = charts[chartId];
+            
+            // Store original data
+            const originalData = JSON.parse(JSON.stringify(config.data));
+            
+            // Create dramatic animation by temporarily changing data
+            const animationData = config.data.map(item => ({
+                ...item,
+                stacks: item.stacks.map(stack => ({
+                    ...stack,
+                    value: stack.value * 1.5, // Increase values for dramatic effect
+                    label: Math.round(stack.value * 1.5).toString()
+                }))
+            }));
+            
+            // Animate with different durations and easing
+            config.chart
+                .duration(1000)
+                .ease(d3.easeBounce);
+            
+            // First animation: grow the bars
+            d3.select(`#${chartId}`)
+                .datum(animationData)
+                .call(config.chart);
+            
+            // Second animation: return to original size
+            setTimeout(() => {
+                config.chart
+                    .duration(1000)
+                    .ease(d3.easeElastic);
+                
+                d3.select(`#${chartId}`)
+                    .datum(originalData)
+                    .call(config.chart);
+            }, 1200);
+            
+            // Reset to normal settings
+            setTimeout(() => {
+                config.chart.duration(750).ease(d3.easeQuadInOut);
+            }, 2500);
+        };
+    </script>
+</body>
+</html>

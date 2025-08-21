@@ -1,0 +1,38 @@
+# Node modules
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python HTTP server artifacts
+__pycache__/
+*.pyc
+
+# VS Code settings
+.vscode/
+
+# Environment files
+.env
+
+# Coverage
+coverage/
+
+# Build output
+dist/
+build/
+
+# Misc
+*.log
+*.tmp
+
+# Local environments
+.env.*
+
+# GitHub workflows temp
+.github/workflows/*.tmp
