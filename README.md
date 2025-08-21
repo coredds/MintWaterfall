@@ -1,6 +1,6 @@
 # MintWaterfall
 
-[![CI](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml/badge.svg)](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml)
+[![CI](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml/badge.svg?branch=main)](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A powerful, D3.js-compatible waterfall chart component with stacking capabilities.
