@@ -4,15 +4,15 @@
 export function createScaleSystem() {
     
     // Enhanced scale factory with auto-detection
-    function createAdaptiveScale(data, dimension = 'x') {
-        const values = data.map(d => dimension === 'x' ? d.label : d.cumulativeTotal);
+    function createAdaptiveScale(data, dimension = "x") {
+        const values = data.map(d => dimension === "x" ? d.label : d.cumulativeTotal);
         
         // Detect data type and return appropriate scale
         if (values.every(v => v instanceof Date)) {
             return createTimeScale(values);
-        } else if (values.every(v => typeof v === 'string' || isNaN(v))) {
+        } else if (values.every(v => typeof v === "string" || isNaN(v))) {
             return createOrdinalScale(values);
-        } else if (values.every(v => typeof v === 'number')) {
+        } else if (values.every(v => typeof v === "number")) {
             return createLinearScale(values);
         } else {
             // Mixed types - fallback to band scale
@@ -25,7 +25,7 @@ export function createScaleSystem() {
         const {
             range = [0, 800],
             nice = true,
-            tickFormat = 'auto'
+            tickFormat = "auto"
         } = options;
         
         const extent = d3.extent(values);
@@ -38,18 +38,18 @@ export function createScaleSystem() {
         }
         
         // Auto-detect appropriate time format
-        if (tickFormat === 'auto') {
+        if (tickFormat === "auto") {
             const timeSpan = extent[1] - extent[0];
             const days = timeSpan / (1000 * 60 * 60 * 24);
             
             if (days < 1) {
-                scale.tickFormat = d3.timeFormat('%H:%M');
+                scale.tickFormat = d3.timeFormat("%H:%M");
             } else if (days < 30) {
-                scale.tickFormat = d3.timeFormat('%m/%d');
+                scale.tickFormat = d3.timeFormat("%m/%d");
             } else if (days < 365) {
-                scale.tickFormat = d3.timeFormat('%b %Y');
+                scale.tickFormat = d3.timeFormat("%b %Y");
             } else {
-                scale.tickFormat = d3.timeFormat('%Y');
+                scale.tickFormat = d3.timeFormat("%Y");
             }
         }
         
@@ -60,7 +60,7 @@ export function createScaleSystem() {
     function createOrdinalScale(values, options = {}) {
         const {
             range = d3.schemeCategory10,
-            unknown = '#ccc'
+            unknown = "#ccc"
         } = options;
         
         const uniqueValues = [...new Set(values)];
@@ -150,7 +150,7 @@ export function createScaleSystem() {
         const positiveValues = values.filter(v => v > 0);
         
         if (positiveValues.length === 0) {
-            console.warn('Log scale requires positive values. Falling back to linear scale.');
+            console.warn("Log scale requires positive values. Falling back to linear scale.");
             return createLinearScale(values, options);
         }
         
@@ -171,15 +171,15 @@ export function createScaleSystem() {
     const scaleUtils = {
         // Auto-detect best scale type for data
         detectScaleType(values) {
-            if (values.every(v => v instanceof Date)) return 'time';
-            if (values.every(v => typeof v === 'string')) return 'ordinal';
-            if (values.every(v => typeof v === 'number' && v > 0)) return 'linear'; // Could be log
-            if (values.every(v => typeof v === 'number')) return 'linear';
-            return 'band'; // fallback
+            if (values.every(v => v instanceof Date)) return "time";
+            if (values.every(v => typeof v === "string")) return "ordinal";
+            if (values.every(v => typeof v === "number" && v > 0)) return "linear"; // Could be log
+            if (values.every(v => typeof v === "number")) return "linear";
+            return "band"; // fallback
         },
         
         // Create appropriate axis for scale
-        createAxis(scale, orientation = 'bottom', options = {}) {
+        createAxis(scale, orientation = "bottom", options = {}) {
             const {
                 tickCount = 10,
                 tickFormat = null,
@@ -188,13 +188,13 @@ export function createScaleSystem() {
             
             let axis;
             switch (orientation) {
-                case 'top':
+                case "top":
                     axis = d3.axisTop(scale);
                     break;
-                case 'right':
+                case "right":
                     axis = d3.axisRight(scale);
                     break;
-                case 'left':
+                case "left":
                     axis = d3.axisLeft(scale);
                     break;
                 default:

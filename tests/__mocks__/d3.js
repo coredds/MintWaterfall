@@ -234,13 +234,13 @@ const d3Mock = {
   })),
   
   // Time formatting
-  timeFormat: jest.fn((formatString) => jest.fn(date => date.toISOString())),
+  timeFormat: jest.fn(() => jest.fn(date => date.toISOString())),
   
   // Color schemes
-  schemeCategory10: ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'],
+  schemeCategory10: ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"],
   schemeBlues: [
-    ['#f7fbff', '#deebf7', '#c6dbef', '#9ecae1', '#6baed6'],
-    ['#f7fbff', '#deebf7', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b']
+    ["#f7fbff", "#deebf7", "#c6dbef", "#9ecae1", "#6baed6"],
+    ["#f7fbff", "#deebf7", "#c6dbef", "#9ecae1", "#6baed6", "#4292c6", "#2171b5", "#08519c", "#08306b"]
   ],
   
   // Interpolators

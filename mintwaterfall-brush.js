@@ -11,7 +11,7 @@ export function createBrushSystem() {
     // Create brush instance with configuration
     function createBrush(options = {}) {
         const {
-            type = 'x', // 'x', 'y', or 'xy'
+            type = "x", // 'x', 'y', or 'xy'
             extent = [[0, 0], [800, 400]],
             handleSize = 4,
             cornerRadius = 4
@@ -20,13 +20,13 @@ export function createBrushSystem() {
         let brush;
         
         switch (type) {
-            case 'x':
+            case "x":
                 brush = d3.brushX();
                 break;
-            case 'y':
+            case "y":
                 brush = d3.brushY();
                 break;
-            case 'xy':
+            case "xy":
                 brush = d3.brush();
                 break;
             default:
@@ -37,9 +37,9 @@ export function createBrushSystem() {
             .extent(extent)
             .handleSize(handleSize)
             .cornerRadius(cornerRadius)
-            .on('start', handleBrushStart)
-            .on('brush', handleBrushMove)
-            .on('end', handleBrushEnd);
+            .on("start", handleBrushStart)
+            .on("brush", handleBrushMove)
+            .on("end", handleBrushEnd);
             
         return brush;
     }
@@ -47,33 +47,33 @@ export function createBrushSystem() {
     // Add brush to chart container
     function addBrushToChart(container, brush, options = {}) {
         const {
-            className = 'waterfall-brush',
+            className = "waterfall-brush",
             styles = {}
         } = options;
         
         const brushGroup = container
-            .append('g')
-            .attr('class', className)
+            .append("g")
+            .attr("class", className)
             .call(brush);
             
         // Apply custom styles
         if (styles.selection) {
-            brushGroup.selectAll('.selection')
-                .style('fill', styles.selection.fill || 'rgba(70, 130, 180, 0.3)')
-                .style('stroke', styles.selection.stroke || '#4682b4');
+            brushGroup.selectAll(".selection")
+                .style("fill", styles.selection.fill || "rgba(70, 130, 180, 0.3)")
+                .style("stroke", styles.selection.stroke || "#4682b4");
         }
         
         if (styles.handle) {
-            brushGroup.selectAll('.handle')
-                .style('fill', styles.handle.fill || '#4682b4')
-                .style('stroke', styles.handle.stroke || '#fff');
+            brushGroup.selectAll(".handle")
+                .style("fill", styles.handle.fill || "#4682b4")
+                .style("stroke", styles.handle.stroke || "#fff");
         }
         
         return brushGroup;
     }
     
     // Filter data based on brush selection
-    function filterDataByBrush(data, selection, scale, dimension = 'x') {
+    function filterDataByBrush(data, selection, scale, dimension = "x") {
         if (!selection || !selection[0] || !selection[1]) {
             return data; // No selection, return all data
         }
@@ -81,9 +81,9 @@ export function createBrushSystem() {
         const [start, end] = selection;
         
         return data.filter(d => {
-            const value = dimension === 'x' ? scale.invert(scale(d.label)) : d.cumulativeTotal;
+            const value = dimension === "x" ? scale.invert(scale(d.label)) : d.cumulativeTotal;
             
-            if (dimension === 'x') {
+            if (dimension === "x") {
                 const position = scale(d.label) + scale.bandwidth() / 2;
                 return position >= start && position <= end;
             } else {
@@ -94,7 +94,7 @@ export function createBrushSystem() {
     }
     
     // Get selected data indices
-    function getSelectedIndices(data, selection, scale, dimension = 'x') {
+    function getSelectedIndices(data, selection, scale, dimension = "x") {
         if (!selection) return [];
         
         const filteredData = filterDataByBrush(data, selection, scale, dimension);
@@ -136,14 +136,14 @@ export function createBrushSystem() {
         },
         
         // Get brush bounds in data coordinates
-        getBrushBounds(selection, scale, dimension = 'x') {
+        getBrushBounds(selection, scale, dimension = "x") {
             if (!selection) return null;
             
             const [start, end] = selection;
             
-            if (dimension === 'x' && scale.invert) {
+            if (dimension === "x" && scale.invert) {
                 return [scale.invert(start), scale.invert(end)];
-            } else if (dimension === 'y' && scale.invert) {
+            } else if (dimension === "y" && scale.invert) {
                 return [scale.invert(end), scale.invert(start)]; // Y is inverted
             }
             
@@ -153,16 +153,16 @@ export function createBrushSystem() {
         // Highlight selected elements
         highlightSelection(container, selectedIndices, options = {}) {
             const {
-                selectedClass = 'selected',
-                unselectedClass = 'unselected',
+                selectedClass = "selected",
+                unselectedClass = "unselected",
                 selectedOpacity = 1,
                 unselectedOpacity = 0.3
             } = options;
             
-            container.selectAll('.bar-group')
+            container.selectAll(".bar-group")
                 .classed(selectedClass, (d, i) => selectedIndices.includes(i))
                 .classed(unselectedClass, (d, i) => !selectedIndices.includes(i))
-                .style('opacity', (d, i) => 
+                .style("opacity", (d, i) => 
                     selectedIndices.length === 0 ? 1 : 
                     selectedIndices.includes(i) ? selectedOpacity : unselectedOpacity
                 );
@@ -244,7 +244,7 @@ export function addQuickBrush(container, data, xScale, yScale, options = {}) {
             brushSystem.selectionUtils.highlightSelection(container, selectedIndices);
             
             // Dispatch custom event with selection info
-            container.dispatch('brushSelection', {
+            container.dispatch("brushSelection", {
                 detail: {
                     data: filteredData,
                     indices: selectedIndices,

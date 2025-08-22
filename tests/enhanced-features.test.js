@@ -1,39 +1,39 @@
 // Tests for Enhanced D3.js Features
 // Tests staggered animations, brush selection, and advanced scales
 
-import { createScaleSystem } from '../mintwaterfall-scales.js';
-import { createBrushSystem } from '../mintwaterfall-brush.js';
-import { createAnimationSystem } from '../mintwaterfall-animations.js';
+import { createScaleSystem } from "../mintwaterfall-scales.js";
+import { createBrushSystem } from "../mintwaterfall-brush.js";
+import { createAnimationSystem } from "../mintwaterfall-animations.js";
 
 // Mock D3 for testing
-const d3Mock = require('../tests/__mocks__/d3.js');
+const d3Mock = require("../tests/__mocks__/d3.js");
 global.d3 = d3Mock;
 
-describe('Enhanced D3.js Features', () => {
+describe("Enhanced D3.js Features", () => {
     
-    describe('Scale System', () => {
+    describe("Scale System", () => {
         let scaleSystem;
         
         beforeEach(() => {
             scaleSystem = createScaleSystem();
         });
         
-        test('should create adaptive scale for numeric data', () => {
+        test("should create adaptive scale for numeric data", () => {
             const data = [
-                { label: 'A', cumulativeTotal: 10 },
-                { label: 'B', cumulativeTotal: 20 },
-                { label: 'C', cumulativeTotal: 30 }
+                { label: "A", cumulativeTotal: 10 },
+                { label: "B", cumulativeTotal: 20 },
+                { label: "C", cumulativeTotal: 30 }
             ];
             
-            const scale = scaleSystem.createAdaptiveScale(data, 'y');
+            const scale = scaleSystem.createAdaptiveScale(data, "y");
             expect(scale).toBeDefined();
         });
         
-        test('should create time scale with proper domain', () => {
+        test("should create time scale with proper domain", () => {
             const timeValues = [
-                new Date('2023-01-01'),
-                new Date('2023-02-01'),
-                new Date('2023-03-01')
+                new Date("2023-01-01"),
+                new Date("2023-02-01"),
+                new Date("2023-03-01")
             ];
             
             const scale = scaleSystem.createTimeScale(timeValues);
@@ -45,15 +45,15 @@ describe('Enhanced D3.js Features', () => {
             expect(domain).toHaveLength(2); // [min, max]
         });
         
-        test('should create ordinal scale with unique values', () => {
-            const values = ['Category A', 'Category B', 'Category A', 'Category C'];
+        test("should create ordinal scale with unique values", () => {
+            const values = ["Category A", "Category B", "Category A", "Category C"];
             const scale = scaleSystem.createOrdinalScale(values);
             
             expect(scale).toBeDefined();
             expect(scale.domain()).toHaveLength(3); // Unique values only
         });
         
-        test('should create linear scale with padding', () => {
+        test("should create linear scale with padding", () => {
             const values = [10, 20, 30, 40, 50];
             const options = { padding: 0.2, nice: true };
             
@@ -61,14 +61,14 @@ describe('Enhanced D3.js Features', () => {
             expect(scale).toBeDefined();
         });
         
-        test('should handle log scale with positive values', () => {
+        test("should handle log scale with positive values", () => {
             const values = [1, 10, 100, 1000];
             const scale = scaleSystem.createLogScale(values);
             
             expect(scale).toBeDefined();
         });
         
-        test('should fallback to linear scale for log scale with non-positive values', () => {
+        test("should fallback to linear scale for log scale with non-positive values", () => {
             const values = [0, -10, 5];
             const scale = scaleSystem.createLogScale(values);
             
@@ -76,57 +76,57 @@ describe('Enhanced D3.js Features', () => {
             expect(scale).toBeDefined();
         });
         
-        test('should detect scale type correctly', () => {
-            expect(scaleSystem.scaleUtils.detectScaleType([new Date(), new Date()])).toBe('time');
-            expect(scaleSystem.scaleUtils.detectScaleType(['A', 'B', 'C'])).toBe('ordinal');
-            expect(scaleSystem.scaleUtils.detectScaleType([1, 2, 3])).toBe('linear');
+        test("should detect scale type correctly", () => {
+            expect(scaleSystem.scaleUtils.detectScaleType([new Date(), new Date()])).toBe("time");
+            expect(scaleSystem.scaleUtils.detectScaleType(["A", "B", "C"])).toBe("ordinal");
+            expect(scaleSystem.scaleUtils.detectScaleType([1, 2, 3])).toBe("linear");
         });
         
-        test('should create appropriate axis for scale', () => {
+        test("should create appropriate axis for scale", () => {
             const mockScale = { domain: jest.fn(), range: jest.fn() };
-            const axis = scaleSystem.scaleUtils.createAxis(mockScale, 'bottom');
+            const axis = scaleSystem.scaleUtils.createAxis(mockScale, "bottom");
             
             expect(axis).toBeDefined();
         });
     });
     
-    describe('Brush System', () => {
+    describe("Brush System", () => {
         let brushSystem;
         
         beforeEach(() => {
             brushSystem = createBrushSystem();
         });
         
-        test('should create brush with default options', () => {
+        test("should create brush with default options", () => {
             const brush = brushSystem.createBrush();
             expect(brush).toBeDefined();
         });
         
-        test('should create x-direction brush', () => {
-            const brush = brushSystem.createBrush({ type: 'x' });
+        test("should create x-direction brush", () => {
+            const brush = brushSystem.createBrush({ type: "x" });
             expect(brush).toBeDefined();
         });
         
-        test('should create y-direction brush', () => {
-            const brush = brushSystem.createBrush({ type: 'y' });
+        test("should create y-direction brush", () => {
+            const brush = brushSystem.createBrush({ type: "y" });
             expect(brush).toBeDefined();
         });
         
-        test('should create xy-direction brush', () => {
-            const brush = brushSystem.createBrush({ type: 'xy' });
+        test("should create xy-direction brush", () => {
+            const brush = brushSystem.createBrush({ type: "xy" });
             expect(brush).toBeDefined();
         });
         
-        test('should filter data based on brush selection', () => {
+        test("should filter data based on brush selection", () => {
             const data = [
-                { label: 'A', cumulativeTotal: 10 },
-                { label: 'B', cumulativeTotal: 20 },
-                { label: 'C', cumulativeTotal: 30 }
+                { label: "A", cumulativeTotal: 10 },
+                { label: "B", cumulativeTotal: 20 },
+                { label: "C", cumulativeTotal: 30 }
             ];
             
             // Create a proper mock scale function
             const mockScale = jest.fn((label) => {
-                const positions = { 'A': 0, 'B': 100, 'C': 200 };
+                const positions = { "A": 0, "B": 100, "C": 200 };
                 return positions[label] || 0;
             });
             mockScale.invert = jest.fn(x => x);
@@ -138,15 +138,15 @@ describe('Enhanced D3.js Features', () => {
             expect(Array.isArray(filteredData)).toBe(true);
         });
         
-        test('should get selected indices', () => {
+        test("should get selected indices", () => {
             const data = [
-                { label: 'A', cumulativeTotal: 10 },
-                { label: 'B', cumulativeTotal: 20 }
+                { label: "A", cumulativeTotal: 10 },
+                { label: "B", cumulativeTotal: 20 }
             ];
             
             // Create a proper mock scale function
             const mockScale = jest.fn((label) => {
-                const positions = { 'A': 0, 'B': 100 };
+                const positions = { "A": 0, "B": 100 };
                 return positions[label] || 0;
             });
             mockScale.invert = jest.fn(x => x);
@@ -158,7 +158,7 @@ describe('Enhanced D3.js Features', () => {
             expect(Array.isArray(indices)).toBe(true);
         });
         
-        test('should create selection summary', () => {
+        test("should create selection summary", () => {
             const selectedData = [
                 { cumulativeTotal: 10 },
                 { cumulativeTotal: 20 },
@@ -177,7 +177,7 @@ describe('Enhanced D3.js Features', () => {
             });
         });
         
-        test('should handle empty selection summary', () => {
+        test("should handle empty selection summary", () => {
             const summary = brushSystem.selectionUtils.createSelectionSummary([]);
             
             expect(summary).toEqual({
@@ -189,7 +189,7 @@ describe('Enhanced D3.js Features', () => {
             });
         });
         
-        test('should register event handlers', () => {
+        test("should register event handlers", () => {
             const startHandler = jest.fn();
             const moveHandler = jest.fn();
             const endHandler = jest.fn();
@@ -205,14 +205,14 @@ describe('Enhanced D3.js Features', () => {
         });
     });
     
-    describe('Enhanced Animation System', () => {
+    describe("Enhanced Animation System", () => {
         let animationSystem;
         
         beforeEach(() => {
             animationSystem = createAnimationSystem();
         });
         
-        test('should create staggered transition', async () => {
+        test("should create staggered transition", async () => {
             const elements = [
                 { id: 1 },
                 { id: 2 },
@@ -226,25 +226,25 @@ describe('Enhanced D3.js Features', () => {
             expect(result).toBeInstanceOf(Promise);
         });
         
-        test('should create custom tween function', () => {
+        test("should create custom tween function", () => {
             const startValue = 0;
             const endValue = 100;
             const interpolator = (start, end, t) => start + (end - start) * t * t;
             
             const tween = animationSystem.createCustomTween(startValue, endValue, interpolator);
-            expect(typeof tween).toBe('function');
+            expect(typeof tween).toBe("function");
             
             // Test interpolation
             expect(tween(0.5)).toBe(25); // 0 + (100 - 0) * 0.5 * 0.5
         });
         
-        test('should create custom tween with default linear interpolation', () => {
+        test("should create custom tween with default linear interpolation", () => {
             const tween = animationSystem.createCustomTween(0, 100);
-            expect(typeof tween).toBe('function');
+            expect(typeof tween).toBe("function");
             expect(tween(0.5)).toBe(50);
         });
         
-        test('should create transition with events', () => {
+        test("should create transition with events", () => {
             const config = {
                 duration: 1000,
                 onStart: jest.fn(),
@@ -259,7 +259,7 @@ describe('Enhanced D3.js Features', () => {
             expect(transition.then).toBeDefined();
         });
         
-        test('should handle transition interruption', () => {
+        test("should handle transition interruption", () => {
             const config = {
                 onInterrupt: jest.fn()
             };
@@ -270,7 +270,7 @@ describe('Enhanced D3.js Features', () => {
             expect(config.onInterrupt).toHaveBeenCalled();
         });
         
-        test('should configure transition settings', () => {
+        test("should configure transition settings", () => {
             const config = animationSystem.transitionConfig;
             
             expect(config.staggerDelay).toBeDefined();
@@ -278,7 +278,7 @@ describe('Enhanced D3.js Features', () => {
             expect(config.defaultEase).toBeDefined();
         });
         
-        test('should support easing functions', () => {
+        test("should support easing functions", () => {
             const easings = animationSystem.easingFunctions;
             
             expect(easings.linear).toBeDefined();
@@ -291,8 +291,8 @@ describe('Enhanced D3.js Features', () => {
         });
     });
     
-    describe('Integration Tests', () => {
-        test('should work together for enhanced chart features', () => {
+    describe("Integration Tests", () => {
+        test("should work together for enhanced chart features", () => {
             const scaleSystem = createScaleSystem();
             const brushSystem = createBrushSystem();
             const animationSystem = createAnimationSystem();
@@ -304,8 +304,8 @@ describe('Enhanced D3.js Features', () => {
             
             // Test basic integration
             const data = [
-                { label: 'A', cumulativeTotal: 10 },
-                { label: 'B', cumulativeTotal: 20 }
+                { label: "A", cumulativeTotal: 10 },
+                { label: "B", cumulativeTotal: 20 }
             ];
             
             const scale = scaleSystem.createLinearScale(data.map(d => d.cumulativeTotal));

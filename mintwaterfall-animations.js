@@ -336,7 +336,7 @@ export function createAnimationSystem() {
     // Custom tweening functions
     function createCustomTween(startValue, endValue, interpolator) {
         return function(t) {
-            if (typeof interpolator === 'function') {
+            if (typeof interpolator === "function") {
                 return interpolator(startValue, endValue, t);
             }
             // Default linear interpolation
@@ -348,9 +348,7 @@ export function createAnimationSystem() {
     function createTransitionWithEvents(element, config) {
         const {
             duration = transitionConfig.defaultDuration,
-            ease = transitionConfig.defaultEase,
             onStart,
-            onProgress,
             onEnd,
             onInterrupt
         } = config;

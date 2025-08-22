@@ -1,9 +1,8 @@
 // MintWaterfall - D3.js compatible waterfall chart component
 // Usage: d3.waterfallChart().width(800).height(400).showTotal(true)(selection)
 
-import { createScaleSystem } from './mintwaterfall-scales.js';
-import { createBrushSystem } from './mintwaterfall-brush.js';
-import { createAnimationSystem } from './mintwaterfall-animations.js';
+import { createScaleSystem } from "./mintwaterfall-scales.js";
+import { createBrushSystem } from "./mintwaterfall-brush.js";
 
 export function waterfallChart() {
     let width = 800;
@@ -24,12 +23,11 @@ export function waterfallChart() {
     let brushOptions = {};
     let staggeredAnimations = false;
     let staggerDelay = 100;
-    let scaleType = 'auto'; // 'auto', 'linear', 'time', 'ordinal'
+    let scaleType = "auto"; // 'auto', 'linear', 'time', 'ordinal'
     
     // Initialize systems
     const scaleSystem = createScaleSystem();
     const brushSystem = createBrushSystem();
-    const animationSystem = createAnimationSystem();
     
     // Event listeners - enhanced with brush events
     const listeners = d3.dispatch("barClick", "barMouseover", "barMouseout", "chartUpdate", "brushSelection");
@@ -78,12 +76,12 @@ export function waterfallChart() {
             
             // Set up scales using enhanced scale system
             let xScale;
-            if (scaleType === 'auto') {
-                xScale = scaleSystem.createAdaptiveScale(processedData, 'x');
-            } else if (scaleType === 'time') {
+            if (scaleType === "auto") {
+                xScale = scaleSystem.createAdaptiveScale(processedData, "x");
+            } else if (scaleType === "time") {
                 const timeValues = processedData.map(d => new Date(d.label));
                 xScale = scaleSystem.createTimeScale(timeValues);
-            } else if (scaleType === 'ordinal') {
+            } else if (scaleType === "ordinal") {
                 xScale = scaleSystem.createOrdinalScale(processedData.map(d => d.label));
             } else {
                 // Default to band scale for categorical data
@@ -530,20 +528,20 @@ export function waterfallChart() {
     // Add brush selection functionality
     function addBrushSelection(container, data, xScale, yScale) {
         const brush = brushSystem.createBrush({
-            type: 'x',
+            type: "x",
             extent: [[xScale.range()[0], yScale.range()[1]], [xScale.range()[1], yScale.range()[0]]],
             ...brushOptions
         });
         
         // Remove existing brush if any
-        container.selectAll('.waterfall-brush').remove();
+        container.selectAll(".waterfall-brush").remove();
         
-        const brushGroup = brushSystem.addBrushToChart(container, brush, {
-            className: 'waterfall-brush',
+        brushSystem.addBrushToChart(container, brush, {
+            className: "waterfall-brush",
             styles: {
                 selection: {
-                    fill: 'rgba(70, 130, 180, 0.2)',
-                    stroke: '#4682b4'
+                    fill: "rgba(70, 130, 180, 0.2)",
+                    stroke: "#4682b4"
                 }
             }
         });
