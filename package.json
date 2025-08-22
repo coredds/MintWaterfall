@@ -2,15 +2,29 @@
   "name": "mintwaterfall",
   "version": "0.5.5",
   "description": "A powerful, D3.js-compatible waterfall chart component with stacking capabilities, animations, and extensive customization options",
-  "main": "mintwaterfall-chart.js",
+  "main": "dist/mintwaterfall.cjs.js",
+  "module": "dist/mintwaterfall.esm.js",
+  "browser": "dist/mintwaterfall.min.js",
+  "unpkg": "dist/mintwaterfall.min.js",
+  "jsdelivr": "dist/mintwaterfall.min.js",
+  "types": "dist/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/mintwaterfall.esm.js",
+      "require": "./dist/mintwaterfall.cjs.js",
+      "browser": "./dist/mintwaterfall.min.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
-    "mintwaterfall-chart.js",
-    "mintwaterfall-tooltip.js",
-    "mintwaterfall-themes.js",
+    "dist/",
+    "src/",
+    "mintwaterfall-*.js",
     "API.md",
     "CONTRIBUTING.md",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "start": "python -m http.server 8080",
@@ -20,8 +34,15 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "build": "echo 'Build process will be added in Phase 3' && exit 0",
-    "format": "echo 'Prettier formatting will be added' && exit 0"
+    "prebuild": "rimraf dist",
+    "build": "rollup -c",
+    "build:watch": "rollup -c -w",
+    "build:analyze": "rollup -c --environment ANALYZE",
+    "format": "prettier --write \"src/**/*.js\" \"*.js\" \"*.md\"",
+    "format:check": "prettier --check \"src/**/*.js\" \"*.js\" \"*.md\"",
+    "prepublishOnly": "npm run test && npm run lint && npm run build",
+    "version": "npm run build && git add dist/",
+    "postversion": "git push && git push --tags"
   },
   "keywords": [
     "d3js",
@@ -57,6 +78,9 @@
   "devDependencies": {
     "@babel/core": "^7.28.3",
     "@babel/preset-env": "^7.28.3",
+    "@rollup/plugin-babel": "^6.0.4",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
     "babel-jest": "^30.0.5",
     "eslint": "^9.33.0",
     "husky": "^8.0.0",
@@ -64,7 +88,11 @@
     "jest-environment-jsdom": "^30.0.5",
     "jsdom": "^26.1.0",
     "lint-staged": "^16.1.5",
-    "prettier": "^3.0.0",
+    "prettier": "^3.6.2",
+    "rimraf": "^6.0.1",
+    "rollup": "^4.47.1",
+    "rollup-plugin-cleanup": "^3.2.1",
+    "rollup-plugin-filesize": "^10.0.0",
     "typescript": "^5.9.2"
   },
   "lint-staged": {

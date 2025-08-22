@@ -1,6 +1,9 @@
 # Node modules
 node_modules/
 
+# Build outputs (comment out to track dist files for now)
+# dist/
+
 # Logs
 npm-debug.log*
 yarn-debug.log*

@@ -2,6 +2,11 @@
 export default [
   {
     files: ["**/*.js"],
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      "coverage/**"
+    ],
     languageOptions: {
       ecmaVersion: 2021,
       sourceType: "module",

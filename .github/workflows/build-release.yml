@@ -1,0 +1,102 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run tests
+      run: npm test
+      
+    - name: Run linter
+      run: npm run lint
+      
+    - name: Build distribution files
+      run: npm run build
+      
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-files
+        path: dist/
+        retention-days: 30
+        
+    - name: Verify build outputs
+      run: |
+        echo "Checking build outputs..."
+        ls -la dist/
+        echo "ES Module size:"
+        du -h dist/mintwaterfall.esm.js
+        echo "Minified size:"
+        du -h dist/mintwaterfall.min.js
+        echo "UMD size:"
+        du -h dist/mintwaterfall.umd.js
+        echo "CommonJS size:"
+        du -h dist/mintwaterfall.cjs.js
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        registry-url: 'https://registry.npmjs.org'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build for release
+      run: npm run build
+      
+    - name: Publish to npm
+      run: npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          ## Changes in this Release
+          - Updated build system with multiple distribution formats
+          - Added TypeScript definitions
+          - Improved package exports for better compatibility
+          
+          ## Distribution Files
+          - `dist/mintwaterfall.esm.js` - ES6 modules (35.6 KB)
+          - `dist/mintwaterfall.umd.js` - UMD format (40.0 KB) 
+          - `dist/mintwaterfall.min.js` - Minified UMD (15.0 KB)
+          - `dist/mintwaterfall.cjs.js` - CommonJS (35.9 KB)
+          - `dist/index.d.ts` - TypeScript definitions
+        draft: false
+        prerelease: false
