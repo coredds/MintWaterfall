@@ -1,5 +1,5 @@
 // Animation System Test Suite
-import { animationSystem } from '../mintwaterfall-animations.js';
+import { animationSystem } from "../mintwaterfall-animations.js";
 
 // Mock performance.now for testing
 let mockTime = 0;
@@ -13,31 +13,31 @@ global.performance = {
 // Mock requestAnimationFrame
 global.requestAnimationFrame = jest.fn(cb => setTimeout(cb, 16));
 
-describe('MintWaterfall Animation System', () => {
+describe("MintWaterfall Animation System", () => {
     beforeEach(() => {
         jest.clearAllMocks();
         // Reset mock time
         mockTime = 0;
     });
 
-    describe('Easing Functions', () => {
-        test('should provide basic easing functions', () => {
+    describe("Easing Functions", () => {
+        test("should provide basic easing functions", () => {
             const { easingFunctions } = animationSystem;
             
-            expect(typeof easingFunctions.linear).toBe('function');
-            expect(typeof easingFunctions.easeInQuad).toBe('function');
-            expect(typeof easingFunctions.easeOutQuad).toBe('function');
-            expect(typeof easingFunctions.easeInOutQuad).toBe('function');
+            expect(typeof easingFunctions.linear).toBe("function");
+            expect(typeof easingFunctions.easeInQuad).toBe("function");
+            expect(typeof easingFunctions.easeOutQuad).toBe("function");
+            expect(typeof easingFunctions.easeInOutQuad).toBe("function");
         });
 
-        test('linear easing should return input value', () => {
+        test("linear easing should return input value", () => {
             const { easingFunctions } = animationSystem;
             expect(easingFunctions.linear(0.5)).toBe(0.5);
             expect(easingFunctions.linear(0)).toBe(0);
             expect(easingFunctions.linear(1)).toBe(1);
         });
 
-        test('easing functions should work with boundary values', () => {
+        test("easing functions should work with boundary values", () => {
             const { easingFunctions } = animationSystem;
             
             Object.values(easingFunctions).forEach(easingFn => {
@@ -47,8 +47,8 @@ describe('MintWaterfall Animation System', () => {
         });
     });
 
-    describe('animateValue', () => {
-        test('should animate from start to end value', (done) => {
+    describe("animateValue", () => {
+        test("should animate from start to end value", (done) => {
             const updateSpy = jest.fn();
             const completeSpy = jest.fn(() => {
                 // Just verify the completion was called
@@ -60,29 +60,29 @@ describe('MintWaterfall Animation System', () => {
             setTimeout(() => completeSpy(), 50);
         });
 
-        test('should use correct easing function', (done) => {
+        test("should use correct easing function", (done) => {
             const updateSpy = jest.fn();
             
             // Test that the function exists and can be called
-            expect(typeof animationSystem.animateValue).toBe('function');
+            expect(typeof animationSystem.animateValue).toBe("function");
             
             // Simple verification that it doesn't throw
             expect(() => {
-                animationSystem.animateValue(0, 100, 100, 'linear', updateSpy);
+                animationSystem.animateValue(0, 100, 100, "linear", updateSpy);
             }).not.toThrow();
             
             done();
         });
     });
 
-    describe('staggeredAnimation', () => {
-        test('should throw error for non-array items', () => {
+    describe("staggeredAnimation", () => {
+        test("should throw error for non-array items", () => {
             expect(() => {
-                animationSystem.staggeredAnimation('not an array', () => {});
-            }).toThrow('Items must be an array');
+                animationSystem.staggeredAnimation("not an array", () => {});
+            }).toThrow("Items must be an array");
         });
 
-        test('should call animation function for each item', (done) => {
+        test("should call animation function for each item", (done) => {
             const items = [1, 2, 3];
             const animationSpy = jest.fn();
             
@@ -98,14 +98,14 @@ describe('MintWaterfall Animation System', () => {
         });
     });
 
-    describe('morphShape', () => {
-        test('should throw error for non-string paths', () => {
+    describe("morphShape", () => {
+        test("should throw error for non-string paths", () => {
             expect(() => {
-                animationSystem.morphShape(123, 'M10,10L20,20', 1000);
-            }).toThrow('Path values must be strings');
+                animationSystem.morphShape(123, "M10,10L20,20", 1000);
+            }).toThrow("Path values must be strings");
         });
 
-        test('should call update callback during morphing', (done) => {
+        test("should call update callback during morphing", (done) => {
             const updateSpy = jest.fn();
             const completeSpy = jest.fn(() => {
                 expect(updateSpy).toHaveBeenCalled();
@@ -113,10 +113,10 @@ describe('MintWaterfall Animation System', () => {
             });
             
             animationSystem.morphShape(
-                'M0,0L10,10',
-                'M20,20L30,30',
+                "M0,0L10,10",
+                "M20,20L30,30",
                 100,
-                'linear',
+                "linear",
                 updateSpy,
                 completeSpy
             );
@@ -129,120 +129,120 @@ describe('MintWaterfall Animation System', () => {
         });
     });
 
-    describe('fadeTransition', () => {
-        test('should animate opacity on DOM element', async () => {
+    describe("fadeTransition", () => {
+        test("should animate opacity on DOM element", async () => {
             const mockElement = {
-                style: { opacity: '0' }
+                style: { opacity: "0" }
             };
             
             // Mock the animation directly
-            mockElement.style.opacity = '1';
-            expect(mockElement.style.opacity).toBe('1');
+            mockElement.style.opacity = "1";
+            expect(mockElement.style.opacity).toBe("1");
         });
 
-        test('should work with D3 selections', async () => {
+        test("should work with D3 selections", async () => {
             const mockD3Element = {
                 attr: jest.fn()
             };
             
             // Mock the D3 selection behavior
-            mockD3Element.attr('opacity', 1);
-            expect(mockD3Element.attr).toHaveBeenCalledWith('opacity', 1);
+            mockD3Element.attr("opacity", 1);
+            expect(mockD3Element.attr).toHaveBeenCalledWith("opacity", 1);
         });
     });
 
-    describe('slideTransition', () => {
-        test('should animate translateX on DOM element', async () => {
+    describe("slideTransition", () => {
+        test("should animate translateX on DOM element", async () => {
             const mockElement = {
-                style: { transform: '' }
+                style: { transform: "" }
             };
             
             // Mock the animation directly
-            mockElement.style.transform = 'translateX(100px)';
-            expect(mockElement.style.transform).toBe('translateX(100px)');
+            mockElement.style.transform = "translateX(100px)";
+            expect(mockElement.style.transform).toBe("translateX(100px)");
         });
     });
 
-    describe('scaleTransition', () => {
-        test('should animate scale transform', async () => {
+    describe("scaleTransition", () => {
+        test("should animate scale transform", async () => {
             const mockElement = {
-                style: { transform: '' }
+                style: { transform: "" }
             };
             
             // Mock the animation directly
-            mockElement.style.transform = 'scale(1)';
-            expect(mockElement.style.transform).toBe('scale(1)');
+            mockElement.style.transform = "scale(1)";
+            expect(mockElement.style.transform).toBe("scale(1)");
         });
     });
 
-    describe('createTransitionSequence', () => {
-        test('should create a sequence with add method', () => {
+    describe("createTransitionSequence", () => {
+        test("should create a sequence with add method", () => {
             const sequence = animationSystem.createTransitionSequence();
             
-            expect(typeof sequence.add).toBe('function');
-            expect(typeof sequence.parallel).toBe('function');
-            expect(typeof sequence.play).toBe('function');
-            expect(typeof sequence.stop).toBe('function');
+            expect(typeof sequence.add).toBe("function");
+            expect(typeof sequence.parallel).toBe("function");
+            expect(typeof sequence.play).toBe("function");
+            expect(typeof sequence.stop).toBe("function");
         });
 
-        test('should execute transitions in sequence', async () => {
+        test("should execute transitions in sequence", async () => {
             const sequence = animationSystem.createTransitionSequence();
             const results = [];
             
             sequence
                 .add(() => {
-                    results.push('first');
+                    results.push("first");
                     return Promise.resolve();
                 })
                 .add(() => {
-                    results.push('second');
+                    results.push("second");
                     return Promise.resolve();
                 });
             
             await sequence.play();
             
-            expect(results).toEqual(['first', 'second']);
+            expect(results).toEqual(["first", "second"]);
         });
 
-        test('should execute parallel transitions', async () => {
+        test("should execute parallel transitions", async () => {
             const sequence = animationSystem.createTransitionSequence();
             const results = [];
             
             sequence.parallel(
                 () => {
-                    results.push('parallel1');
+                    results.push("parallel1");
                     return Promise.resolve();
                 },
                 () => {
-                    results.push('parallel2');
+                    results.push("parallel2");
                     return Promise.resolve();
                 }
             );
             
             await sequence.play();
             
-            expect(results).toContain('parallel1');
-            expect(results).toContain('parallel2');
+            expect(results).toContain("parallel1");
+            expect(results).toContain("parallel2");
         });
 
-        test('should prevent multiple simultaneous plays', async () => {
+        test("should prevent multiple simultaneous plays", async () => {
             const sequence = animationSystem.createTransitionSequence();
             sequence.add(() => new Promise(resolve => setTimeout(resolve, 100)));
             
             const firstPlay = sequence.play();
             
-            await expect(sequence.play()).rejects.toThrow('Sequence is already running');
+            await expect(sequence.play()).rejects.toThrow("Sequence is already running");
             await firstPlay;
         });
     });
 
-    describe('createSpringAnimation', () => {
-        test('should create spring animation with animate method', () => {
+    describe("createSpringAnimation", () => {
+        test("should create spring animation with animate method", () => {
             const spring = animationSystem.createSpringAnimation();
-            expect(typeof spring.animate).toBe('function');
+            expect(typeof spring.animate).toBe("function");
         });
 
-        test('should animate with spring physics', (done) => {
+        test("should animate with spring physics", (done) => {
             const spring = animationSystem.createSpringAnimation(100, 10);
             const updateSpy = jest.fn();
             
@@ -257,38 +257,38 @@ describe('MintWaterfall Animation System', () => {
         });
     });
 
-    describe('Animation Presets', () => {
-        test('should provide preset animations', () => {
+    describe("Animation Presets", () => {
+        test("should provide preset animations", () => {
             const { presets } = animationSystem;
             
-            expect(typeof presets.slideInLeft).toBe('function');
-            expect(typeof presets.slideInRight).toBe('function');
-            expect(typeof presets.fadeIn).toBe('function');
-            expect(typeof presets.fadeOut).toBe('function');
-            expect(typeof presets.scaleIn).toBe('function');
-            expect(typeof presets.scaleOut).toBe('function');
-            expect(typeof presets.pulse).toBe('function');
-            expect(typeof presets.bounce).toBe('function');
+            expect(typeof presets.slideInLeft).toBe("function");
+            expect(typeof presets.slideInRight).toBe("function");
+            expect(typeof presets.fadeIn).toBe("function");
+            expect(typeof presets.fadeOut).toBe("function");
+            expect(typeof presets.scaleIn).toBe("function");
+            expect(typeof presets.scaleOut).toBe("function");
+            expect(typeof presets.pulse).toBe("function");
+            expect(typeof presets.bounce).toBe("function");
         });
 
-        test('should execute fade in preset', async () => {
+        test("should execute fade in preset", async () => {
             const mockElement = {
-                style: { opacity: '0' }
+                style: { opacity: "0" }
             };
             
             // Mock the preset behavior
-            mockElement.style.opacity = '1';
-            expect(mockElement.style.opacity).toBe('1');
+            mockElement.style.opacity = "1";
+            expect(mockElement.style.opacity).toBe("1");
         });
 
-        test('should execute pulse preset', async () => {
+        test("should execute pulse preset", async () => {
             const mockElement = {
-                style: { transform: '' }
+                style: { transform: "" }
             };
             
             // Mock the pulse animation
-            mockElement.style.transform = 'scale(1)';
-            expect(mockElement.style.transform).toBe('scale(1)');
+            mockElement.style.transform = "scale(1)";
+            expect(mockElement.style.transform).toBe("scale(1)");
         });
     });
 });

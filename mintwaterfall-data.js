@@ -5,19 +5,19 @@ export function createDataProcessor() {
     
     function validateData(data) {
         if (!data || !Array.isArray(data)) {
-            throw new Error('Data must be an array');
+            throw new Error("Data must be an array");
         }
         
         if (data.length === 0) {
-            throw new Error('Data array cannot be empty');
+            throw new Error("Data array cannot be empty");
         }
         
         const isValid = data.every((item, index) => {
-            if (!item || typeof item !== 'object') {
+            if (!item || typeof item !== "object") {
                 throw new Error(`Item at index ${index} must be an object`);
             }
             
-            if (typeof item.label !== 'string') {
+            if (typeof item.label !== "string") {
                 throw new Error(`Item at index ${index} must have a string 'label' property`);
             }
             
@@ -30,11 +30,11 @@ export function createDataProcessor() {
             }
             
             item.stacks.forEach((stack, stackIndex) => {
-                if (typeof stack.value !== 'number' || isNaN(stack.value)) {
+                if (typeof stack.value !== "number" || isNaN(stack.value)) {
                     throw new Error(`Stack ${stackIndex} in item ${index} must have a numeric 'value'`);
                 }
                 
-                if (typeof stack.color !== 'string') {
+                if (typeof stack.color !== "string") {
                     throw new Error(`Stack ${stackIndex} in item ${index} must have a string 'color'`);
                 }
             });
@@ -45,23 +45,23 @@ export function createDataProcessor() {
         return isValid;
     }
     
-    function aggregateData(data, aggregateBy = 'sum') {
+    function aggregateData(data, aggregateBy = "sum") {
         validateData(data);
         
         return data.map(item => {
             let aggregatedValue;
             
             switch (aggregateBy) {
-                case 'sum':
+                case "sum":
                     aggregatedValue = item.stacks.reduce((sum, stack) => sum + stack.value, 0);
                     break;
-                case 'average':
+                case "average":
                     aggregatedValue = item.stacks.reduce((sum, stack) => sum + stack.value, 0) / item.stacks.length;
                     break;
-                case 'max':
+                case "max":
                     aggregatedValue = Math.max(...item.stacks.map(s => s.value));
                     break;
-                case 'min':
+                case "min":
                     aggregatedValue = Math.min(...item.stacks.map(s => s.value));
                     break;
                 default:
@@ -76,26 +76,26 @@ export function createDataProcessor() {
         });
     }
     
-    function sortData(data, sortBy = 'label', direction = 'ascending') {
+    function sortData(data, sortBy = "label", direction = "ascending") {
         validateData(data);
         
         const sorted = [...data].sort((a, b) => {
             let valueA, valueB;
             
             switch (sortBy) {
-                case 'label':
+                case "label":
                     valueA = a.label.toLowerCase();
                     valueB = b.label.toLowerCase();
                     break;
-                case 'total':
+                case "total":
                     valueA = a.stacks.reduce((sum, stack) => sum + stack.value, 0);
                     valueB = b.stacks.reduce((sum, stack) => sum + stack.value, 0);
                     break;
-                case 'maxStack':
+                case "maxStack":
                     valueA = Math.max(...a.stacks.map(s => s.value));
                     valueB = Math.max(...b.stacks.map(s => s.value));
                     break;
-                case 'stackCount':
+                case "stackCount":
                     valueA = a.stacks.length;
                     valueB = b.stacks.length;
                     break;
@@ -104,7 +104,7 @@ export function createDataProcessor() {
                     valueB = b.label.toLowerCase();
             }
             
-            if (direction === 'ascending') {
+            if (direction === "ascending") {
                 return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
             } else {
                 return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
@@ -117,8 +117,8 @@ export function createDataProcessor() {
     function filterData(data, filterFn) {
         validateData(data);
         
-        if (typeof filterFn !== 'function') {
-            throw new Error('Filter must be a function');
+        if (typeof filterFn !== "function") {
+            throw new Error("Filter must be a function");
         }
         
         return data.filter(filterFn);
@@ -127,8 +127,8 @@ export function createDataProcessor() {
     function transformStacks(data, transformFn) {
         validateData(data);
         
-        if (typeof transformFn !== 'function') {
-            throw new Error('Transform function must be a function');
+        if (typeof transformFn !== "function") {
+            throw new Error("Transform function must be a function");
         }
         
         return data.map(item => ({
@@ -164,8 +164,8 @@ export function createDataProcessor() {
     function groupByCategory(data, categoryExtractor) {
         validateData(data);
         
-        if (typeof categoryExtractor !== 'function') {
-            throw new Error('Category extractor must be a function');
+        if (typeof categoryExtractor !== "function") {
+            throw new Error("Category extractor must be a function");
         }
         
         const grouped = {};
@@ -211,7 +211,7 @@ export function createDataProcessor() {
         // Simple linear interpolation between two datasets
         // t should be between 0 and 1
         if (data1.length !== data2.length) {
-            throw new Error('Datasets must have the same length for interpolation');
+            throw new Error("Datasets must have the same length for interpolation");
         }
         
         return data1.map((item1, index) => {
@@ -235,7 +235,7 @@ export function createDataProcessor() {
     }
     
     function generateSampleData(categories = 5, maxStacks = 3, valueRange = [10, 100]) {
-        const colors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c'];
+        const colors = ["#3498db", "#2ecc71", "#e74c3c", "#f39c12", "#9b59b6", "#1abc9c"];
         const data = [];
         
         for (let i = 0; i < categories; i++) {

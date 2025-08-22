@@ -42,7 +42,7 @@ export function createAnimationSystem() {
     
     const easingFunctions = createEasingFunctions();
     
-    function animateValue(startValue, endValue, duration, easingType = 'easeOutQuad', onUpdate, onComplete) {
+    function animateValue(startValue, endValue, duration, easingType = "easeOutQuad", onUpdate, onComplete) {
         const startTime = performance.now();
         const valueRange = endValue - startValue;
         const easing = easingFunctions[easingType] || easingFunctions.easeOutQuad;
@@ -70,7 +70,7 @@ export function createAnimationSystem() {
     
     function staggeredAnimation(items, animationFn, staggerDelay = 100, totalDuration = 1000) {
         if (!Array.isArray(items)) {
-            throw new Error('Items must be an array');
+            throw new Error("Items must be an array");
         }
         
         items.forEach((item, index) => {
@@ -85,12 +85,12 @@ export function createAnimationSystem() {
         });
     }
     
-    function morphShape(fromPath, toPath, duration = 1000, easingType = 'easeInOutQuad', onUpdate, onComplete) {
+    function morphShape(fromPath, toPath, duration = 1000, easingType = "easeInOutQuad", onUpdate, onComplete) {
         // Simple path morphing for basic shapes
         // Note: In a real implementation, you'd want more sophisticated path interpolation
         
-        if (typeof fromPath !== 'string' || typeof toPath !== 'string') {
-            throw new Error('Path values must be strings');
+        if (typeof fromPath !== "string" || typeof toPath !== "string") {
+            throw new Error("Path values must be strings");
         }
         
         const startTime = performance.now();
@@ -119,7 +119,7 @@ export function createAnimationSystem() {
         requestAnimationFrame(frame);
     }
     
-    function fadeTransition(element, fromOpacity, toOpacity, duration = 500, easingType = 'easeOutQuad') {
+    function fadeTransition(element, fromOpacity, toOpacity, duration = 500, easingType = "easeOutQuad") {
         return new Promise((resolve) => {
             animateValue(
                 fromOpacity,
@@ -131,7 +131,7 @@ export function createAnimationSystem() {
                         element.style.opacity = value;
                     } else if (element && element.attr) {
                         // D3 selection
-                        element.attr('opacity', value);
+                        element.attr("opacity", value);
                     }
                 },
                 resolve
@@ -139,7 +139,7 @@ export function createAnimationSystem() {
         });
     }
     
-    function slideTransition(element, fromX, toX, duration = 500, easingType = 'easeOutQuad') {
+    function slideTransition(element, fromX, toX, duration = 500, easingType = "easeOutQuad") {
         return new Promise((resolve) => {
             animateValue(
                 fromX,
@@ -151,7 +151,7 @@ export function createAnimationSystem() {
                         element.style.transform = `translateX(${value}px)`;
                     } else if (element && element.attr) {
                         // D3 selection
-                        element.attr('transform', `translate(${value}, 0)`);
+                        element.attr("transform", `translate(${value}, 0)`);
                     }
                 },
                 resolve
@@ -159,7 +159,7 @@ export function createAnimationSystem() {
         });
     }
     
-    function scaleTransition(element, fromScale, toScale, duration = 500, easingType = 'easeOutQuad') {
+    function scaleTransition(element, fromScale, toScale, duration = 500, easingType = "easeOutQuad") {
         return new Promise((resolve) => {
             animateValue(
                 fromScale,
@@ -171,7 +171,7 @@ export function createAnimationSystem() {
                         element.style.transform = `scale(${value})`;
                     } else if (element && element.attr) {
                         // D3 selection
-                        element.attr('transform', `scale(${value})`);
+                        element.attr("transform", `scale(${value})`);
                     }
                 },
                 resolve
@@ -198,7 +198,7 @@ export function createAnimationSystem() {
         
         async function play() {
             if (isRunning) {
-                throw new Error('Sequence is already running');
+                throw new Error("Sequence is already running");
             }
             
             isRunning = true;
@@ -271,33 +271,33 @@ export function createAnimationSystem() {
     function createAnimationPresets() {
         return {
             slideInLeft: (element, duration = 500) => 
-                slideTransition(element, -100, 0, duration, 'easeOutQuad'),
+                slideTransition(element, -100, 0, duration, "easeOutQuad"),
             
             slideInRight: (element, duration = 500) => 
-                slideTransition(element, 100, 0, duration, 'easeOutQuad'),
+                slideTransition(element, 100, 0, duration, "easeOutQuad"),
             
             fadeIn: (element, duration = 500) => 
-                fadeTransition(element, 0, 1, duration, 'easeOutQuad'),
+                fadeTransition(element, 0, 1, duration, "easeOutQuad"),
             
             fadeOut: (element, duration = 500) => 
-                fadeTransition(element, 1, 0, duration, 'easeOutQuad'),
+                fadeTransition(element, 1, 0, duration, "easeOutQuad"),
             
             scaleIn: (element, duration = 500) => 
-                scaleTransition(element, 0, 1, duration, 'easeOutElastic'),
+                scaleTransition(element, 0, 1, duration, "easeOutElastic"),
             
             scaleOut: (element, duration = 500) => 
-                scaleTransition(element, 1, 0, duration, 'easeInQuad'),
+                scaleTransition(element, 1, 0, duration, "easeInQuad"),
             
             pulse: (element, duration = 300) => {
                 const sequence = createTransitionSequence();
                 return sequence
-                    .add(() => scaleTransition(element, 1, 1.1, duration / 2, 'easeOutQuad'))
-                    .add(() => scaleTransition(element, 1.1, 1, duration / 2, 'easeInQuad'))
+                    .add(() => scaleTransition(element, 1, 1.1, duration / 2, "easeOutQuad"))
+                    .add(() => scaleTransition(element, 1.1, 1, duration / 2, "easeInQuad"))
                     .play();
             },
             
             bounce: (element, duration = 600) => 
-                scaleTransition(element, 0, 1, duration, 'easeOutBounce')
+                scaleTransition(element, 0, 1, duration, "easeOutBounce")
         };
     }
     

@@ -1,15 +1,15 @@
 // Test setup file
 // Polyfills for Node.js environment
-global.TextEncoder = require('util').TextEncoder;
-global.TextDecoder = require('util').TextDecoder;
+global.TextEncoder = require("util").TextEncoder;
+global.TextDecoder = require("util").TextDecoder;
 
-const { JSDOM } = require('jsdom');
+const { JSDOM } = require("jsdom");
 
 // Create a fake DOM for testing
-const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
-  url: 'http://localhost',
+const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>", {
+  url: "http://localhost",
   pretendToBeVisual: true,
-  resources: 'usable'
+  resources: "usable"
 });
 
 // Set up global objects
@@ -18,7 +18,7 @@ global.document = dom.window.document;
 global.navigator = dom.window.navigator;
 
 // Mock D3.js for testing
-const d3Mock = require('./__mocks__/d3.js');
+const d3Mock = require("./__mocks__/d3.js");
 global.d3 = d3Mock;
 global.d3 = {
   select: jest.fn(() => ({

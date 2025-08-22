@@ -1,7 +1,7 @@
 // MintWaterfall Chart Component Tests
-import { waterfallChart } from '../mintwaterfall-chart.js';
+import { waterfallChart } from "../mintwaterfall-chart.js";
 
-describe('MintWaterfall Chart', () => {
+describe("MintWaterfall Chart", () => {
   let chart;
   let mockSvg;
   let sampleData;
@@ -59,13 +59,13 @@ describe('MintWaterfall Chart', () => {
     ];
   });
 
-  describe('Initialization', () => {
-    test('should create chart instance', () => {
+  describe("Initialization", () => {
+    test("should create chart instance", () => {
       expect(chart).toBeDefined();
-      expect(typeof chart).toBe('function');
+      expect(typeof chart).toBe("function");
     });
 
-    test('should have default configuration', () => {
+    test("should have default configuration", () => {
       expect(chart.width()).toBe(800);
       expect(chart.height()).toBe(400);
       expect(chart.showTotal()).toBe(false);
@@ -74,56 +74,56 @@ describe('MintWaterfall Chart', () => {
     });
   });
 
-  describe('Configuration API', () => {
-    test('should set and get width', () => {
+  describe("Configuration API", () => {
+    test("should set and get width", () => {
       chart.width(600);
       expect(chart.width()).toBe(600);
     });
 
-    test('should set and get height', () => {
+    test("should set and get height", () => {
       chart.height(300);
       expect(chart.height()).toBe(300);
     });
 
-    test('should set and get showTotal', () => {
+    test("should set and get showTotal", () => {
       chart.showTotal(true);
       expect(chart.showTotal()).toBe(true);
     });
 
-    test('should set and get stacked mode', () => {
+    test("should set and get stacked mode", () => {
       chart.stacked(false);
       expect(chart.stacked()).toBe(false);
     });
 
-    test('should set and get duration', () => {
+    test("should set and get duration", () => {
       chart.duration(1000);
       expect(chart.duration()).toBe(1000);
     });
 
-    test('should set and get margin', () => {
+    test("should set and get margin", () => {
       const margin = { top: 40, right: 60, bottom: 40, left: 60 };
       chart.margin(margin);
       expect(chart.margin()).toEqual(margin);
     });
 
-    test('should set and get totalLabel', () => {
-      chart.totalLabel('Grand Total');
-      expect(chart.totalLabel()).toBe('Grand Total');
+    test("should set and get totalLabel", () => {
+      chart.totalLabel("Grand Total");
+      expect(chart.totalLabel()).toBe("Grand Total");
     });
 
-    test('should set and get totalColor', () => {
-      chart.totalColor('#ff0000');
-      expect(chart.totalColor()).toBe('#ff0000');
+    test("should set and get totalColor", () => {
+      chart.totalColor("#ff0000");
+      expect(chart.totalColor()).toBe("#ff0000");
     });
 
-    test('should set and get barPadding', () => {
+    test("should set and get barPadding", () => {
       chart.barPadding(0.2);
       expect(chart.barPadding()).toBe(0.2);
     });
   });
 
-  describe('Method Chaining', () => {
-    test('should support method chaining', () => {
+  describe("Method Chaining", () => {
+    test("should support method chaining", () => {
       const result = chart
         .width(600)
         .height(300)
@@ -138,10 +138,10 @@ describe('MintWaterfall Chart', () => {
     });
   });
 
-  describe('Data Validation', () => {
-    test('should handle valid data', () => {
+  describe("Data Validation", () => {
+    test("should handle valid data", () => {
       // Test that the chart function exists and can be called
-      expect(typeof chart).toBe('function');
+      expect(typeof chart).toBe("function");
       
       // Create a simple mock that won't trigger D3 issues
       const simpleMock = {
@@ -156,8 +156,8 @@ describe('MintWaterfall Chart', () => {
       expect(simpleMock.each).toHaveBeenCalled();
     });
 
-    test('should validate data structure', () => {
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+    test("should validate data structure", () => {
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
       
       // Test with invalid data
       const invalidData = null;
@@ -174,8 +174,8 @@ describe('MintWaterfall Chart', () => {
       consoleSpy.mockRestore();
     });
 
-    test('should validate empty data array', () => {
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+    test("should validate empty data array", () => {
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
       
       // Test with empty array
       const emptyData = [];
@@ -193,37 +193,37 @@ describe('MintWaterfall Chart', () => {
     });
   });
 
-  describe('Event System', () => {
-    test('should have event system methods', () => {
+  describe("Event System", () => {
+    test("should have event system methods", () => {
       // Test that the chart has an event system
-      expect(typeof chart.on).toBe('function');
+      expect(typeof chart.on).toBe("function");
       
       // Test that event registration doesn't throw and methods exist
       expect(() => {
-        chart.on('barClick', jest.fn());
-        chart.on('barMouseover', jest.fn());
+        chart.on("barClick", jest.fn());
+        chart.on("barMouseover", jest.fn());
       }).not.toThrow();
       
       // Verify chart has all required API methods
-      expect(typeof chart.width).toBe('function');
-      expect(typeof chart.height).toBe('function');
-      expect(typeof chart.margin).toBe('function');
+      expect(typeof chart.width).toBe("function");
+      expect(typeof chart.height).toBe("function");
+      expect(typeof chart.margin).toBe("function");
     });
   });
 
-  describe('Number Formatting', () => {
-    test('should set custom number formatter', () => {
+  describe("Number Formatting", () => {
+    test("should set custom number formatter", () => {
       const customFormatter = jest.fn();
       chart.formatNumber(customFormatter);
       expect(chart.formatNumber()).toBe(customFormatter);
     });
   });
 
-  describe('Theme Support', () => {
-    test('should set and get theme', () => {
+  describe("Theme Support", () => {
+    test("should set and get theme", () => {
       const theme = { 
-        gridColor: '#f0f0f0',
-        axisColor: '#333333'
+        gridColor: "#f0f0f0",
+        axisColor: "#333333"
       };
       chart.theme(theme);
       expect(chart.theme()).toBe(theme);
