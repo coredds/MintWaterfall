@@ -3,6 +3,13 @@
 
 export function createAnimationSystem() {
     
+    // Advanced transition configuration
+    const transitionConfig = {
+        staggerDelay: 100,      // Default stagger delay between elements
+        defaultDuration: 750,   // Default animation duration
+        defaultEase: "easeOutQuad"
+    };
+    
     function createEasingFunctions() {
         return {
             linear: t => t,
@@ -303,6 +310,79 @@ export function createAnimationSystem() {
     
     const presets = createAnimationPresets();
     
+    // Advanced staggered animations
+    function createStaggeredTransition(elements, animationFn, options = {}) {
+        const {
+            delay = transitionConfig.staggerDelay,
+            duration = transitionConfig.defaultDuration,
+            ease = transitionConfig.defaultEase,
+            reverse = false
+        } = options;
+        
+        const elementArray = Array.isArray(elements) ? elements : Array.from(elements);
+        const orderedElements = reverse ? elementArray.reverse() : elementArray;
+        
+        return Promise.all(
+            orderedElements.map((element, index) => {
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        animationFn(element, duration, ease).then(resolve);
+                    }, index * delay);
+                });
+            })
+        );
+    }
+    
+    // Custom tweening functions
+    function createCustomTween(startValue, endValue, interpolator) {
+        return function(t) {
+            if (typeof interpolator === 'function') {
+                return interpolator(startValue, endValue, t);
+            }
+            // Default linear interpolation
+            return startValue + (endValue - startValue) * t;
+        };
+    }
+    
+    // Transition event handlers
+    function createTransitionWithEvents(element, config) {
+        const {
+            duration = transitionConfig.defaultDuration,
+            ease = transitionConfig.defaultEase,
+            onStart,
+            onProgress,
+            onEnd,
+            onInterrupt
+        } = config;
+        
+        let isInterrupted = false;
+        
+        const transition = {
+            start() {
+                if (onStart) onStart();
+                return this;
+            },
+            
+            interrupt() {
+                isInterrupted = true;
+                if (onInterrupt) onInterrupt();
+                return this;
+            },
+            
+            then(callback) {
+                if (!isInterrupted && onEnd) {
+                    setTimeout(() => {
+                        onEnd();
+                        if (callback) callback();
+                    }, duration);
+                }
+                return this;
+            }
+        };
+        
+        return transition;
+    }
+    
     return {
         easingFunctions,
         animateValue,
@@ -313,6 +393,10 @@ export function createAnimationSystem() {
         scaleTransition,
         createTransitionSequence,
         createSpringAnimation,
+        createStaggeredTransition,
+        createCustomTween,
+        createTransitionWithEvents,
+        transitionConfig,
         presets
     };
 }

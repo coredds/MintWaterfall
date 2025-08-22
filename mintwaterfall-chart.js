@@ -1,6 +1,10 @@
 // MintWaterfall - D3.js compatible waterfall chart component
 // Usage: d3.waterfallChart().width(800).height(400).showTotal(true)(selection)
 
+import { createScaleSystem } from './mintwaterfall-scales.js';
+import { createBrushSystem } from './mintwaterfall-brush.js';
+import { createAnimationSystem } from './mintwaterfall-animations.js';
+
 export function waterfallChart() {
     let width = 800;
     let height = 400;
@@ -15,8 +19,20 @@ export function waterfallChart() {
     let formatNumber = d3.format(".0f");
     let theme = null;
     
-    // Event listeners
-    const listeners = d3.dispatch("barClick", "barMouseover", "barMouseout", "chartUpdate");
+    // Advanced features
+    let enableBrush = false;
+    let brushOptions = {};
+    let staggeredAnimations = false;
+    let staggerDelay = 100;
+    let scaleType = 'auto'; // 'auto', 'linear', 'time', 'ordinal'
+    
+    // Initialize systems
+    const scaleSystem = createScaleSystem();
+    const brushSystem = createBrushSystem();
+    const animationSystem = createAnimationSystem();
+    
+    // Event listeners - enhanced with brush events
+    const listeners = d3.dispatch("barClick", "barMouseover", "barMouseout", "chartUpdate", "brushSelection");
 
     function chart(selection) {
         selection.each(function(data) {
@@ -60,16 +76,32 @@ export function waterfallChart() {
             // Prepare data with cumulative calculations
             const processedData = prepareData(data);
             
-            // Set up scales
-            const xScale = d3.scaleBand()
-                .domain(processedData.map(d => d.label))
-                .range([margin.left, width - margin.right])
-                .padding(barPadding);
+            // Set up scales using enhanced scale system
+            let xScale;
+            if (scaleType === 'auto') {
+                xScale = scaleSystem.createAdaptiveScale(processedData, 'x');
+            } else if (scaleType === 'time') {
+                const timeValues = processedData.map(d => new Date(d.label));
+                xScale = scaleSystem.createTimeScale(timeValues);
+            } else if (scaleType === 'ordinal') {
+                xScale = scaleSystem.createOrdinalScale(processedData.map(d => d.label));
+            } else {
+                // Default to band scale for categorical data
+                xScale = d3.scaleBand()
+                    .domain(processedData.map(d => d.label))
+                    .padding(barPadding);
+            }
+            
+            // Set range for x scale
+            xScale.range([margin.left, width - margin.right]);
 
-            const maxValue = d3.max(processedData, d => d.cumulativeTotal);
-            const yScale = d3.scaleLinear()
-                .domain([0, Math.ceil(maxValue / 20) * 20 + 10])
-                .range([height - margin.bottom, margin.top]);
+            // Enhanced Y scale using d3.extent and nice()
+            const yValues = processedData.map(d => d.cumulativeTotal);
+            const yScale = scaleSystem.createLinearScale(yValues, {
+                range: [height - margin.bottom, margin.top],
+                nice: true,
+                padding: 0.1
+            });
 
             // Create/update grid
             drawGrid(containerUpdate, yScale);
@@ -77,11 +109,20 @@ export function waterfallChart() {
             // Create/update axes
             drawAxes(containerUpdate, xScale, yScale);
             
-            // Create/update bars
-            drawBars(containerUpdate, processedData, xScale, yScale);
+            // Create/update bars with enhanced animations
+            if (staggeredAnimations) {
+                drawBarsWithStagger(containerUpdate, processedData, xScale, yScale);
+            } else {
+                drawBars(containerUpdate, processedData, xScale, yScale);
+            }
             
             // Create/update connectors
             drawConnectors(containerUpdate, processedData, xScale, yScale);
+            
+            // Add brush functionality if enabled
+            if (enableBrush) {
+                addBrushSelection(containerUpdate, processedData, xScale, yScale);
+            }
         });
     }
 
@@ -436,6 +477,103 @@ export function waterfallChart() {
         
         return dominantColor;
     }
+    
+    // Enhanced bar drawing with staggered animations
+    function drawBarsWithStagger(container, processedData, xScale, yScale) {
+        const barsGroup = container.selectAll(".bars-group").data([0]);
+        const barsGroupEnter = barsGroup.enter()
+            .append("g")
+            .attr("class", "bars-group");
+        const barsGroupUpdate = barsGroupEnter.merge(barsGroup);
+
+        // Bar groups for each data point
+        const barGroups = barsGroupUpdate.selectAll(".bar-group").data(processedData, d => d.label);
+        
+        const barGroupsEnter = barGroups.enter()
+            .append("g")
+            .attr("class", "bar-group")
+            .attr("transform", d => `translate(${xScale(d.label)}, 0)`)
+            .style("opacity", 0);
+
+        const barGroupsUpdate = barGroupsEnter.merge(barGroups);
+
+        // Apply staggered animation using the animation system
+        barGroupsUpdate.each(function(d, i) {
+            const group = d3.select(this);
+            setTimeout(() => {
+                group.transition()
+                    .duration(duration)
+                    .ease(ease)
+                    .delay(i * staggerDelay)
+                    .style("opacity", 1)
+                    .attr("transform", d => `translate(${xScale(d.label)}, 0)`);
+            }, i * staggerDelay);
+        });
+
+        if (stacked) {
+            drawStackedBars(barGroupsUpdate, xScale, yScale);
+        } else {
+            drawWaterfallBars(barGroupsUpdate, xScale, yScale);
+        }
+
+        // Add value labels
+        drawValueLabels(barGroupsUpdate, xScale, yScale);
+
+        barGroups.exit()
+            .transition()
+            .duration(duration)
+            .ease(ease)
+            .style("opacity", 0)
+            .remove();
+    }
+    
+    // Add brush selection functionality
+    function addBrushSelection(container, data, xScale, yScale) {
+        const brush = brushSystem.createBrush({
+            type: 'x',
+            extent: [[xScale.range()[0], yScale.range()[1]], [xScale.range()[1], yScale.range()[0]]],
+            ...brushOptions
+        });
+        
+        // Remove existing brush if any
+        container.selectAll('.waterfall-brush').remove();
+        
+        const brushGroup = brushSystem.addBrushToChart(container, brush, {
+            className: 'waterfall-brush',
+            styles: {
+                selection: {
+                    fill: 'rgba(70, 130, 180, 0.2)',
+                    stroke: '#4682b4'
+                }
+            }
+        });
+        
+        // Set up brush event handlers
+        brushSystem
+            .onEnd((event, selection) => {
+                if (selection) {
+                    const filteredData = brushSystem.filterDataByBrush(data, selection, xScale);
+                    const selectedIndices = brushSystem.getSelectedIndices(data, selection, xScale);
+                    
+                    // Highlight selected bars
+                    brushSystem.selectionUtils.highlightSelection(container, selectedIndices, {
+                        selectedOpacity: 1,
+                        unselectedOpacity: 0.3
+                    });
+                    
+                    // Dispatch brush selection event
+                    listeners.call("brushSelection", container.node(), event, {
+                        data: filteredData,
+                        indices: selectedIndices,
+                        selection,
+                        summary: brushSystem.selectionUtils.createSelectionSummary(filteredData)
+                    });
+                } else {
+                    // Clear selection highlighting
+                    brushSystem.selectionUtils.highlightSelection(container, []);
+                }
+            });
+    }
 
     // Getter/setter methods for chainable API
     chart.width = function(_) {
@@ -484,6 +622,27 @@ export function waterfallChart() {
 
     chart.theme = function(_) {
         return arguments.length ? (theme = _, chart) : theme;
+    };
+
+    // Enhanced features configuration
+    chart.enableBrush = function(_) {
+        return arguments.length ? (enableBrush = _, chart) : enableBrush;
+    };
+
+    chart.brushOptions = function(_) {
+        return arguments.length ? (brushOptions = _, chart) : brushOptions;
+    };
+
+    chart.staggeredAnimations = function(_) {
+        return arguments.length ? (staggeredAnimations = _, chart) : staggeredAnimations;
+    };
+
+    chart.staggerDelay = function(_) {
+        return arguments.length ? (staggerDelay = _, chart) : staggerDelay;
+    };
+
+    chart.scaleType = function(_) {
+        return arguments.length ? (scaleType = _, chart) : scaleType;
     };
 
     // Event handling methods

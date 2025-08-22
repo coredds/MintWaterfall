@@ -302,8 +302,27 @@
         </div>
     </div>
 
+    <!-- Enhanced Features Demo Chart -->
+    <div class="chart-container">
+        <h2>🚀 Enhanced Features Demo - Brush Selection & Staggered Animations</h2>
+        <p style="text-align: center; color: #666; font-style: italic; margin-bottom: 20px;">
+            🖱️ Drag to select data ranges • ⚡ Staggered animations • 📊 Advanced scales
+        </p>
+        <svg id="chartAdvanced" width="1100" height="400"></svg>
+        <div class="controls">
+            <button onclick="toggleStaggered('chartAdvanced')">Toggle Staggered Animation</button>
+            <button onclick="clearBrushSelection('chartAdvanced')">Clear Selection</button>
+            <button onclick="changeScaleType('chartAdvanced')">Toggle Scale Type</button>
+            <button onclick="updateAdvancedData('chartAdvanced')">Update Data</button>
+        </div>
+        <div id="selection-info" style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 4px; display: none;">
+            <strong>Selection Summary:</strong>
+            <div id="selection-details"></div>
+        </div>
+    </div>
+
     <script type="module">
-        // Import all MintWaterfall modules
+        // Import all MintWaterfall modules including new features
         import { waterfallChart } from './mintwaterfall-chart.js';
         import { themes, applyTheme } from './mintwaterfall-themes.js';
         import { dataProcessor } from './mintwaterfall-data.js';
@@ -643,6 +662,20 @@
                     .stacked(true),
                 data: complexData,
                 currentTheme: 'default'
+            },
+            chartAdvanced: {
+                chart: waterfallChart()
+                    .width(1100)
+                    .height(400)
+                    .showTotal(true)
+                    .totalLabel('Enhanced Total')
+                    .stacked(true)
+                    .enableBrush(true)
+                    .staggeredAnimations(true)
+                    .staggerDelay(150),
+                data: [...revenueData], // Clone revenue data
+                currentTheme: 'default',
+                currentScaleType: 'auto'
             }
         };
 
@@ -672,6 +705,26 @@
 
                 chart.on('barMouseout', function(event, d) {
                     // Handle bar mouse leave events for other charts
+                });
+            }
+
+            // Enhanced features for advanced chart
+            if (chartId === 'chartAdvanced') {
+                chart.on('brushSelection', function(event, selectionData) {
+                    const infoDiv = document.getElementById('selection-info');
+                    const detailsDiv = document.getElementById('selection-details');
+                    
+                    if (selectionData.data.length > 0) {
+                        infoDiv.style.display = 'block';
+                        detailsDiv.innerHTML = `
+                            <div>Selected: ${selectionData.data.length} items</div>
+                            <div>Total Value: ${selectionData.summary.sum.toFixed(2)}</div>
+                            <div>Average: ${selectionData.summary.average.toFixed(2)}</div>
+                            <div>Range: ${selectionData.summary.min.toFixed(2)} - ${selectionData.summary.max.toFixed(2)}</div>
+                        `;
+                    } else {
+                        infoDiv.style.display = 'none';
+                    }
                 });
             }
 
@@ -1112,12 +1165,78 @@
             URL.revokeObjectURL(url);
         }
 
+        // Enhanced feature control functions
+        window.toggleStaggered = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                const currentStagger = chartConfig.chart.staggeredAnimations();
+                chartConfig.chart.staggeredAnimations(!currentStagger);
+                d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                
+                showFeedback(chartId, 
+                    `Staggered animations ${!currentStagger ? 'enabled' : 'disabled'}`, 
+                    'success'
+                );
+            }
+        };
+
+        window.clearBrushSelection = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                // Clear brush selection programmatically
+                d3.select(`#${chartId}`).selectAll('.waterfall-brush').call(d3.brush().move, null);
+                
+                // Hide selection info
+                const infoDiv = document.getElementById('selection-info');
+                if (infoDiv) infoDiv.style.display = 'none';
+                
+                showFeedback(chartId, 'Selection cleared', 'success');
+            }
+        };
+
+        window.changeScaleType = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                const scaleTypes = ['auto', 'linear', 'ordinal'];
+                const currentIndex = scaleTypes.indexOf(chartConfig.currentScaleType || 'auto');
+                const nextIndex = (currentIndex + 1) % scaleTypes.length;
+                const newScaleType = scaleTypes[nextIndex];
+                
+                chartConfig.currentScaleType = newScaleType;
+                chartConfig.chart.scaleType(newScaleType);
+                d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                
+                showFeedback(chartId, `Scale type: ${newScaleType}`, 'success');
+            }
+        };
+
+        window.updateAdvancedData = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                // Generate new random data with enhanced values
+                const newData = chartConfig.data.map((item, i) => ({
+                    ...item,
+                    stacks: item.stacks.map(stack => ({
+                        ...stack,
+                        value: Math.max(5, Math.round(Math.random() * 100 + 20)),
+                        label: `${stack.label.split(':')[0]}: ${Math.round(Math.random() * 100 + 20)}`
+                    }))
+                }));
+                
+                chartConfig.data = newData;
+                d3.select(`#${chartId}`).datum(newData).call(chartConfig.chart);
+                
+                showFeedback(chartId, 'Data updated with enhanced animations', 'success');
+            }
+        };
+
         // Log successful initialization
-        console.log('🎉 MintWaterfall v0.5.5 initialized with all Phase 2 features!');
+        console.log('🚀 MintWaterfall v0.5.5 initialized with Enhanced D3.js Features!');
         console.log('📊 Charts:', Object.keys(charts));
         console.log('🎨 Available themes:', Object.keys(themes));
         console.log('🔧 Data processor loaded with', Object.keys(dataProcessor).length, 'methods');
         console.log('✨ Animation system loaded with', Object.keys(animationSystem).length, 'features');
+        console.log('🎯 New Features: Staggered Animations, Brush Selection, Advanced Scales');
 
     </script>
 
