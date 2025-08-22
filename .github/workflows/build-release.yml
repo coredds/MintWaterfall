@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
     - name: Checkout code
@@ -57,6 +59,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+      id-token: write
     
     steps:
     - name: Checkout code
@@ -80,12 +85,10 @@ jobs:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         
     - name: Create GitHub Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
         body: |
           ## Changes in this Release
           - Updated build system with multiple distribution formats
@@ -100,3 +103,7 @@ jobs:
           - `dist/index.d.ts` - TypeScript definitions
         draft: false
         prerelease: false
+        files: |
+          dist/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
