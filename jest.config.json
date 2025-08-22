@@ -1,0 +1,21 @@
+{
+  "testEnvironment": "jsdom",
+  "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
+  "testMatch": ["<rootDir>/tests/**/*.test.js"],
+  "collectCoverage": true,
+  "coverageDirectory": "coverage",
+  "coverageReporters": ["text", "lcov", "html"],
+  "moduleFileExtensions": ["js", "json"],
+  "transform": {
+    "^.+\\.js$": "babel-jest"
+  },
+  "transformIgnorePatterns": [
+    "node_modules/(?!(d3|d3-.*)/)"
+  ],
+  "moduleNameMapper": {
+    "^d3$": "<rootDir>/tests/__mocks__/d3.js"
+  },
+  "globals": {
+    "__DEV__": true
+  }
+}

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animation Test</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <h1>Animation Test</h1>
+    <svg id="testChart" width="800" height="400"></svg>
+    <button onclick="testAnimation()">Test Animation</button>
+    
+    <script type="module">
+        import { waterfallChart } from './mintwaterfall-chart.js';
+        
+        // Simple test data
+        const testData = [
+            {
+                label: "A",
+                stacks: [
+                    { value: 20, color: "#3498db", label: "20" }
+                ]
+            },
+            {
+                label: "B",
+                stacks: [
+                    { value: 30, color: "#e74c3c", label: "30" }
+                ]
+            }
+        ];
+        
+        // Create chart
+        const chart = waterfallChart()
+            .width(800)
+            .height(400)
+            .showTotal(true);
+        
+        // Render initial chart
+        d3.select("#testChart").datum(testData).call(chart);
+        
+        // Test animation function
+        window.testAnimation = function() {
+            console.log('Testing animation...');
+            console.log('Original duration:', chart.duration());
+            console.log('Original ease:', chart.ease());
+            
+            // Create animation data
+            const animData = testData.map(item => ({
+                ...item,
+                stacks: item.stacks.map(stack => ({
+                    ...stack,
+                    value: stack.value * 1.5
+                }))
+            }));
+            
+            // Animate
+            chart.duration(1000).ease(d3.easeBounce);
+            d3.select("#testChart").datum(animData).call(chart);
+            
+            // Reset after delay
+            setTimeout(() => {
+                chart.duration(750).ease(d3.easeQuadInOut);
+                d3.select("#testChart").datum(testData).call(chart);
+            }, 1100);
+            
+            console.log('Animation triggered');
+        };
+        
+        console.log('Test page loaded');
+    </script>
+</body>
+</html>

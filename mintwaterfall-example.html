@@ -21,42 +21,47 @@
             background: rgba(255, 255, 255, 0.95);
             border-radius: 15px;
             padding: 30px;
-            margin: 20px 0;
+            margin: 20px auto;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             color: #333;
+            max-width: 1200px;
+            text-align: center;
         }
 
         .waterfall-container {
             background: white;
         }
 
-        /* Grid and axis styling */
+        /* Grid styling */
         .grid-line {
             stroke: #e0e0e0;
             stroke-width: 1;
         }
 
-        .y-axis, .x-axis {
+        /* Axis styling */
+        .x-axis, .y-axis {
             font-size: 12px;
-            fill: #666;
         }
 
-        .y-axis path, .x-axis path,
-        .y-axis line, .x-axis line {
+        .x-axis text, .y-axis text {
+            fill: #333;
+        }
+
+        .x-axis path, .y-axis path,
+        .x-axis line, .y-axis line {
             stroke: #666;
             stroke-width: 1;
         }
 
         /* Bar styling */
-        .stack, .waterfall-bar {
-            stroke: rgba(255, 255, 255, 0.8);
-            stroke-width: 1;
+        .bar-group rect {
+            stroke: none;
+            cursor: pointer;
             transition: opacity 0.2s ease;
         }
 
-        .stack:hover, .waterfall-bar:hover {
+        .bar-group rect:hover {
             opacity: 0.8;
-            cursor: pointer;
         }
 
         /* Label styling */
@@ -108,272 +113,438 @@
 
         button:active {
             transform: translateY(0px);
-            box-shadow: 0 2px 4px rgba(20, 123, 88, 0.3);
+        }
+
+        .theme-selector {
+            margin: 10px 0;
+        }
+
+        .theme-selector select {
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            background: white;
+            color: #333;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .export-controls {
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .export-btn {
+            background: linear-gradient(45deg, #8e44ad, #9b59b6);
+            margin: 3px;
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .export-btn:hover {
+            background: linear-gradient(45deg, #9b59b6, #a569bd);
+        }
+
+        .animation-btn {
+            background: linear-gradient(45deg, #e74c3c, #f39c12);
+        }
+
+        .animation-btn:hover {
+            background: linear-gradient(45deg, #f39c12, #f1c40f);
         }
 
         h1 {
             text-align: center;
             margin-bottom: 30px;
-            font-family: 'Roboto', sans-serif;
-            font-weight: 300;
             font-size: 2.5em;
-            letter-spacing: 1px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         h2 {
             color: #333;
-            border-bottom: 2px solid #147B58;
+            border-bottom: 3px solid #147B58;
             padding-bottom: 10px;
-            font-family: 'Roboto', sans-serif;
-            font-weight: 400;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
-    <h1>MintWaterfall - D3.js Chart Component</h1>
+    <h1>MintWaterfall Chart Showcase</h1>
     
+    <!-- Chart 1: Revenue Analysis -->
     <div class="chart-container">
-        <h2>Revenue Breakdown - Stacked Mode</h2>
-        <svg id="chart1" width="800" height="400"></svg>
+        <h2>Revenue Analysis - Theme Demo</h2>
+        <div class="theme-selector">
+            <label>Theme: </label>
+            <select onchange="changeTheme('chart1', this.value)">
+                <option value="default" selected>Default</option>
+                <option value="dark">Dark</option>
+                <option value="corporate">Corporate</option>
+                <option value="accessible">Accessible</option>
+                <option value="colorful">Colorful</option>
+            </select>
+        </div>
+        <svg id="chart1" width="1100" height="400"></svg>
         <div class="controls">
-            <button onclick="toggleStacked('chart1')">Toggle Stacked/Waterfall</button>
-            <button onclick="toggleTotal('chart1')">Toggle Total Bar</button>
+            <button onclick="toggleStacked('chart1')">Switch to Waterfall</button>
+            <button onclick="toggleTotal('chart1')">Toggle Total</button>
             <button onclick="updateData('chart1')">Update Data</button>
+            <button onclick="testEasingFunctions()" style="background: #ff6b6b;">Test Easing</button>
+        </div>
+        <div class="export-controls">
+            <button class="export-btn" onclick="exportChart('chart1', 'svg')">Export SVG</button>
+            <button class="export-btn" onclick="exportChart('chart1', 'png')">Export PNG</button>
+            <button class="export-btn" onclick="exportChart('chart1', 'json')">Export JSON</button>
+            <button class="export-btn" onclick="exportChart('chart1', 'csv')">Export CSV</button>
         </div>
     </div>
 
+    <!-- Chart 2: Cost Analysis -->
     <div class="chart-container">
-        <h2>Cost Analysis - Waterfall Mode</h2>
-        <svg id="chart2" width="800" height="400"></svg>
+        <h2>Cost Analysis - Animation & Data Processing Demo</h2>
+        <svg id="chart2" width="1100" height="400"></svg>
         <div class="controls">
-            <button onclick="toggleStacked('chart2')">Toggle Stacked/Waterfall</button>
-            <button onclick="animateChart('chart2')">Animate</button>
+            <button onclick="toggleStacked('chart2')">Switch to Stacked</button>
+            <button class="animation-btn" onclick="animateChart('chart2')">Animate</button>
+            <button onclick="sortData('chart2')">Sort by Total</button>
+            <button onclick="resetData('chart2')">Reset Order</button>
+        </div>
+        <div class="export-controls">
+            <button class="export-btn" onclick="exportChart('chart2', 'svg')">Export SVG</button>
+            <button class="export-btn" onclick="exportChart('chart2', 'png')">Export PNG</button>
+            <button class="export-btn" onclick="exportChart('chart2', 'json')">Export JSON</button>
+            <button class="export-btn" onclick="exportChart('chart2', 'csv')">Export CSV</button>
         </div>
     </div>
 
+    <!-- Chart 3: Performance Data -->
     <div class="chart-container">
         <h2>Multi-Category Performance - Stacked</h2>
-        <svg id="chart3" width="800" height="400"></svg>
+        <div class="theme-selector">
+            <label>Theme: </label>
+            <select onchange="changeTheme('chart3', this.value)">
+                <option value="default">Default</option>
+                <option value="dark">Dark</option>
+                <option value="corporate">Corporate</option>
+                <option value="accessible">Accessible</option>
+                <option value="colorful" selected>Colorful</option>
+            </select>
+        </div>
+        <svg id="chart3" width="1100" height="400"></svg>
         <div class="controls">
-            <button onclick="toggleStacked('chart3')">Toggle Stacked/Waterfall</button>
-            <button onclick="toggleTotal('chart3')">Toggle Total Bar</button>
-            <button onclick="updateData('chart3')">Update Data</button>
+            <button onclick="toggleStacked('chart3')">Switch to Waterfall</button>
+            <button onclick="animateWithEasing('chart3', 'bounce')">Bounce Effect</button>
+        </div>
+        <div class="export-controls">
+            <button class="export-btn" onclick="exportChart('chart3', 'svg')">Export SVG</button>
+            <button class="export-btn" onclick="exportChart('chart3', 'png')">Export PNG</button>
+            <button class="export-btn" onclick="exportChart('chart3', 'json')">Export JSON</button>
+            <button class="export-btn" onclick="exportChart('chart3', 'csv')">Export CSV</button>
         </div>
     </div>
 
+    <!-- Chart 4: Project Timeline -->
     <div class="chart-container">
         <h2>Project Timeline - Mixed Values</h2>
-        <svg id="chart4" width="800" height="400"></svg>
+        <svg id="chart4" width="1100" height="400"></svg>
         <div class="controls">
-            <button onclick="toggleStacked('chart4')">Toggle Stacked/Waterfall</button>
-            <button onclick="toggleTotal('chart4')">Toggle Total Bar</button>
-            <button onclick="animateChart('chart4')">Animate</button>
+            <button onclick="toggleStacked('chart4')">Switch to Waterfall</button>
+            <button onclick="toggleTotal('chart4')">Toggle Total</button>
+            <button class="animation-btn" onclick="animateChart('chart4')">Animate</button>
         </div>
     </div>
 
+    <!-- Chart 5: Complex Data -->
     <div class="chart-container">
         <h2>Complex Breakdown - Many Stacks</h2>
-        <svg id="chart5" width="800" height="400"></svg>
+        <svg id="chart5" width="1100" height="400"></svg>
         <div class="controls">
-            <button onclick="toggleStacked('chart5')">Toggle Stacked/Waterfall</button>
-            <button onclick="toggleTotal('chart5')">Toggle Total Bar</button>
-            <button onclick="updateData('chart5')">Random Update</button>
+            <button onclick="toggleStacked('chart5')">Switch to Waterfall</button>
+            <button onclick="generateRandomData('chart5')">Generate Data</button>
         </div>
     </div>
 
     <script type="module">
+        // Import all MintWaterfall modules
         import { waterfallChart } from './mintwaterfall-chart.js';
+        import { themes, applyTheme } from './mintwaterfall-themes.js';
+        import { dataProcessor } from './mintwaterfall-data.js';
+        import { animationSystem } from './mintwaterfall-animations.js';
 
-        // Sample data 1 - Revenue breakdown
-        const revenueData = [
+        // Sample data
+        let revenueData = [
             {
                 label: "Q1 Sales",
                 stacks: [
-                    { value: 45, color: "#3498db", label: "45" },
-                    { value: 25, color: "#2ecc71", label: "25" }
+                    { value: 45, color: "#3498db", label: "Direct: 45" },
+                    { value: 25, color: "#2ecc71", label: "Online: 25" }
                 ]
             },
             {
                 label: "Q2 Growth",
                 stacks: [
-                    { value: 30, color: "#e74c3c", label: "30" }
+                    { value: 30, color: "#e74c3c", label: "Expansion: 30" }
                 ]
             },
             {
                 label: "Q3 Expansion",
                 stacks: [
-                    { value: 20, color: "#f39c12", label: "20" },
-                    { value: 15, color: "#9b59b6", label: "15" }
+                    { value: 20, color: "#f39c12", label: "New Markets: 20" },
+                    { value: 15, color: "#9b59b6", label: "Products: 15" }
                 ]
             },
             {
                 label: "Q4 Holiday",
                 stacks: [
-                    { value: 40, color: "#1abc9c", label: "40" }
+                    { value: 40, color: "#1abc9c", label: "Seasonal: 40" }
+                ]
+            },
+            {
+                label: "Q5 Enterprise",
+                stacks: [
+                    { value: 35, color: "#e67e22", label: "B2B: 35" },
+                    { value: 18, color: "#95a5a6", label: "Partnerships: 18" }
+                ]
+            },
+            {
+                label: "Q6 International",
+                stacks: [
+                    { value: 28, color: "#34495e", label: "Export: 28" }
+                ]
+            },
+            {
+                label: "Q7 Digital",
+                stacks: [
+                    { value: 22, color: "#8e44ad", label: "Mobile: 22" },
+                    { value: 16, color: "#d35400", label: "Web: 16" }
                 ]
             }
         ];
 
-        // Sample data 2 - Cost analysis
-        const costData = [
+        let costData = [
             {
                 label: "Initial Budget",
                 stacks: [
-                    { value: 100, color: "#2ecc71", label: "100" }
+                    { value: 100, color: "#2ecc71", label: "100K" }
                 ]
             },
             {
                 label: "Marketing",
                 stacks: [
-                    { value: -25, color: "#e74c3c", label: "-25" }
+                    { value: -25, color: "#e74c3c", label: "-25K" }
                 ]
             },
             {
                 label: "Development",
                 stacks: [
-                    { value: -35, color: "#e67e22", label: "-35" }
+                    { value: -35, color: "#e67e22", label: "-35K" }
                 ]
             },
             {
                 label: "Operations",
                 stacks: [
-                    { value: -15, color: "#f39c12", label: "-15" }
+                    { value: -15, color: "#f39c12", label: "-15K" }
+                ]
+            },
+            {
+                label: "Infrastructure",
+                stacks: [
+                    { value: -20, color: "#9b59b6", label: "-20K" }
+                ]
+            },
+            {
+                label: "Support",
+                stacks: [
+                    { value: -12, color: "#34495e", label: "-12K" }
                 ]
             },
             {
                 label: "Savings",
                 stacks: [
-                    { value: 10, color: "#27ae60", label: "10" }
+                    { value: 10, color: "#27ae60", label: "+10K" }
                 ]
             }
         ];
 
-        // Sample data 3 - Multi-category performance
-        const performanceData = [
+        let performanceData = [
             {
                 label: "Product A",
                 stacks: [
-                    { value: 35, color: "#3498db", label: "Sales: 35" },
-                    { value: 15, color: "#2ecc71", label: "Profit: 15" },
-                    { value: 8, color: "#f39c12", label: "Growth: 8" }
+                    { value: 35, color: "#3498db", label: "Sales: 35M" },
+                    { value: 15, color: "#2ecc71", label: "Profit: 15M" },
+                    { value: 8, color: "#f39c12", label: "Growth: 8%" }
                 ]
             },
             {
                 label: "Product B",
                 stacks: [
-                    { value: 28, color: "#3498db", label: "Sales: 28" },
-                    { value: 22, color: "#2ecc71", label: "Profit: 22" },
-                    { value: 12, color: "#f39c12", label: "Growth: 12" }
+                    { value: 28, color: "#3498db", label: "Sales: 28M" },
+                    { value: 22, color: "#2ecc71", label: "Profit: 22M" },
+                    { value: 12, color: "#f39c12", label: "Growth: 12%" }
                 ]
             },
             {
                 label: "Product C",
                 stacks: [
-                    { value: 45, color: "#3498db", label: "Sales: 45" },
-                    { value: 18, color: "#2ecc71", label: "Profit: 18" },
-                    { value: 6, color: "#f39c12", label: "Growth: 6" }
+                    { value: 45, color: "#3498db", label: "Sales: 45M" },
+                    { value: 18, color: "#2ecc71", label: "Profit: 18M" },
+                    { value: 6, color: "#f39c12", label: "Growth: 6%" }
                 ]
             },
             {
                 label: "Product D",
                 stacks: [
-                    { value: 32, color: "#3498db", label: "Sales: 32" },
-                    { value: 14, color: "#2ecc71", label: "Profit: 14" },
-                    { value: 18, color: "#f39c12", label: "Growth: 18" }
+                    { value: 32, color: "#3498db", label: "Sales: 32M" },
+                    { value: 14, color: "#2ecc71", label: "Profit: 14M" },
+                    { value: 18, color: "#f39c12", label: "Growth: 18%" }
                 ]
             },
             {
                 label: "Product E",
                 stacks: [
-                    { value: 41, color: "#3498db", label: "Sales: 41" },
-                    { value: 19, color: "#2ecc71", label: "Profit: 19" },
-                    { value: 15, color: "#f39c12", label: "Growth: 15" }
+                    { value: 41, color: "#3498db", label: "Sales: 41M" },
+                    { value: 19, color: "#2ecc71", label: "Profit: 19M" },
+                    { value: 14, color: "#f39c12", label: "Growth: 14%" }
                 ]
             },
             {
-                label: "New Launch",
+                label: "Product F",
                 stacks: [
-                    { value: 20, color: "#3498db", label: "Sales: 20" },
-                    { value: 5, color: "#2ecc71", label: "Profit: 5" },
-                    { value: 25, color: "#f39c12", label: "Growth: 25" }
+                    { value: 29, color: "#3498db", label: "Sales: 29M" },
+                    { value: 16, color: "#2ecc71", label: "Profit: 16M" },
+                    { value: 9, color: "#f39c12", label: "Growth: 9%" }
+                ]
+            },
+            {
+                label: "Product G",
+                stacks: [
+                    { value: 38, color: "#3498db", label: "Sales: 38M" },
+                    { value: 21, color: "#2ecc71", label: "Profit: 21M" },
+                    { value: 11, color: "#f39c12", label: "Growth: 11%" }
                 ]
             }
         ];
 
-        // Sample data 4 - Project timeline with mixed values
-        const projectData = [
+        let projectData = [
             {
                 label: "Planning",
                 stacks: [
-                    { value: 40, color: "#9b59b6", label: "Research: 40" },
-                    { value: 20, color: "#8e44ad", label: "Design: 20" }
+                    { value: 50, color: "#3498db", label: "Research: 50h" },
+                    { value: 30, color: "#2ecc71", label: "Design: 30h" }
                 ]
             },
             {
                 label: "Development",
                 stacks: [
-                    { value: -15, color: "#e74c3c", label: "Delays: -15" },
-                    { value: 50, color: "#27ae60", label: "Progress: 50" },
-                    { value: -8, color: "#c0392b", label: "Issues: -8" }
+                    { value: 120, color: "#e74c3c", label: "Backend: 120h" },
+                    { value: 80, color: "#f39c12", label: "Frontend: 80h" },
+                    { value: 40, color: "#9b59b6", label: "Testing: 40h" }
                 ]
             },
             {
-                label: "Testing",
+                label: "Integration",
                 stacks: [
-                    { value: 25, color: "#f39c12", label: "QA: 25" },
-                    { value: -12, color: "#d35400", label: "Bugs: -12" },
-                    { value: 18, color: "#f1c40f", label: "Fixes: 18" }
+                    { value: 35, color: "#1abc9c", label: "API: 35h" },
+                    { value: 20, color: "#34495e", label: "Database: 20h" }
                 ]
             },
             {
-                label: "Launch",
+                label: "Quality Assurance",
                 stacks: [
-                    { value: 30, color: "#1abc9c", label: "Marketing: 30" },
-                    { value: 15, color: "#16a085", label: "Support: 15" }
+                    { value: 45, color: "#e67e22", label: "Testing: 45h" },
+                    { value: 25, color: "#95a5a6", label: "Review: 25h" }
+                ]
+            },
+            {
+                label: "Deployment",
+                stacks: [
+                    { value: 25, color: "#8e44ad", label: "Setup: 25h" },
+                    { value: 15, color: "#d35400", label: "Config: 15h" }
+                ]
+            },
+            {
+                label: "Documentation",
+                stacks: [
+                    { value: 30, color: "#c0392b", label: "User Guide: 30h" },
+                    { value: 20, color: "#16a085", label: "Tech Docs: 20h" }
+                ]
+            },
+            {
+                label: "Maintenance",
+                stacks: [
+                    { value: -20, color: "#e67e22", label: "Issues: -20h" },
+                    { value: 30, color: "#27ae60", label: "Updates: 30h" }
                 ]
             }
         ];
 
-        // Sample data 5 - Complex breakdown with many stacks
-        const complexData = [
+        let complexData = [
             {
                 label: "Region A",
                 stacks: [
-                    { value: 12, color: "#e74c3c", label: "12" },
-                    { value: 8, color: "#e67e22", label: "8" },
-                    { value: 15, color: "#f39c12", label: "15" },
-                    { value: 10, color: "#f1c40f", label: "10" },
-                    { value: 6, color: "#2ecc71", label: "6" }
+                    { value: 25, color: "#3498db", label: "Q1: 25" },
+                    { value: 30, color: "#2ecc71", label: "Q2: 30" },
+                    { value: 22, color: "#e74c3c", label: "Q3: 22" },
+                    { value: 35, color: "#f39c12", label: "Q4: 35" },
+                    { value: 18, color: "#9b59b6", label: "Bonus: 18" }
                 ]
             },
             {
                 label: "Region B",
                 stacks: [
-                    { value: 18, color: "#e74c3c", label: "18" },
-                    { value: 14, color: "#e67e22", label: "14" },
-                    { value: 9, color: "#f39c12", label: "9" },
-                    { value: 12, color: "#f1c40f", label: "12" },
-                    { value: 11, color: "#2ecc71", label: "11" }
+                    { value: 40, color: "#3498db", label: "Q1: 40" },
+                    { value: 28, color: "#2ecc71", label: "Q2: 28" },
+                    { value: 32, color: "#e74c3c", label: "Q3: 32" },
+                    { value: 45, color: "#f39c12", label: "Q4: 45" }
                 ]
             },
             {
                 label: "Region C",
                 stacks: [
-                    { value: 22, color: "#e74c3c", label: "22" },
-                    { value: 7, color: "#e67e22", label: "7" },
-                    { value: 16, color: "#f39c12", label: "16" },
-                    { value: 8, color: "#f1c40f", label: "8" },
-                    { value: 13, color: "#2ecc71", label: "13" }
+                    { value: 20, color: "#3498db", label: "Q1: 20" },
+                    { value: 35, color: "#2ecc71", label: "Q2: 35" },
+                    { value: 28, color: "#e74c3c", label: "Q3: 28" },
+                    { value: 40, color: "#f39c12", label: "Q4: 40" },
+                    { value: 15, color: "#9b59b6", label: "Special: 15" },
+                    { value: 12, color: "#1abc9c", label: "Extra: 12" }
                 ]
             },
             {
-                label: "Online",
+                label: "Region D",
                 stacks: [
-                    { value: 25, color: "#e74c3c", label: "25" },
-                    { value: 19, color: "#e67e22", label: "19" },
-                    { value: 11, color: "#f39c12", label: "11" },
-                    { value: 14, color: "#f1c40f", label: "14" },
-                    { value: 9, color: "#2ecc71", label: "9" }
+                    { value: 33, color: "#3498db", label: "Q1: 33" },
+                    { value: 26, color: "#2ecc71", label: "Q2: 26" },
+                    { value: 38, color: "#e74c3c", label: "Q3: 38" },
+                    { value: 42, color: "#f39c12", label: "Q4: 42" }
+                ]
+            },
+            {
+                label: "Region E",
+                stacks: [
+                    { value: 29, color: "#3498db", label: "Q1: 29" },
+                    { value: 34, color: "#2ecc71", label: "Q2: 34" },
+                    { value: 31, color: "#e74c3c", label: "Q3: 31" },
+                    { value: 37, color: "#f39c12", label: "Q4: 37" },
+                    { value: 14, color: "#9b59b6", label: "Growth: 14" }
+                ]
+            },
+            {
+                label: "Region F",
+                stacks: [
+                    { value: 36, color: "#3498db", label: "Q1: 36" },
+                    { value: 24, color: "#2ecc71", label: "Q2: 24" },
+                    { value: 39, color: "#e74c3c", label: "Q3: 39" },
+                    { value: 44, color: "#f39c12", label: "Q4: 44" }
+                ]
+            },
+            {
+                label: "Region G",
+                stacks: [
+                    { value: 27, color: "#3498db", label: "Q1: 27" },
+                    { value: 32, color: "#2ecc71", label: "Q2: 32" },
+                    { value: 25, color: "#e74c3c", label: "Q3: 25" },
+                    { value: 41, color: "#f39c12", label: "Q4: 41" },
+                    { value: 16, color: "#9b59b6", label: "Bonus: 16" },
+                    { value: 11, color: "#1abc9c", label: "Extra: 11" }
                 ]
             }
         ];
@@ -381,183 +552,559 @@
         // Chart configurations
         const charts = {
             chart1: {
-                chart: d3.waterfallChart()
-                    .width(800)
+                chart: waterfallChart()
+                    .width(1100)
                     .height(400)
                     .showTotal(true)
                     .totalLabel('Total Revenue')
                     .stacked(true),
-                data: revenueData
+                data: revenueData,
+                currentTheme: 'default'
             },
             chart2: {
-                chart: d3.waterfallChart()
-                    .width(800)
+                chart: waterfallChart()
+                    .width(1100)
                     .height(400)
                     .showTotal(true)
                     .totalLabel('Remaining Budget')
-                    .stacked(false)
-                    .duration(1000),
-                data: costData
+                    .stacked(false),
+                data: costData,
+                currentTheme: 'default'
             },
             chart3: {
-                chart: d3.waterfallChart()
-                    .width(800)
+                chart: waterfallChart()
+                    .width(1100)
                     .height(400)
                     .showTotal(true)
                     .totalLabel('Total Performance')
-                    .stacked(true)
-                    .barPadding(0.15),
-                data: performanceData
+                    .stacked(true),
+                data: performanceData,
+                currentTheme: 'colorful'
             },
             chart4: {
-                chart: d3.waterfallChart()
-                    .width(800)
+                chart: waterfallChart()
+                    .width(1100)
                     .height(400)
                     .showTotal(true)
                     .totalLabel('Project Total')
-                    .stacked(true)
-                    .duration(500),
-                data: projectData
+                    .stacked(true),
+                data: projectData,
+                currentTheme: 'default'
             },
             chart5: {
-                chart: d3.waterfallChart()
-                    .width(800)
+                chart: waterfallChart()
+                    .width(1100)
                     .height(400)
                     .showTotal(true)
                     .totalLabel('Grand Total')
-                    .stacked(true)
-                    .barPadding(0.05)
-                    .duration(800),
-                data: complexData
+                    .stacked(true),
+                data: complexData,
+                currentTheme: 'default'
             }
         };
 
         // Initialize charts
         Object.keys(charts).forEach(chartId => {
-            const config = charts[chartId];
-            d3.select(`#${chartId}`)
-                .datum(config.data)
-                .call(config.chart);
+            const { chart, data, currentTheme } = charts[chartId];
+            
+            // Add event listeners
+            chart.on('barClick', function(event, d) {
+                const total = d.stacks.reduce((sum, s) => sum + s.value, 0);
+                alert(`Clicked on ${d.label}: ${total}`);
+            });
+
+            chart.on('barMouseover', function(event, d) {
+                // Handle bar hover events
+            });
+
+            chart.on('barMouseout', function(event, d) {
+                // Handle bar mouse leave events
+            });
+
+            // Apply initial theme if specified
+            if (currentTheme && currentTheme !== 'default') {
+                // Apply theme colors to data
+                const theme = themes[currentTheme];
+                const themedData = data.map((item, itemIndex) => ({
+                    ...item,
+                    stacks: item.stacks.map((stack, stackIndex) => ({
+                        ...stack,
+                        color: theme.colors[stackIndex % theme.colors.length]
+                    }))
+                }));
+                
+                // Update chart configuration
+                chart.totalColor(theme.totalColor);
+                charts[chartId].data = themedData;
+                
+                // Render with themed data
+                d3.select(`#${chartId}`).datum(themedData).call(chart);
+            } else {
+                // Render with default data
+                d3.select(`#${chartId}`).datum(data).call(chart);
+            }
         });
 
-        // Make functions available globally for buttons
+        // Global functions for UI controls
+        window.changeTheme = function(chartId, themeName) {
+            const chartConfig = charts[chartId];
+            if (chartConfig && themes[themeName]) {
+                // Update the chart's current theme
+                chartConfig.currentTheme = themeName;
+                
+                // Get the theme object
+                const theme = themes[themeName];
+                
+                // Apply theme colors to the data
+                const themedData = chartConfig.data.map((item, itemIndex) => ({
+                    ...item,
+                    stacks: item.stacks.map((stack, stackIndex) => ({
+                        ...stack,
+                        color: theme.colors[stackIndex % theme.colors.length]
+                    }))
+                }));
+                
+                // Update the chart configuration
+                chartConfig.chart.totalColor(theme.totalColor);
+                
+                // Update the data and re-render
+                chartConfig.data = themedData;
+                d3.select(`#${chartId}`).datum(themedData).call(chartConfig.chart);
+            }
+        };
+
+        window.exportChart = function(chartId, format) {
+            try {
+                const svg = d3.select(`#${chartId}`).node();
+                const chartName = `mintwaterfall-${chartId}-${format}`;
+                
+                if (format === 'svg') {
+                    // Export SVG with proper styling
+                    const svgClone = svg.cloneNode(true);
+                    
+                    // Add inline styles to ensure proper rendering
+                    const styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style");
+                    styleElement.textContent = `
+                        .grid-line { stroke: #e0e0e0; stroke-width: 1; }
+                        .x-axis, .y-axis { font-size: 12px; font-family: Arial, sans-serif; }
+                        .x-axis text, .y-axis text { fill: #333; }
+                        .x-axis path, .y-axis path, .x-axis line, .y-axis line { stroke: #666; stroke-width: 1; }
+                        .total-label { font-size: 12px; font-weight: bold; fill: #333; font-family: Arial, sans-serif; }
+                        .stack-label { font-size: 10px; fill: white; font-family: Arial, sans-serif; }
+                        .connector { stroke: #666; stroke-width: 1; stroke-dasharray: 3,3; }
+                    `;
+                    svgClone.insertBefore(styleElement, svgClone.firstChild);
+                    
+                    // Set proper SVG attributes
+                    svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                    svgClone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+                    
+                    const svgData = new XMLSerializer().serializeToString(svgClone);
+                    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                    const svgUrl = URL.createObjectURL(svgBlob);
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = svgUrl;
+                    downloadLink.download = `${chartName}.svg`;
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                    URL.revokeObjectURL(svgUrl);
+                } else if (format === 'png') {
+                    // Export PNG by converting SVG to canvas
+                    const svgClone = svg.cloneNode(true);
+                    
+                    // Add inline styles for proper PNG rendering
+                    const styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style");
+                    styleElement.textContent = `
+                        .grid-line { stroke: #e0e0e0; stroke-width: 1; }
+                        .x-axis, .y-axis { font-size: 12px; font-family: Arial, sans-serif; }
+                        .x-axis text, .y-axis text { fill: #333; }
+                        .x-axis path, .y-axis path, .x-axis line, .y-axis line { stroke: #666; stroke-width: 1; }
+                        .total-label { font-size: 12px; font-weight: bold; fill: #333; font-family: Arial, sans-serif; }
+                        .stack-label { font-size: 10px; fill: white; font-family: Arial, sans-serif; }
+                        .connector { stroke: #666; stroke-width: 1; stroke-dasharray: 3,3; }
+                    `;
+                    svgClone.insertBefore(styleElement, svgClone.firstChild);
+                    
+                    // Set proper SVG attributes
+                    svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                    svgClone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+                    
+                    const svgData = new XMLSerializer().serializeToString(svgClone);
+                    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                    const url = URL.createObjectURL(svgBlob);
+                    const img = new Image();
+                    
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = parseInt(svg.getAttribute('width')) || 800;
+                        canvas.height = parseInt(svg.getAttribute('height')) || 400;
+                        
+                        // Fill with white background
+                        ctx.fillStyle = 'white';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        
+                        // Draw the SVG image
+                        ctx.drawImage(img, 0, 0);
+                        
+                        // Download the PNG
+                        canvas.toBlob(function(blob) {
+                            const pngUrl = URL.createObjectURL(blob);
+                            const downloadLink = document.createElement('a');
+                            downloadLink.href = pngUrl;
+                            downloadLink.download = `${chartName}.png`;
+                            document.body.appendChild(downloadLink);
+                            downloadLink.click();
+                            document.body.removeChild(downloadLink);
+                            URL.revokeObjectURL(pngUrl);
+                        }, 'image/png');
+                        
+                        URL.revokeObjectURL(url);
+                    };
+                    
+                    img.onerror = function() {
+                        // Fallback: download as SVG instead
+                        const svgUrl2 = URL.createObjectURL(svgBlob);
+                        const downloadLink = document.createElement('a');
+                        downloadLink.href = svgUrl2;
+                        downloadLink.download = `${chartName}-fallback.svg`;
+                        document.body.appendChild(downloadLink);
+                        downloadLink.click();
+                        document.body.removeChild(downloadLink);
+                        URL.revokeObjectURL(svgUrl2);
+                        alert('PNG export failed, downloaded as SVG instead');
+                        URL.revokeObjectURL(url);
+                    };
+                    
+                    img.src = url;
+                } else if (format === 'json') {
+                    const data = JSON.stringify(charts[chartId].data, null, 2);
+                    downloadData(data, `${chartName}.json`, 'application/json');
+                } else if (format === 'csv') {
+                    const csvData = convertToCSV(charts[chartId].data);
+                    downloadData(csvData, `${chartName}.csv`, 'text/csv');
+                } else {
+                    alert(`${format.toUpperCase()} export not implemented`);
+                }
+            } catch (error) {
+                console.error('Export error:', error);
+                alert(`Export failed: ${error.message}`);
+            }
+        };
+
         window.toggleStacked = function(chartId) {
-            const config = charts[chartId];
-            const isStacked = config.chart.stacked();
-            config.chart.stacked(!isStacked);
-            
-            d3.select(`#${chartId}`)
-                .datum(config.data)
-                .call(config.chart);
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                const currentStacked = chartConfig.chart.stacked();
+                const newMode = !currentStacked;
+                
+                // Debug: temporary alert to check values
+                console.log(`Chart ${chartId}: Current stacked: ${currentStacked}, New mode: ${newMode}`);
+                
+                chartConfig.chart.stacked(newMode);
+                
+                // Force a complete re-render
+                d3.select(`#${chartId}`).selectAll("*").remove();
+                d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                
+                // Update button text to show next action
+                const button = document.querySelector(`button[onclick="toggleStacked('${chartId}')"]`);
+                if (button) {
+                    const nextModeName = newMode ? 'Waterfall' : 'Stacked';
+                    button.textContent = `Switch to ${nextModeName}`;
+                }
+            }
         };
 
         window.toggleTotal = function(chartId) {
-            const config = charts[chartId];
-            const showTotal = config.chart.showTotal();
-            config.chart.showTotal(!showTotal);
-            
-            d3.select(`#${chartId}`)
-                .datum(config.data)
-                .call(config.chart);
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                const currentTotal = chartConfig.chart.showTotal();
+                chartConfig.chart.showTotal(!currentTotal);
+                d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+            }
         };
 
         window.updateData = function(chartId) {
-            const config = charts[chartId];
-            
-            // Generate different types of random data based on chart
-            let newData;
-            if (chartId === 'chart1' || chartId === 'chart3') {
-                // Positive values only for revenue/performance charts
-                newData = config.data.map(item => ({
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                const updatedData = chartConfig.data.map(item => ({
                     ...item,
-                    stacks: item.stacks.map(stack => {
-                        const randomValue = Math.max(5, Math.abs(stack.value) + (Math.random() - 0.5) * 20);
-                        return {
-                            ...stack,
-                            value: randomValue,
-                            label: Math.round(randomValue).toString()
-                        };
-                    })
+                    stacks: item.stacks.map(stack => ({
+                        ...stack,
+                        value: Math.max(5, Math.round(Math.abs(stack.value) + (Math.random() - 0.5) * 20))
+                    }))
                 }));
-            } else if (chartId === 'chart4') {
-                // Mixed positive/negative for project data
-                newData = config.data.map(item => ({
-                    ...item,
-                    stacks: item.stacks.map(stack => {
-                        const baseValue = Math.abs(stack.value);
-                        const randomValue = baseValue + (Math.random() - 0.5) * 30;
-                        const finalValue = stack.value < 0 ? -Math.abs(randomValue) : Math.abs(randomValue);
-                        return {
-                            ...stack,
-                            value: finalValue,
-                            label: (finalValue > 0 ? '' : '') + Math.round(finalValue).toString()
-                        };
-                    })
-                }));
-            } else {
-                // Default random generation
-                newData = config.data.map(item => ({
-                    ...item,
-                    stacks: item.stacks.map(stack => {
-                        const randomValue = stack.value + (Math.random() - 0.5) * 20;
-                        return {
-                            ...stack,
-                            value: randomValue,
-                            label: Math.round(randomValue).toString()
-                        };
-                    })
-                }));
+                
+                chartConfig.data = updatedData;
+                d3.select(`#${chartId}`).datum(updatedData).call(chartConfig.chart);
             }
-            
-            config.data = newData;
-            
-            d3.select(`#${chartId}`)
-                .datum(newData)
-                .call(config.chart);
         };
 
         window.animateChart = function(chartId) {
-            const config = charts[chartId];
-            
-            // Store original data
-            const originalData = JSON.parse(JSON.stringify(config.data));
-            
-            // Create dramatic animation by temporarily changing data
-            const animationData = config.data.map(item => ({
-                ...item,
-                stacks: item.stacks.map(stack => ({
-                    ...stack,
-                    value: stack.value * 1.5, // Increase values for dramatic effect
-                    label: Math.round(stack.value * 1.5).toString()
-                }))
-            }));
-            
-            // Animate with different durations and easing
-            config.chart
-                .duration(1000)
-                .ease(d3.easeBounce);
-            
-            // First animation: grow the bars
-            d3.select(`#${chartId}`)
-                .datum(animationData)
-                .call(config.chart);
-            
-            // Second animation: return to original size
-            setTimeout(() => {
-                config.chart
-                    .duration(1000)
-                    .ease(d3.easeElastic);
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                // Store original data and settings
+                const originalData = JSON.parse(JSON.stringify(chartConfig.data));
+                const originalDuration = chartConfig.chart.duration();
+                const originalEase = chartConfig.chart.ease();
                 
-                d3.select(`#${chartId}`)
-                    .datum(originalData)
-                    .call(config.chart);
-            }, 1200);
-            
-            // Reset to normal settings
-            setTimeout(() => {
-                config.chart.duration(750).ease(d3.easeQuadInOut);
-            }, 2500);
+                // Create animation data with larger values for dramatic effect
+                const animationData = chartConfig.data.map(item => ({
+                    ...item,
+                    stacks: item.stacks.map(stack => ({
+                        ...stack,
+                        value: stack.value * 1.3, // Increase by 30%
+                        label: stack.label
+                    }))
+                }));
+                
+                // First animation: bounce effect with larger values
+                chartConfig.chart.duration(800).ease(d3.easeBounce);
+                d3.select(`#${chartId}`).datum(animationData).call(chartConfig.chart);
+                
+                // Second animation: return to original with elastic effect
+                setTimeout(() => {
+                    chartConfig.chart.duration(1000).ease(d3.easeElastic);
+                    d3.select(`#${chartId}`).datum(originalData).call(chartConfig.chart);
+                }, 900);
+                
+                // Reset to original settings
+                setTimeout(() => {
+                    chartConfig.chart.duration(originalDuration).ease(originalEase);
+                }, 2000);
+            }
         };
+
+        window.animateWithEasing = function(chartId, easingType) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                let easing;
+                if (easingType === 'bounce') {
+                    easing = d3.easeBounceOut;
+                } else if (easingType === 'elastic') {
+                    easing = d3.easeElasticOut;
+                } else {
+                    easing = d3.easeQuadInOut;
+                }
+                
+                try {
+                    // Store original data
+                    const originalData = JSON.parse(JSON.stringify(chartConfig.data));
+                    
+                    // Create modified data with different values to animate from
+                    const animationData = chartConfig.data.map(item => ({
+                        ...item,
+                        stacks: item.stacks.map(stack => ({
+                            ...stack,
+                            value: stack.value * 0.1 // Start with 10% of original values
+                        }))
+                    }));
+                    
+                    // First, quickly set to the reduced values
+                    chartConfig.chart.duration(0);
+                    d3.select(`#${chartId}`).datum(animationData).call(chartConfig.chart);
+                    
+                    // Then animate back to original values with the easing
+                    setTimeout(() => {
+                        chartConfig.chart.duration(1500).ease(easing);
+                        d3.select(`#${chartId}`).datum(originalData).call(chartConfig.chart);
+                        
+                        // Reset to normal animation settings after
+                        setTimeout(() => {
+                            chartConfig.chart.duration(750).ease(d3.easeQuadInOut);
+                        }, 1600);
+                    }, 50);
+                    
+                    showFeedback(chartId, `✓ Applied ${easingType} easing animation`, 'success');
+                } catch (error) {
+                    showFeedback(chartId, '✗ Error applying easing: ' + error.message, 'error');
+                }
+            } else {
+                showFeedback(chartId, '✗ No chart config found', 'error');
+            }
+        };
+
+        window.sortData = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                // Store original data if not already stored
+                if (!chartConfig.originalData) {
+                    chartConfig.originalData = JSON.parse(JSON.stringify(chartConfig.data));
+                }
+                
+                const sortedData = dataProcessor.sortData(chartConfig.data, 'total', 'descending');
+                chartConfig.data = sortedData;
+                d3.select(`#${chartId}`).datum(sortedData).call(chartConfig.chart);
+                
+                showFeedback(chartId, '✓ Sorted by total value (waterfall order affects cumulative totals)', 'success');
+            }
+        };
+
+        window.resetData = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig && chartConfig.originalData) {
+                chartConfig.data = JSON.parse(JSON.stringify(chartConfig.originalData));
+                d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+            } else {
+                showFeedback(chartId, '✗ No original data to reset to', 'error');
+            }
+        };
+
+        window.normalizeData = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                try {
+                    const normalizedData = dataProcessor.normalizeValues(chartConfig.data, 100);
+                    chartConfig.data = normalizedData;
+                    d3.select(`#${chartId}`).datum(normalizedData).call(chartConfig.chart);
+                    
+                    // Show visual feedback
+                    showFeedback(chartId, '✓ Data normalized to max value of 100', 'success');
+                } catch (error) {
+                    showFeedback(chartId, '✗ Error normalizing data: ' + error.message, 'error');
+                }
+            } else {
+                showFeedback(chartId, '✗ No chart config found', 'error');
+            }
+        };
+
+        window.generateRandomData = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                const randomData = chartConfig.data.map(item => ({
+                    ...item,
+                    stacks: item.stacks.map(stack => ({
+                        ...stack,
+                        value: Math.max(5, Math.round(Math.random() * 50 + 10)),
+                        label: `Random: ${Math.round(Math.random() * 50 + 10)}`
+                    }))
+                }));
+                
+                chartConfig.data = randomData;
+                d3.select(`#${chartId}`).datum(randomData).call(chartConfig.chart);
+            }
+        };
+
+        // Visual feedback function
+        window.showFeedback = function(chartId, message, type) {
+            let feedbackDiv = document.getElementById(`feedback-${chartId}`);
+            if (!feedbackDiv) {
+                feedbackDiv = document.createElement('div');
+                feedbackDiv.id = `feedback-${chartId}`;
+                feedbackDiv.style.cssText = 'margin: 10px 0; padding: 8px; border-radius: 4px; font-size: 14px; font-weight: bold;';
+                
+                // Find the chart container and add feedback after the controls
+                const chartContainer = document.querySelector(`#${chartId}`).closest('.chart-container');
+                const controls = chartContainer.querySelector('.controls') || chartContainer.querySelector('.export-controls');
+                if (controls) {
+                    controls.parentNode.insertBefore(feedbackDiv, controls.nextSibling);
+                }
+            }
+            
+            // Style based on type
+            if (type === 'success') {
+                feedbackDiv.style.background = '#27ae60';
+                feedbackDiv.style.color = 'white';
+            } else if (type === 'error') {
+                feedbackDiv.style.background = '#e74c3c';
+                feedbackDiv.style.color = 'white';
+            } else {
+                feedbackDiv.style.background = '#f39c12';
+                feedbackDiv.style.color = 'white';
+            }
+            
+            feedbackDiv.textContent = message;
+            
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                feedbackDiv.style.opacity = '0';
+                setTimeout(() => {
+                    if (feedbackDiv.parentNode) {
+                        feedbackDiv.parentNode.removeChild(feedbackDiv);
+                    }
+                }, 300);
+            }, 3000);
+        };
+
+        // Utility functions
+        function convertToCSV(data) {
+            const headers = ['Label', 'Stack_Index', 'Value', 'Color', 'Stack_Label'];
+            const rows = [headers.join(',')];
+            
+            data.forEach(item => {
+                item.stacks.forEach((stack, index) => {
+                    rows.push([
+                        `"${item.label}"`,
+                        index,
+                        stack.value,
+                        `"${stack.color}"`,
+                        `"${stack.label}"`
+                    ].join(','));
+                });
+            });
+            
+            return rows.join('\n');
+        }
+
+        function downloadData(data, filename, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Log successful initialization
+        console.log('🎉 MintWaterfall v0.5.5 initialized with all Phase 2 features!');
+        console.log('📊 Charts:', Object.keys(charts));
+        console.log('🎨 Available themes:', Object.keys(themes));
+        console.log('🔧 Data processor loaded with', Object.keys(dataProcessor).length, 'methods');
+        console.log('✨ Animation system loaded with', Object.keys(animationSystem).length, 'features');
+
+    </script>
+
+    <script>
+        // Test function to check D3 easing availability - outside module scope
+        function testEasingFunctions() {
+            console.log('Testing D3 easing functions...');
+            console.log('d3.easeBounceOut:', typeof d3.easeBounceOut);
+            console.log('d3.easeElasticOut:', typeof d3.easeElasticOut);
+            console.log('d3.easeQuadInOut:', typeof d3.easeQuadInOut);
+            
+            // Create a results div to show on page instead of alert
+            let resultsDiv = document.getElementById('easing-test-results');
+            if (!resultsDiv) {
+                resultsDiv = document.createElement('div');
+                resultsDiv.id = 'easing-test-results';
+                resultsDiv.style.cssText = 'background: #333; color: white; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace;';
+                document.querySelector('.chart-container').appendChild(resultsDiv);
+            }
+            
+            let results = ['D3 Easing Functions Test Results:'];
+            
+            if (typeof d3.easeBounceOut === 'function') {
+                console.log('✓ Bounce easing is available');
+                results.push('✓ Bounce easing is available');
+            } else {
+                console.log('✗ Bounce easing is NOT available');
+                results.push('✗ Bounce easing is NOT available');
+            }
+            
+            if (typeof d3.easeElasticOut === 'function') {
+                console.log('✓ Elastic easing is available');
+                results.push('✓ Elastic easing is available');
+            } else {
+                console.log('✗ Elastic easing is NOT available');
+                results.push('✗ Elastic easing is NOT available');
+            }
+            
+            results.push('✓ Test completed - check console for more details');
+            resultsDiv.innerHTML = results.join('<br>');
+        }
     </script>
 </body>
 </html>

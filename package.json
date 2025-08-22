@@ -1,12 +1,12 @@
 {
   "name": "mintwaterfall",
-  "version": "1.1.0",
+  "version": "0.5.5",
   "description": "A powerful, D3.js-compatible waterfall chart component with stacking capabilities, animations, and extensive customization options",
   "main": "mintwaterfall-chart.js",
   "type": "module",
   "files": [
     "mintwaterfall-chart.js",
-    "mintwaterfall-tooltip.js", 
+    "mintwaterfall-tooltip.js",
     "mintwaterfall-themes.js",
     "API.md",
     "CONTRIBUTING.md",
@@ -17,8 +17,10 @@
     "dev": "python -m http.server 8080",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "echo 'Tests will be added in Phase 2' && exit 0",
-    "build": "echo 'Build process will be added in Phase 2' && exit 0",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "build": "echo 'Build process will be added in Phase 3' && exit 0",
     "format": "echo 'Prettier formatting will be added' && exit 0"
   },
   "keywords": [
@@ -53,14 +55,25 @@
     "d3": "^7.0.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.28.3",
+    "@babel/preset-env": "^7.28.3",
+    "babel-jest": "^30.0.5",
     "eslint": "^9.33.0",
-    "typescript": "^5.9.2",
-    "prettier": "^3.0.0",
     "husky": "^8.0.0",
-    "lint-staged": "^13.0.0"
+    "jest": "^30.0.5",
+    "jest-environment-jsdom": "^30.0.5",
+    "jsdom": "^26.1.0",
+    "lint-staged": "^13.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.9.2"
   },
   "lint-staged": {
-    "*.js": ["eslint --fix", "prettier --write"],
-    "*.md": ["prettier --write"]
+    "*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.md": [
+      "prettier --write"
+    ]
   }
 }
