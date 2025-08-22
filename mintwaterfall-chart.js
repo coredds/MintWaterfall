@@ -12,9 +12,41 @@ export function waterfallChart() {
     let barPadding = 0.1;
     let duration = 750;
     let ease = d3.easeQuadInOut;
+    let formatNumber = d3.format(".0f");
+    let theme = null;
+    
+    // Event listeners
+    const listeners = d3.dispatch("barClick", "barMouseover", "barMouseout", "chartUpdate");
 
     function chart(selection) {
         selection.each(function(data) {
+            // Data validation
+            if (!data || !Array.isArray(data)) {
+                console.warn("MintWaterfall: Invalid data provided. Expected an array.");
+                return;
+            }
+
+            if (data.length === 0) {
+                console.warn("MintWaterfall: Empty data array provided.");
+                return;
+            }
+
+            // Validate data structure
+            const isValidData = data.every(item => 
+                item && 
+                typeof item.label === "string" && 
+                Array.isArray(item.stacks) &&
+                item.stacks.every(stack => 
+                    typeof stack.value === "number" && 
+                    typeof stack.color === "string"
+                )
+            );
+
+            if (!isValidData) {
+                console.error("MintWaterfall: Invalid data structure. Each item must have a 'label' string and 'stacks' array with 'value' numbers and 'color' strings.");
+                return;
+            }
+
             const svg = d3.select(this);
             const container = svg.selectAll(".waterfall-container").data([data]);
             
@@ -24,10 +56,6 @@ export function waterfallChart() {
                 .attr("class", "waterfall-container");
             
             const containerUpdate = containerEnter.merge(container);
-
-            // Set up dimensions
-            const chartWidth = width - margin.left - margin.right;
-            const chartHeight = height - margin.top - margin.bottom;
 
             // Prepare data with cumulative calculations
             const processedData = prepareData(data);
@@ -44,7 +72,7 @@ export function waterfallChart() {
                 .range([height - margin.bottom, margin.top]);
 
             // Create/update grid
-            drawGrid(containerUpdate, yScale, chartWidth);
+            drawGrid(containerUpdate, yScale);
             
             // Create/update axes
             drawAxes(containerUpdate, xScale, yScale);
@@ -94,7 +122,7 @@ export function waterfallChart() {
         return processedData;
     }
 
-    function drawGrid(container, yScale, chartWidth) {
+    function drawGrid(container, yScale) {
         const gridGroup = container.selectAll(".grid-group").data([0]);
         const gridGroupEnter = gridGroup.enter()
             .append("g")
@@ -109,7 +137,7 @@ export function waterfallChart() {
             .attr("class", "grid-line")
             .attr("x1", margin.left)
             .attr("x2", width - margin.right)
-            .attr("stroke", "#e0e0e0")
+            .attr("stroke", theme?.gridColor || "#e0e0e0")
             .attr("stroke-width", 1)
             .merge(gridLines)
             .transition()
@@ -133,7 +161,7 @@ export function waterfallChart() {
             .transition()
             .duration(duration)
             .ease(ease)
-            .call(d3.axisLeft(yScale).tickFormat(d3.format(".0f")));
+            .call(d3.axisLeft(yScale).tickFormat(formatNumber));
 
         // X-axis
         const xAxisGroup = container.selectAll(".x-axis").data([0]);
@@ -224,7 +252,19 @@ export function waterfallChart() {
                 .ease(ease)
                 .attr("y", stack => stack.y)
                 .attr("height", stack => stack.height)
-                .attr("fill", stack => stack.color);
+                .attr("fill", stack => stack.color)
+                .selection()
+                .on("click", function(event, d) {
+                    listeners.call("barClick", this, event, d);
+                })
+                .on("mouseover", function(event, d) {
+                    d3.select(this).style("opacity", 0.8);
+                    listeners.call("barMouseover", this, event, d);
+                })
+                .on("mouseout", function(event, d) {
+                    d3.select(this).style("opacity", 1);
+                    listeners.call("barMouseout", this, event, d);
+                });
 
             stacks.exit()
                 .transition()
@@ -321,7 +361,7 @@ export function waterfallChart() {
             .ease(ease)
             .attr("y", d => yScale(d.cumulativeTotal) - 10)
             .style("opacity", 1)
-            .text(d => d.cumulativeTotal);
+            .text(d => formatNumber(d.cumulativeTotal));
 
         totalLabels.exit()
             .transition()
@@ -438,8 +478,22 @@ export function waterfallChart() {
         return arguments.length ? (ease = _, chart) : ease;
     };
 
+    chart.formatNumber = function(_) {
+        return arguments.length ? (formatNumber = _, chart) : formatNumber;
+    };
+
+    chart.theme = function(_) {
+        return arguments.length ? (theme = _, chart) : theme;
+    };
+
+    // Event handling methods
+    chart.on = function() {
+        const value = listeners.on.apply(listeners, arguments);
+        return value === listeners ? chart : value;
+    };
+
     // Method to update data
-    chart.data = function(newData) {
+    chart.data = function() {
         return chart;
     };
 
