@@ -53,6 +53,15 @@ describe("Enhanced D3.js Features", () => {
             expect(scale.domain()).toHaveLength(3); // Unique values only
         });
         
+        test("should create band scale for categorical positioning", () => {
+            const values = ["A", "B", "C"];
+            const scale = scaleSystem.createBandScale(values);
+            
+            expect(scale).toBeDefined();
+            expect(scale.domain()).toEqual(values);
+            expect(typeof scale.bandwidth).toBe("function"); // Should have bandwidth method
+        });
+        
         test("should create linear scale with padding", () => {
             const values = [10, 20, 30, 40, 50];
             const options = { padding: 0.2, nice: true };
@@ -78,7 +87,7 @@ describe("Enhanced D3.js Features", () => {
         
         test("should detect scale type correctly", () => {
             expect(scaleSystem.scaleUtils.detectScaleType([new Date(), new Date()])).toBe("time");
-            expect(scaleSystem.scaleUtils.detectScaleType(["A", "B", "C"])).toBe("ordinal");
+            expect(scaleSystem.scaleUtils.detectScaleType(["A", "B", "C"])).toBe("band");
             expect(scaleSystem.scaleUtils.detectScaleType([1, 2, 3])).toBe("linear");
         });
         

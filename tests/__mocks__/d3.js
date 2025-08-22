@@ -58,12 +58,25 @@ const d3Mock = {
     ticks: jest.fn(() => [0, 10, 20, 30, 40, 50])
   })),
   
-  scaleBand: jest.fn(() => ({
-    domain: jest.fn(() => d3Mock.scaleBand()),
-    range: jest.fn(() => d3Mock.scaleBand()),
-    padding: jest.fn(() => d3Mock.scaleBand()),
-    bandwidth: jest.fn(() => 50)
-  })),
+  scaleBand: jest.fn(() => {
+    const bandMock = {
+      _domain: [],
+      domain: function(domain) {
+        if (arguments.length) {
+          this._domain = domain;
+          return this;
+        }
+        return this._domain;
+      },
+      range: jest.fn(() => bandMock),
+      padding: jest.fn(() => bandMock),
+      paddingInner: jest.fn(() => bandMock),
+      paddingOuter: jest.fn(() => bandMock),
+      align: jest.fn(() => bandMock),
+      bandwidth: jest.fn(() => 50)
+    };
+    return bandMock;
+  }),
   
   // Advanced scales
   scaleTime: jest.fn(() => {
@@ -132,24 +145,18 @@ const d3Mock = {
   // Brush functions
   brushX: jest.fn(() => ({
     extent: jest.fn(() => d3Mock.brushX()),
-    handleSize: jest.fn(() => d3Mock.brushX()),
-    cornerRadius: jest.fn(() => d3Mock.brushX()),
     on: jest.fn(() => d3Mock.brushX()),
     move: jest.fn()
   })),
   
   brushY: jest.fn(() => ({
     extent: jest.fn(() => d3Mock.brushY()),
-    handleSize: jest.fn(() => d3Mock.brushY()),
-    cornerRadius: jest.fn(() => d3Mock.brushY()),
     on: jest.fn(() => d3Mock.brushY()),
     move: jest.fn()
   })),
   
   brush: jest.fn(() => ({
     extent: jest.fn(() => d3Mock.brush()),
-    handleSize: jest.fn(() => d3Mock.brush()),
-    cornerRadius: jest.fn(() => d3Mock.brush()),
     on: jest.fn(() => d3Mock.brush()),
     move: jest.fn()
   })),

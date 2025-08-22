@@ -2,7 +2,7 @@
 
 ## Overview
 
-MintWaterfall is a production-ready, D3.js-compatible waterfall chart component with comprehensive testing (121 test cases, 57% coverage) that supports both stacked and waterfall visualization modes with smooth animations and extensive customization options.
+MintWaterfall is a production-ready, D3.js-compatible waterfall chart component with comprehensive testing (168 test cases, 51% coverage) that supports both stacked and waterfall visualization modes with smooth animations, advanced interactive features, and extensive customization options. Enhanced with D3.js v7 full compatibility including advanced scale systems, brush filtering, and staggered animations.
 
 ## Installation & Setup
 
@@ -68,7 +68,7 @@ d3.select('#chart')
 
 ### Configuration Methods
 
-All configuration methods return the chart instance for method chaining. Extensively tested with 121 test cases ensuring robust API reliability.
+All configuration methods return the chart instance for method chaining. Extensively tested with 168 test cases ensuring robust API reliability.
 
 #### `.width([value])`
 - **Type**: `number` - Chart width in pixels
@@ -157,16 +157,65 @@ chart.formatNumber(d3.format(".1%"));   // Percentage format
 - **Default**: `null`
 - **Returns**: Chart instance (setter) or current theme (getter)
 
+### Advanced Features
+
+#### `.scaleType([value])`
+- **Type**: `string` - Set scale type for x-axis: 'auto', 'linear', 'ordinal', 'time'
+- **Default**: `'auto'`
+- **Returns**: Chart instance (setter) or current scale type (getter)
+- **Note**: Auto-detection chooses appropriate scale based on data types
+
+```javascript
+chart.scaleType('linear');  // Force linear scale
+chart.scaleType('ordinal'); // Force ordinal scale
+chart.scaleType('time');    // For time-series data
+```
+
+#### `.staggeredAnimations([value])`
+- **Type**: `boolean` - Enable/disable staggered bar animations
+- **Default**: `false`
+- **Returns**: Chart instance (setter) or current staggered setting (getter)
+- **Note**: Creates cascading animation effect for better visual appeal
+
+#### `.staggerDelay([value])`
+- **Type**: `number` - Delay between staggered animations in milliseconds
+- **Default**: `100`
+- **Returns**: Chart instance (setter) or current stagger delay (getter)
+- **Validation**: Must be non-negative number
+
+```javascript
+chart.staggeredAnimations(true).staggerDelay(150); // Enable with 150ms delay
+```
+
+#### `.brush([config])`
+- **Type**: `object` - Enable brush selection with configuration
+- **Default**: `null`
+- **Returns**: Chart instance (setter) or current brush config (getter)
+- **Note**: Enables interactive data filtering via brush selection
+
+#### `.onBrushEnd([handler])`
+- **Type**: `function` - Set brush end event handler for data filtering
+- **Default**: `null`
+- **Returns**: Chart instance (setter) or current brush handler (getter)
+
+```javascript
+chart.brush({ dimension: 'x' })
+     .onBrushEnd((event, selection) => {
+         console.log('Brush selection:', selection);
+     });
+```
+
 ### Event Handling & Interactivity
 
 #### `.on(type, listener)`
-Register event listeners for chart interactions. Comprehensive event system tested with 121 test cases.
+Register event listeners for chart interactions. Comprehensive event system tested with 168 test cases.
 
 **Available Events:**
 - `"barClick"` - Fired when a bar segment is clicked
 - `"barMouseover"` - Fired when mouse enters a bar segment  
 - `"barMouseout"` - Fired when mouse leaves a bar segment
 - `"chartUpdate"` - Fired when chart data or configuration is updated
+- `"brushEnd"` - Fired when brush selection ends (requires brush enabled)
 
 **Event Data:**
 All events receive `(event, data)` parameters where:
@@ -606,4 +655,4 @@ if (validateChartData(myData)) {
 
 ---
 
-*This documentation reflects MintWaterfall v0.5.5 with comprehensive testing coverage and professional CI/CD pipeline.*
+*This documentation reflects MintWaterfall v0.5.6 with comprehensive testing coverage and professional CI/CD pipeline.*

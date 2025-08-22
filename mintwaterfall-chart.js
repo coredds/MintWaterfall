@@ -4,6 +4,30 @@
 import { createScaleSystem } from "./mintwaterfall-scales.js";
 import { createBrushSystem } from "./mintwaterfall-brush.js";
 
+// Utility function to get bar width from any scale type
+function getBarWidth(scale, barCount, totalWidth) {
+    if (scale.bandwidth) {
+        // Band scale has bandwidth method
+        return scale.bandwidth();
+    } else {
+        // For continuous scales, calculate width based on bar count
+        const padding = 0.1;
+        const availableWidth = totalWidth * (1 - padding);
+        return availableWidth / barCount;
+    }
+}
+
+// Utility function to get bar position from any scale type
+function getBarPosition(scale, value, barWidth) {
+    if (scale.bandwidth) {
+        // Band scale - use scale directly
+        return scale(value);
+    } else {
+        // Continuous scale - center the bar around the scale value
+        return scale(value) - barWidth / 2;
+    }
+}
+
 export function waterfallChart() {
     let width = 800;
     let height = 400;
@@ -71,55 +95,92 @@ export function waterfallChart() {
             
             const containerUpdate = containerEnter.merge(container);
 
-            // Prepare data with cumulative calculations
-            const processedData = prepareData(data);
-            
-            // Set up scales using enhanced scale system
-            let xScale;
-            if (scaleType === "auto") {
-                xScale = scaleSystem.createAdaptiveScale(processedData, "x");
-            } else if (scaleType === "time") {
-                const timeValues = processedData.map(d => new Date(d.label));
-                xScale = scaleSystem.createTimeScale(timeValues);
-            } else if (scaleType === "ordinal") {
-                xScale = scaleSystem.createOrdinalScale(processedData.map(d => d.label));
-            } else {
-                // Default to band scale for categorical data
-                xScale = d3.scaleBand()
-                    .domain(processedData.map(d => d.label))
-                    .padding(barPadding);
-            }
-            
-            // Set range for x scale
-            xScale.range([margin.left, width - margin.right]);
+            try {
+                // Prepare data with cumulative calculations
+                const processedData = prepareData(data);
+                
+                // Set up scales using enhanced scale system
+                let xScale;
+                if (scaleType === "auto") {
+                    xScale = scaleSystem.createAdaptiveScale(processedData, "x");
+                    // If it's a band scale, apply padding
+                    if (xScale.padding) {
+                        xScale.padding(barPadding);
+                    }
+                } else if (scaleType === "time") {
+                    const timeValues = processedData.map(d => new Date(d.label));
+                    xScale = scaleSystem.createTimeScale(timeValues);
+                } else if (scaleType === "ordinal") {
+                    xScale = scaleSystem.createOrdinalScale(processedData.map(d => d.label));
+                } else {
+                    // Default to band scale for categorical data
+                    xScale = d3.scaleBand()
+                        .domain(processedData.map(d => d.label))
+                        .padding(barPadding);
+                }
+                
+                // Set range for x scale
+                xScale.range([margin.left, width - margin.right]);
 
-            // Enhanced Y scale using d3.extent and nice()
-            const yValues = processedData.map(d => d.cumulativeTotal);
-            const yScale = scaleSystem.createLinearScale(yValues, {
-                range: [height - margin.bottom, margin.top],
-                nice: true,
-                padding: 0.1
-            });
+                // Enhanced Y scale using d3.extent and nice()
+                const yValues = processedData.map(d => d.cumulativeTotal);
+                
+                // For waterfall charts, ensure proper baseline handling
+                const [min, max] = d3.extent(yValues);
+                const hasNegativeValues = min < 0;
+                
+                let domainMin, domainMax;
+                
+                if (hasNegativeValues) {
+                    // If we have negative values, include them with padding
+                    domainMin = min;
+                    domainMax = Math.max(0, max);
+                } else {
+                    // For positive-only data, start at 0 with minimal padding
+                    domainMin = 0;
+                    domainMax = max;
+                }
+                
+                const yScale = scaleSystem.createLinearScale([domainMin, domainMax], {
+                    range: [height - margin.bottom, margin.top],
+                    nice: !hasNegativeValues, // Only use nice() when we don't have negative values
+                    padding: hasNegativeValues ? 0.05 : 0.02, // Minimal padding for positive-only data
+                    includeZero: true
+                });
 
-            // Create/update grid
-            drawGrid(containerUpdate, yScale);
-            
-            // Create/update axes
-            drawAxes(containerUpdate, xScale, yScale);
-            
-            // Create/update bars with enhanced animations
-            if (staggeredAnimations) {
-                drawBarsWithStagger(containerUpdate, processedData, xScale, yScale);
-            } else {
-                drawBars(containerUpdate, processedData, xScale, yScale);
-            }
-            
-            // Create/update connectors
-            drawConnectors(containerUpdate, processedData, xScale, yScale);
-            
-            // Add brush functionality if enabled
-            if (enableBrush) {
-                addBrushSelection(containerUpdate, processedData, xScale, yScale);
+                // Create/update grid
+                drawGrid(containerUpdate, yScale);
+                
+                // Create/update axes
+                drawAxes(containerUpdate, xScale, yScale);
+                
+                // Create/update bars with enhanced animations
+                if (staggeredAnimations) {
+                    drawBarsWithStagger(containerUpdate, processedData, xScale, yScale);
+                } else {
+                    drawBars(containerUpdate, processedData, xScale, yScale);
+                }
+                
+                // Create/update connectors
+                drawConnectors(containerUpdate, processedData, xScale, yScale);
+                
+                // Add brush functionality if enabled
+                if (enableBrush) {
+                    addBrushSelection(containerUpdate, processedData, xScale, yScale);
+                }
+            } catch (error) {
+                console.error("MintWaterfall rendering error:", error);
+                console.error("Stack trace:", error.stack);
+                
+                // Clear any partial rendering and show error
+                containerUpdate.selectAll("*").remove();
+                containerUpdate.append("text")
+                    .attr("x", width / 2)
+                    .attr("y", height / 2)
+                    .attr("text-anchor", "middle")
+                    .style("font-size", "14px")
+                    .style("fill", "#ff6b6b")
+                    .text(`Chart Error: ${error.message}`);
             }
         });
     }
@@ -229,7 +290,11 @@ export function waterfallChart() {
         const barGroupsEnter = barGroups.enter()
             .append("g")
             .attr("class", "bar-group")
-            .attr("transform", d => `translate(${xScale(d.label)}, 0)`);
+            .attr("transform", d => {
+                const barWidth = getBarWidth(xScale, processedData.length, innerWidth);
+                const barX = getBarPosition(xScale, d.label, barWidth);
+                return `translate(${barX}, 0)`;
+            });
 
         const barGroupsUpdate = barGroupsEnter.merge(barGroups);
 
@@ -237,7 +302,11 @@ export function waterfallChart() {
             .transition()
             .duration(duration)
             .ease(ease)
-            .attr("transform", d => `translate(${xScale(d.label)}, 0)`);
+            .attr("transform", d => {
+                const barWidth = getBarWidth(xScale, processedData.length, innerWidth);
+                const barX = getBarPosition(xScale, d.label, barWidth);
+                return `translate(${barX}, 0)`;
+            });
 
         if (stacked) {
             drawStackedBars(barGroupsUpdate, xScale, yScale);
@@ -276,11 +345,14 @@ export function waterfallChart() {
 
             const stacks = group.selectAll(".stack").data(stackData);
             
+            // Get bar width using utility function
+            const barWidth = getBarWidth(xScale, barGroups.size(), innerWidth);
+            
             const stacksEnter = stacks.enter()
                 .append("rect")
                 .attr("class", "stack")
                 .attr("x", 0)
-                .attr("width", xScale.bandwidth())
+                .attr("width", barWidth)
                 .attr("y", yScale(0))
                 .attr("height", 0)
                 .attr("fill", stack => stack.color);
@@ -320,7 +392,7 @@ export function waterfallChart() {
                 .append("text")
                 .attr("class", "stack-label")
                 .attr("text-anchor", "middle")
-                .attr("x", xScale.bandwidth() / 2)
+                .attr("x", barWidth / 2)
                 .attr("y", yScale(0))
                 .style("opacity", 0)
                 .merge(stackLabels)
@@ -341,6 +413,8 @@ export function waterfallChart() {
     }
 
     function drawWaterfallBars(barGroups, xScale, yScale) {
+        const barWidth = getBarWidth(xScale, barGroups.size(), innerWidth);
+        
         barGroups.each(function(d) {
             const group = d3.select(this);
             
@@ -360,7 +434,7 @@ export function waterfallChart() {
                 .append("rect")
                 .attr("class", "waterfall-bar")
                 .attr("x", 0)
-                .attr("width", xScale.bandwidth())
+                .attr("width", barWidth)
                 .attr("y", yScale(0))
                 .attr("height", 0)
                 .attr("fill", bar => bar.color);
@@ -384,6 +458,8 @@ export function waterfallChart() {
     }
 
     function drawValueLabels(barGroups, xScale, yScale) {
+        const barWidth = getBarWidth(xScale, barGroups.size(), innerWidth);
+        
         // Cumulative total labels
         const totalLabels = barGroups.selectAll(".total-label").data(d => [d]);
         
@@ -391,7 +467,7 @@ export function waterfallChart() {
             .append("text")
             .attr("class", "total-label")
             .attr("text-anchor", "middle")
-            .attr("x", xScale.bandwidth() / 2)
+            .attr("x", barWidth / 2)
             .attr("y", yScale(0))
             .style("opacity", 0)
             .merge(totalLabels)
@@ -418,15 +494,19 @@ export function waterfallChart() {
         const connectorsGroupUpdate = connectorsGroupEnter.merge(connectorsGroup);
 
         // Create connector data
+        const barWidth = getBarWidth(xScale, processedData.length, innerWidth);
         const connectorData = [];
         for (let i = 0; i < processedData.length - 1; i++) {
             const current = processedData[i];
             const next = processedData[i + 1];
             
+            const currentX = getBarPosition(xScale, current.label, barWidth);
+            const nextX = getBarPosition(xScale, next.label, barWidth);
+            
             connectorData.push({
-                x1: xScale(current.label) + xScale.bandwidth(),
+                x1: currentX + barWidth,
                 y1: yScale(current.cumulativeTotal),
-                x2: xScale(next.label),
+                x2: nextX,
                 y2: next.isTotal ? yScale(next.cumulativeTotal) : yScale(current.cumulativeTotal),
                 id: `connector-${i}`
             });
@@ -490,10 +570,17 @@ export function waterfallChart() {
         const barGroupsEnter = barGroups.enter()
             .append("g")
             .attr("class", "bar-group")
-            .attr("transform", d => `translate(${xScale(d.label)}, 0)`)
+            .attr("transform", d => {
+                const barWidth = getBarWidth(xScale, processedData.length, innerWidth);
+                const barX = getBarPosition(xScale, d.label, barWidth);
+                return `translate(${barX}, 0)`;
+            })
             .style("opacity", 0);
 
         const barGroupsUpdate = barGroupsEnter.merge(barGroups);
+        
+        // Reset all bars to invisible for staggered effect
+        barGroupsUpdate.style("opacity", 0);
 
         // Apply staggered animation using the animation system
         barGroupsUpdate.each(function(d, i) {
@@ -502,9 +589,12 @@ export function waterfallChart() {
                 group.transition()
                     .duration(duration)
                     .ease(ease)
-                    .delay(i * staggerDelay)
                     .style("opacity", 1)
-                    .attr("transform", d => `translate(${xScale(d.label)}, 0)`);
+                    .attr("transform", d => {
+                        const barWidth = getBarWidth(xScale, processedData.length, innerWidth);
+                        const barX = getBarPosition(xScale, d.label, barWidth);
+                        return `translate(${barX}, 0)`;
+                    });
             }, i * staggerDelay);
         });
 

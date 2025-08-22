@@ -12,9 +12,7 @@ export function createBrushSystem() {
     function createBrush(options = {}) {
         const {
             type = "x", // 'x', 'y', or 'xy'
-            extent = [[0, 0], [800, 400]],
-            handleSize = 4,
-            cornerRadius = 4
+            extent = [[0, 0], [800, 400]]
         } = options;
         
         let brush;
@@ -35,8 +33,6 @@ export function createBrushSystem() {
         
         brush
             .extent(extent)
-            .handleSize(handleSize)
-            .cornerRadius(cornerRadius)
             .on("start", handleBrushStart)
             .on("brush", handleBrushMove)
             .on("end", handleBrushEnd);
@@ -81,10 +77,19 @@ export function createBrushSystem() {
         const [start, end] = selection;
         
         return data.filter(d => {
-            const value = dimension === "x" ? scale.invert(scale(d.label)) : d.cumulativeTotal;
-            
             if (dimension === "x") {
-                const position = scale(d.label) + scale.bandwidth() / 2;
+                // Handle different scale types
+                let position;
+                if (scale.bandwidth) {
+                    // Band scale - use the center of the band
+                    position = scale(d.label) + scale.bandwidth() / 2;
+                } else if (scale.invert) {
+                    // Continuous scale (linear, time) - use the scale value directly
+                    position = scale(d.label);
+                } else {
+                    // Fallback for other scale types
+                    position = scale(d.label);
+                }
                 return position >= start && position <= end;
             } else {
                 const position = scale(value);

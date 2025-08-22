@@ -3,7 +3,7 @@
 [![CI](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml/badge.svg?branch=main)](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml)
 [![Security Audit](https://github.com/coredds/MintWaterfall/actions/workflows/security.yml/badge.svg)](https://github.com/coredds/MintWaterfall/actions/workflows/security.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.5.5-blue.svg)](https://github.com/coredds/MintWaterfall/releases)
+[![Version](https://img.shields.io/badge/version-0.5.6-blue.svg)](https://github.com/coredds/MintWaterfall/releases)
 [![codecov](https://codecov.io/gh/coredds/MintWaterfall/branch/main/graph/badge.svg)](https://codecov.io/gh/coredds/MintWaterfall)
 
 A D3.js-compatible waterfall chart component with comprehensive testing and automated CI/CD.
@@ -12,24 +12,28 @@ A D3.js-compatible waterfall chart component with comprehensive testing and auto
 
 ## Features
 
-- **Production Ready**: 121 comprehensive tests with 57% code coverage
+- **Production Ready**: 168 comprehensive tests with 51% code coverage
+- **Enhanced D3.js v7 Compatibility**: Full scale system support (band, linear, ordinal, time)
+- **Advanced Interactive Features**: Brush system, staggered animations, scale switching
 - **Automated CI/CD**: Full GitHub Actions pipeline with testing, security audits, and auto-deployment
 - **D3.js Compatible**: Full integration with D3.js v7+ ecosystem
 - **Dual Modes**: Toggle between stacked and waterfall visualizations
-- **Smooth Animations**: Configurable transitions with custom easing functions
+- **Smooth Animations**: Configurable transitions with enhanced staggered effects
 - **Interactive Controls**: Dynamic data updates and real-time mode switching
 - **Responsive Design**: Adapts to different screen sizes and containers
 - **Method Chaining**: Fluent API for intuitive configuration
 - **Robust Validation**: Comprehensive data validation and error handling
-- **Advanced Features**: Themes, custom formatting, event handling
+- **Advanced Features**: Themes, custom formatting, event handling, brush filtering
 
 ## Quality & Testing
 
-- **121 Test Cases**: Comprehensive test suite covering all major functionality
-- **57% Code Coverage**: High-quality test coverage with ongoing improvements  
+- **168 Test Cases**: Comprehensive test suite covering all major functionality
+- **51% Code Coverage**: Solid test coverage with detailed reporting across all modules  
 - **Zero Lint Issues**: Clean, maintainable code following best practices
 - **Security Audits**: Automated dependency vulnerability scanning
 - **Continuous Deployment**: Auto-deployment to GitHub Pages on updates
+- **D3.js v7 Compatibility**: Full scale system support and API compatibility
+- **Production Ready**: All critical functionality tested and verified
 
 ## Installation & Usage
 
@@ -116,6 +120,14 @@ d3.select('#chart')
 - `.margin(object)` - Set margins `{top, right, bottom, left}` (default: 60, 80, 60, 80)
 - `.showTotal(boolean)` - Show/hide total bar (default: false)
 - `.stacked(boolean)` - Toggle stacked/waterfall mode (default: true)
+- `.scaleType(string)` - Set scale type: 'auto', 'linear', 'ordinal', 'time' (default: 'auto')
+
+### Advanced Features
+
+- `.staggeredAnimations(boolean)` - Enable/disable staggered bar animations (default: false)
+- `.staggerDelay(ms)` - Delay between staggered animations (default: 100)
+- `.brush(config)` - Enable brush selection with configuration object
+- `.onBrushEnd(handler)` - Set brush end event handler for data filtering
 
 ### Styling & Animation
 
@@ -167,18 +179,22 @@ npm install
 ### Available Scripts
 
 ```bash
-npm test              # Run comprehensive test suite (121 tests)
+npm test              # Run comprehensive test suite (168 tests)
+npm run test:coverage # Run tests with detailed coverage report
 npm run lint          # Run ESLint code quality checks  
-npm run lint --fix    # Auto-fix lint issues
+npm run lint:fix      # Auto-fix lint issues
+npm run build         # Build all distribution formats
+npm run dev           # Start development server on port 8080
 ```
 
 ### Testing & Quality
 
-- **Comprehensive Testing**: 121 test cases covering all major functionality
-- **Code Coverage**: 57% coverage with detailed reporting
+- **Comprehensive Testing**: 168 test cases covering all major functionality
+- **Code Coverage**: 51% coverage with detailed reporting across all modules
 - **Automated CI**: GitHub Actions run tests on Node.js 18.x and 20.x
 - **Security Audits**: Weekly automated dependency vulnerability scans
 - **Zero Lint Issues**: Clean, maintainable code following best practices
+- **D3.js v7 Compatibility**: Full scale system and API compatibility testing
 
 ### CI/CD Pipeline
 
@@ -226,7 +242,14 @@ See our [Contributing Guide](CONTRIBUTING.md) for detailed guidelines.
 
 ## Changelog & Releases
 
-### v0.5.5 (Current)
+### v0.5.6 (Current)
+- **Enhanced D3.js v7 compatibility**: Fixed scale system for band, linear, and ordinal scales
+- **Brush system improvements**: Resolved `scale.invert` and D3 API compatibility issues  
+- **Staggered animations**: Enhanced visual feedback with proper reset and progressive reveal
+- **Scale switching**: Fixed `bandwidth()` errors when toggling between scale types
+- **Production ready**: All 168 tests passing, zero errors, optimized performance
+
+### v0.5.5
 - **121 comprehensive test cases** with 57% code coverage
 - **Enhanced functionality**: Fixed normalize/bounce buttons, improved UI/UX
 - **Better visuals**: 1100px wide charts, centered layouts, visual feedback system

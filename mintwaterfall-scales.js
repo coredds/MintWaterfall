@@ -11,7 +11,8 @@ export function createScaleSystem() {
         if (values.every(v => v instanceof Date)) {
             return createTimeScale(values);
         } else if (values.every(v => typeof v === "string" || isNaN(v))) {
-            return createOrdinalScale(values);
+            // For categorical/string data, use band scale for positioning
+            return createBandScale(values);
         } else if (values.every(v => typeof v === "number")) {
             return createLinearScale(values);
         } else {
@@ -71,25 +72,71 @@ export function createScaleSystem() {
             .unknown(unknown);
     }
     
+    // Band scale for categorical data positioning
+    function createBandScale(values, options = {}) {
+        const {
+            padding = 0.1,
+            paddingInner = null,
+            paddingOuter = null,
+            align = 0.5
+        } = options;
+        
+        const uniqueValues = [...new Set(values)];
+        const scale = d3.scaleBand()
+            .domain(uniqueValues)
+            .align(align);
+            
+        if (paddingInner !== null) {
+            scale.paddingInner(paddingInner);
+        }
+        if (paddingOuter !== null) {
+            scale.paddingOuter(paddingOuter);
+        }
+        if (paddingInner === null && paddingOuter === null) {
+            scale.padding(padding);
+        }
+        
+        return scale;
+    }
+    
     // Enhanced linear scale with better domain calculation
     function createLinearScale(values, options = {}) {
         const {
             range = [0, 400],
             nice = true,
             padding = 0.1,
-            clamp = false
+            clamp = false,
+            includeZero = false
         } = options;
         
         const [min, max] = d3.extent(values);
         const paddingValue = (max - min) * padding;
         
+        let domainMin = min - paddingValue;
+        let domainMax = max + paddingValue;
+        
+        // If includeZero is true, ensure zero is in the domain
+        if (includeZero) {
+            domainMin = Math.min(0, domainMin);
+            domainMax = Math.max(0, domainMax);
+        }
+        
         const scale = d3.scaleLinear()
-            .domain([min - paddingValue, max + paddingValue])
+            .domain([domainMin, domainMax])
             .range(range)
             .clamp(clamp);
             
         if (nice) {
             scale.nice();
+            
+            // After nice(), if includeZero is true and all original values are >= 0,
+            // ensure the domain doesn't go below 0
+            if (includeZero && min >= 0) {
+                const niceDomain = scale.domain();
+                if (niceDomain[0] < 0) {
+                    scale.domain([0, niceDomain[1]]);
+                }
+            }
         }
         
         return scale;
@@ -172,7 +219,7 @@ export function createScaleSystem() {
         // Auto-detect best scale type for data
         detectScaleType(values) {
             if (values.every(v => v instanceof Date)) return "time";
-            if (values.every(v => typeof v === "string")) return "ordinal";
+            if (values.every(v => typeof v === "string")) return "band";
             if (values.every(v => typeof v === "number" && v > 0)) return "linear"; // Could be log
             if (values.every(v => typeof v === "number")) return "linear";
             return "band"; // fallback
@@ -223,6 +270,7 @@ export function createScaleSystem() {
         createAdaptiveScale,
         createTimeScale,
         createOrdinalScale,
+        createBandScale,
         createLinearScale,
         createSequentialScale,
         createQuantileScale,

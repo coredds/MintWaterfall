@@ -11,7 +11,7 @@ export { createScaleSystem, createTimeScale, createOrdinalScale } from "../mintw
 export { createBrushSystem, addQuickBrush } from "../mintwaterfall-brush.js";
 
 // Version information
-export const version = "0.5.5";
+export const version = "0.5.6";
 
 // Default export for convenience
 import { waterfallChart } from "../mintwaterfall-chart.js";
