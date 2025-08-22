@@ -9,28 +9,28 @@
 
 A powerful, production-ready D3.js-compatible waterfall chart component with comprehensive testing and automated CI/CD.
 
-🚀 **[Live Demo](https://coredds.github.io/MintWaterfall/mintwaterfall-example.html)** - Try it out!
+**[Live Demo](https://coredds.github.io/MintWaterfall/mintwaterfall-example.html)** - Try it out!
 
 ## Features
 
-- **🎯 Production Ready**: 121 comprehensive tests with 57% code coverage
-- **🚀 Automated CI/CD**: Full GitHub Actions pipeline with testing, security audits, and auto-deployment
-- **📊 D3.js Compatible**: Full integration with D3.js v7+ ecosystem
-- **🔄 Dual Modes**: Toggle between stacked and waterfall visualizations
-- **✨ Smooth Animations**: Configurable transitions with custom easing functions
-- **🎮 Interactive Controls**: Dynamic data updates and real-time mode switching
-- **📱 Responsive Design**: Adapts to different screen sizes and containers
-- **🔗 Method Chaining**: Fluent API for intuitive configuration
-- **🛡️ Robust Validation**: Comprehensive data validation and error handling
-- **📈 Advanced Features**: Themes, custom formatting, event handling
+- **Production Ready**: 121 comprehensive tests with 57% code coverage
+- **Automated CI/CD**: Full GitHub Actions pipeline with testing, security audits, and auto-deployment
+- **D3.js Compatible**: Full integration with D3.js v7+ ecosystem
+- **Dual Modes**: Toggle between stacked and waterfall visualizations
+- **Smooth Animations**: Configurable transitions with custom easing functions
+- **Interactive Controls**: Dynamic data updates and real-time mode switching
+- **Responsive Design**: Adapts to different screen sizes and containers
+- **Method Chaining**: Fluent API for intuitive configuration
+- **Robust Validation**: Comprehensive data validation and error handling
+- **Advanced Features**: Themes, custom formatting, event handling
 
 ## Quality & Testing
 
-- **✅ 121 Test Cases**: Comprehensive test suite covering all major functionality
-- **📊 57% Code Coverage**: High-quality test coverage with ongoing improvements  
-- **🔍 Zero Lint Issues**: Clean, maintainable code following best practices
-- **🛡️ Security Audits**: Automated dependency vulnerability scanning
-- **🚀 Continuous Deployment**: Auto-deployment to GitHub Pages on updates
+- **121 Test Cases**: Comprehensive test suite covering all major functionality
+- **57% Code Coverage**: High-quality test coverage with ongoing improvements  
+- **Zero Lint Issues**: Clean, maintainable code following best practices
+- **Security Audits**: Automated dependency vulnerability scanning
+- **Continuous Deployment**: Auto-deployment to GitHub Pages on updates
 
 ## Installation & Usage
 
@@ -184,12 +184,12 @@ npm run lint --fix    # Auto-fix lint issues
 ### CI/CD Pipeline
 
 Our GitHub Actions workflow includes:
-- ✅ **Continuous Integration**: Automated testing and linting
-- 📊 **Code Coverage**: Automated coverage reporting to Codecov
-- 🛡️ **Security Audits**: Weekly dependency vulnerability scanning  
-- 📄 **Auto-Deployment**: GitHub Pages updates on every push to main
-- 🏷️ **Auto-Tagging**: Automatic git tags when package.json version changes
-- 📦 **Release Automation**: Automated releases with changelog generation
+- **Continuous Integration**: Automated testing and linting
+- **Code Coverage**: Automated coverage reporting to Codecov
+- **Security Audits**: Weekly dependency vulnerability scanning  
+- **Auto-Deployment**: GitHub Pages updates on every push to main
+- **Auto-Tagging**: Automatic git tags when package.json version changes
+- **Release Automation**: Automated releases with changelog generation
 
 ## Browser Support & Requirements
 
@@ -199,10 +199,10 @@ Our GitHub Actions workflow includes:
 - **SVG Support**: For chart rendering
 
 ### Tested Browsers
-- **Chrome 90+** ✅
-- **Firefox 88+** ✅  
-- **Safari 14+** ✅
-- **Edge 90+** ✅
+- **Chrome 90+** (Supported)
+- **Firefox 88+** (Supported)  
+- **Safari 14+** (Supported)
+- **Edge 90+** (Supported)
 
 ### Performance
 - **Small Bundle**: Lightweight ES6 modules
@@ -217,23 +217,23 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 MintWaterfall welcomes contributions! Please ensure all changes:
 
-- ✅ Maintain D3.js compatibility
-- ✅ Include appropriate tests (we have 121+ test cases)
-- ✅ Pass all linting checks (zero tolerance for lint issues)
-- ✅ Include documentation updates
-- ✅ Follow the existing code style
+- Maintain D3.js compatibility
+- Include appropriate tests (we have 121+ test cases)
+- Pass all linting checks (zero tolerance for lint issues)
+- Include documentation updates
+- Follow the existing code style
 
 See our [Contributing Guide](CONTRIBUTING.md) for detailed guidelines.
 
 ## Changelog & Releases
 
 ### v0.5.5 (Current)
-- 🧪 **121 comprehensive test cases** with 57% code coverage
-- 🔧 **Enhanced functionality**: Fixed normalize/bounce buttons, improved UI/UX
-- 🎨 **Better visuals**: 1100px wide charts, centered layouts, visual feedback system
-- 🚀 **Complete CI/CD pipeline**: Automated testing, security audits, deployment
-- ✨ **Code quality**: Zero lint issues, professional codebase
-- 📚 **Documentation**: Updated README, API docs, and examples
+- **121 comprehensive test cases** with 57% code coverage
+- **Enhanced functionality**: Fixed normalize/bounce buttons, improved UI/UX
+- **Better visuals**: 1100px wide charts, centered layouts, visual feedback system
+- **Complete CI/CD pipeline**: Automated testing, security audits, deployment
+- **Code quality**: Zero lint issues, professional codebase
+- **Documentation**: Updated README, API docs, and examples
 
 For detailed version history, see [Releases](https://github.com/coredds/MintWaterfall/releases).
 
