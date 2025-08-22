@@ -84,6 +84,43 @@
             stroke-dasharray: 3,3;
         }
 
+        /* Tooltip styling */
+        .mintwaterfall-tooltip {
+            position: absolute;
+            visibility: hidden;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            pointer-events: none;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 250px;
+            line-height: 1.4;
+        }
+
+        .mintwaterfall-tooltip .tooltip-title {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 6px;
+            color: #4CAF50;
+        }
+
+        .mintwaterfall-tooltip .tooltip-value {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 4px 0;
+        }
+
+        .mintwaterfall-tooltip .tooltip-detail {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
         /* Controls */
         .controls {
             margin: 20px 0;
@@ -172,7 +209,10 @@
     
     <!-- Chart 1: Revenue Analysis -->
     <div class="chart-container">
-        <h2>Revenue Analysis - Theme Demo</h2>
+        <h2>Revenue Analysis - Interactive Tooltips Demo</h2>
+        <p style="text-align: center; color: #666; font-style: italic; margin-bottom: 20px;">
+            🖱️ Hover over any bar to see detailed information in interactive tooltips
+        </p>
         <div class="theme-selector">
             <label>Theme: </label>
             <select onchange="changeTheme('chart1', this.value)">
@@ -188,7 +228,6 @@
             <button onclick="toggleStacked('chart1')">Switch to Waterfall</button>
             <button onclick="toggleTotal('chart1')">Toggle Total</button>
             <button onclick="updateData('chart1')">Update Data</button>
-            <button onclick="testEasingFunctions()" style="background: #ff6b6b;">Test Easing</button>
         </div>
         <div class="export-controls">
             <button class="export-btn" onclick="exportChart('chart1', 'svg')">Export SVG</button>
@@ -269,6 +308,10 @@
         import { themes, applyTheme } from './mintwaterfall-themes.js';
         import { dataProcessor } from './mintwaterfall-data.js';
         import { animationSystem } from './mintwaterfall-animations.js';
+        import { createTooltip } from './mintwaterfall-tooltip.js';
+
+        // Create tooltip instance for interactive charts
+        const tooltip = createTooltip();
 
         // Sample data
         let revenueData = [
@@ -613,13 +656,24 @@
                 alert(`Clicked on ${d.label}: ${total}`);
             });
 
-            chart.on('barMouseover', function(event, d) {
-                // Handle bar hover events
-            });
+            // Add tooltip functionality specifically to chart1
+            if (chartId === 'chart1') {
+                chart.on('barMouseover', function(event, d) {
+                    tooltip.show(event, d);
+                });
 
-            chart.on('barMouseout', function(event, d) {
-                // Handle bar mouse leave events
-            });
+                chart.on('barMouseout', function(event, d) {
+                    tooltip.hide();
+                });
+            } else {
+                chart.on('barMouseover', function(event, d) {
+                    // Handle bar hover events for other charts
+                });
+
+                chart.on('barMouseout', function(event, d) {
+                    // Handle bar mouse leave events for other charts
+                });
+            }
 
             // Apply initial theme if specified
             if (currentTheme && currentTheme !== 'default') {
@@ -1067,44 +1121,6 @@
 
     </script>
 
-    <script>
-        // Test function to check D3 easing availability - outside module scope
-        function testEasingFunctions() {
-            console.log('Testing D3 easing functions...');
-            console.log('d3.easeBounceOut:', typeof d3.easeBounceOut);
-            console.log('d3.easeElasticOut:', typeof d3.easeElasticOut);
-            console.log('d3.easeQuadInOut:', typeof d3.easeQuadInOut);
-            
-            // Create a results div to show on page instead of alert
-            let resultsDiv = document.getElementById('easing-test-results');
-            if (!resultsDiv) {
-                resultsDiv = document.createElement('div');
-                resultsDiv.id = 'easing-test-results';
-                resultsDiv.style.cssText = 'background: #333; color: white; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace;';
-                document.querySelector('.chart-container').appendChild(resultsDiv);
-            }
-            
-            let results = ['D3 Easing Functions Test Results:'];
-            
-            if (typeof d3.easeBounceOut === 'function') {
-                console.log('✓ Bounce easing is available');
-                results.push('✓ Bounce easing is available');
-            } else {
-                console.log('✗ Bounce easing is NOT available');
-                results.push('✗ Bounce easing is NOT available');
-            }
-            
-            if (typeof d3.easeElasticOut === 'function') {
-                console.log('✓ Elastic easing is available');
-                results.push('✓ Elastic easing is available');
-            } else {
-                console.log('✗ Elastic easing is NOT available');
-                results.push('✗ Elastic easing is NOT available');
-            }
-            
-            results.push('✓ Test completed - check console for more details');
-            resultsDiv.innerHTML = results.join('<br>');
-        }
     </script>
 </body>
 </html>
