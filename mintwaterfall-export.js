@@ -98,7 +98,7 @@ export function createExporter() {
         try {
             let csvContent = "Label,Stack Index,Value,Color,Stack Label\n";
             
-            data.forEach((item, itemIndex) => {
+            data.forEach((item) => {
                 item.stacks.forEach((stack, stackIndex) => {
                     csvContent += `"${item.label}",${stackIndex},"${stack.value}","${stack.color}","${stack.label || ""}"\n`;
                 });

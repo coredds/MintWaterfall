@@ -49,7 +49,6 @@ describe("MintWaterfall Animation System", () => {
 
     describe("animateValue", () => {
         test("should animate from start to end value", (done) => {
-            const updateSpy = jest.fn();
             const completeSpy = jest.fn(() => {
                 // Just verify the completion was called
                 expect(completeSpy).toHaveBeenCalledTimes(1);
