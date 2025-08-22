@@ -6,7 +6,7 @@
 [![Version](https://img.shields.io/badge/version-0.5.5-blue.svg)](https://github.com/coredds/MintWaterfall/releases)
 [![codecov](https://codecov.io/gh/coredds/MintWaterfall/branch/main/graph/badge.svg)](https://codecov.io/gh/coredds/MintWaterfall)
 
-A powerful, production-ready D3.js-compatible waterfall chart component with comprehensive testing and automated CI/CD.
+A D3.js-compatible waterfall chart component with comprehensive testing and automated CI/CD.
 
 **[Live Demo](https://coredds.github.io/MintWaterfall/mintwaterfall-example.html)** - Try it out!
 
