@@ -129,24 +129,23 @@ export function waterfallChart() {
                 const [min, max] = d3.extent(yValues);
                 const hasNegativeValues = min < 0;
                 
-                let domainMin, domainMax;
-                
+                let yScale;
                 if (hasNegativeValues) {
-                    // If we have negative values, include them with padding
-                    domainMin = min;
-                    domainMax = Math.max(0, max);
+                    // When we have negative values, create scale that includes them but doesn't extend too far
+                    const range = max - min;
+                    const padding = range * 0.05; // 5% padding
+                    yScale = d3.scaleLinear()
+                        .domain([min - padding, max + padding])
+                        .range([height - margin.bottom, margin.top]);
                 } else {
-                    // For positive-only data, start at 0 with minimal padding
-                    domainMin = 0;
-                    domainMax = max;
+                    // For positive-only data, start at 0
+                    yScale = scaleSystem.createLinearScale(yValues, {
+                        range: [height - margin.bottom, margin.top],
+                        nice: true,
+                        padding: 0.02,
+                        includeZero: true
+                    });
                 }
-                
-                const yScale = scaleSystem.createLinearScale([domainMin, domainMax], {
-                    range: [height - margin.bottom, margin.top],
-                    nice: !hasNegativeValues, // Only use nice() when we don't have negative values
-                    padding: hasNegativeValues ? 0.05 : 0.02, // Minimal padding for positive-only data
-                    includeZero: true
-                });
 
                 // Create/update grid
                 drawGrid(containerUpdate, yScale);
