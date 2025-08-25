@@ -8,9 +8,11 @@
   "unpkg": "dist/mintwaterfall.min.js",
   "jsdelivr": "dist/mintwaterfall.min.js",
   "types": "dist/index.d.ts",
+  "typings": "dist/index.d.ts",
   "type": "module",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/mintwaterfall.esm.js",
       "require": "./dist/mintwaterfall.cjs.js",
       "browser": "./dist/mintwaterfall.min.js"
@@ -36,7 +38,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "prebuild": "rimraf dist",
-    "build": "rollup -c",
+    "build": "rollup -c && npm run build:types",
+    "build:types": "echo 'TypeScript definitions preserved in dist/index.d.ts'",
     "build:watch": "rollup -c -w",
     "build:analyze": "rollup -c --environment ANALYZE",
     "format": "prettier --write \"src/**/*.js\" \"*.js\" \"*.md\"",
