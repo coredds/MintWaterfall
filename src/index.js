@@ -10,6 +10,11 @@ export { themes, applyTheme, getThemeColorPalette } from "../mintwaterfall-theme
 export { createScaleSystem, createTimeScale, createOrdinalScale } from "../mintwaterfall-scales.js";
 export { createBrushSystem, addQuickBrush } from "../mintwaterfall-brush.js";
 
+// Phase 1: Critical Accessibility & UX Features
+export { createAccessibilitySystem, accessibilitySystem, makeChartAccessible } from "../mintwaterfall-accessibility.js";
+export { createTooltipSystem, createChartTooltip, tooltip } from "../mintwaterfall-tooltip.js";
+export { createExportSystem, addExportToChart, exportSystem } from "../mintwaterfall-export.js";
+
 // Version information
 export const version = "0.5.6";
 

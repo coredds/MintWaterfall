@@ -3,6 +3,9 @@
 
 import { createScaleSystem } from "./mintwaterfall-scales.js";
 import { createBrushSystem } from "./mintwaterfall-brush.js";
+import { createAccessibilitySystem } from "./mintwaterfall-accessibility.js";
+import { createTooltipSystem } from "./mintwaterfall-tooltip.js";
+import { createExportSystem } from "./mintwaterfall-export.js";
 
 // Utility function to get bar width from any scale type
 function getBarWidth(scale, barCount, totalWidth) {
@@ -49,9 +52,19 @@ export function waterfallChart() {
     let staggerDelay = 100;
     let scaleType = "auto"; // 'auto', 'linear', 'time', 'ordinal'
     
+    // Accessibility and UX features
+    let enableAccessibility = true;
+    let enableTooltips = false;
+    let tooltipConfig = {};
+    let enableExport = true;
+    let exportConfig = {};
+    
     // Initialize systems
     const scaleSystem = createScaleSystem();
     const brushSystem = createBrushSystem();
+    const accessibilitySystem = createAccessibilitySystem();
+    const tooltipSystem = createTooltipSystem();
+    const exportSystem = createExportSystem();
     
     // Event listeners - enhanced with brush events
     const listeners = d3.dispatch("barClick", "barMouseover", "barMouseout", "chartUpdate", "brushSelection");
@@ -167,6 +180,21 @@ export function waterfallChart() {
                 if (enableBrush) {
                     addBrushSelection(containerUpdate, processedData, xScale, yScale);
                 }
+                // Initialize features after rendering is complete
+                setTimeout(() => {
+                    if (enableAccessibility) {
+                        initializeAccessibility(svg, processedData);
+                    }
+                    
+                    if (enableTooltips) {
+                        initializeTooltips(svg);
+                    }
+                    
+                    if (enableExport) {
+                        initializeExport(svg, processedData);
+                    }
+                }, 50); // Small delay to ensure DOM is ready
+                
             } catch (error) {
                 console.error("MintWaterfall rendering error:", error);
                 console.error("Stack trace:", error.stack);
@@ -614,6 +642,96 @@ export function waterfallChart() {
             .remove();
     }
     
+    // Initialize accessibility features
+    function initializeAccessibility(svg, data) {
+        try {
+            console.log("Initializing accessibility features...");
+            
+            // Create live region for announcements
+            accessibilitySystem.createLiveRegion(d3.select("body"));
+            
+            // Create chart description
+            const chartContainer = svg.node().parentElement;
+            accessibilitySystem.createChartDescription(
+                d3.select(chartContainer), 
+                data, 
+                {
+                    title: "Waterfall Chart",
+                    showTotal,
+                    formatNumber
+                }
+            );
+            
+            // Make chart accessible
+            accessibilitySystem.makeAccessible(d3.select(chartContainer), data, {
+                formatNumber,
+                showTotal
+            });
+            
+            // Apply high contrast styles if needed
+            accessibilitySystem.applyHighContrastStyles(d3.select(chartContainer));
+            
+            // Respect reduced motion preferences
+            if (accessibilitySystem.respectsReducedMotion()) {
+                duration = 0;
+            }
+            
+        } catch (error) {
+            console.warn("MintWaterfall: Accessibility initialization failed:", error);
+        }
+    }
+    
+    // Initialize tooltip system
+    function initializeTooltips(svg) {
+        try {
+            console.log("Initializing tooltip system...");
+            
+            // Configure tooltip
+            tooltipSystem.theme(tooltipConfig.theme || "default")
+                        .position(tooltipConfig.position || "smart")
+                        .formatNumber(formatNumber);
+            
+            // Attach tooltip events to bars
+            const barGroups = svg.selectAll(".bar-group");
+            console.log("Found bar groups for tooltips:", barGroups.size());
+            
+            barGroups.on("mouseover.tooltip", function(event, d) {
+                   if (enableTooltips) {
+                       console.log("Tooltip mouseover - data:", d);
+                       tooltipSystem.show(tooltipConfig.content, event, d);
+                   }
+               })
+               .on("mouseout.tooltip", function() {
+                   if (enableTooltips) {
+                       tooltipSystem.hide();
+                   }
+               })
+               .on("mousemove.tooltip", function(event) {
+                   if (enableTooltips) {
+                       tooltipSystem.move(event);
+                   }
+               });
+               
+        } catch (error) {
+            console.warn("MintWaterfall: Tooltip initialization failed:", error);
+        }
+    }
+    
+    // Initialize export functionality
+    function initializeExport(svg, data) {
+        try {
+            // Configure export system
+            exportSystem.config(exportConfig);
+            
+            // Store reference to chart data for export
+            chart._exportData = data;
+            chart._exportContainer = d3.select(svg.node().parentElement);
+            
+        } catch (error) {
+            console.warn("MintWaterfall: Export initialization failed:", error);
+        }
+    }
+
     // Add brush selection functionality
     function addBrushSelection(container, data, xScale, yScale) {
         const brush = brushSystem.createBrush({
@@ -730,6 +848,50 @@ export function waterfallChart() {
 
     chart.scaleType = function(_) {
         return arguments.length ? (scaleType = _, chart) : scaleType;
+    };
+    
+    // Accessibility configuration
+    chart.accessibility = function(_) {
+        return arguments.length ? (enableAccessibility = _, chart) : enableAccessibility;
+    };
+    
+    // Tooltip configuration
+    chart.tooltips = function(_) {
+        return arguments.length ? (enableTooltips = _, chart) : enableTooltips;
+    };
+    
+    chart.tooltipConfig = function(_) {
+        return arguments.length ? (tooltipConfig = { ...tooltipConfig, ..._ }, chart) : tooltipConfig;
+    };
+    
+    // Export configuration
+    chart.export = function(format = "svg", options = {}) {
+        if (!chart._exportContainer || !chart._exportData) {
+            throw new Error("Chart must be rendered before exporting");
+        }
+        
+        switch (format.toLowerCase()) {
+            case "svg":
+                return exportSystem.exportSVG(chart._exportContainer, options);
+            case "png":
+                return exportSystem.exportPNG(chart._exportContainer, options);
+            case "jpeg":
+            case "jpg":
+                return exportSystem.exportJPEG(chart._exportContainer, options);
+            case "pdf":
+                return exportSystem.exportPDF(chart._exportContainer, options);
+            case "json":
+            case "csv":
+            case "tsv":
+            case "xml":
+                return exportSystem.exportData(chart._exportData, format, options);
+            default:
+                throw new Error(`Unsupported export format: ${format}`);
+        }
+    };
+    
+    chart.exportConfig = function(_) {
+        return arguments.length ? (exportConfig = { ...exportConfig, ..._ }, chart) : exportConfig;
     };
 
     // Event handling methods

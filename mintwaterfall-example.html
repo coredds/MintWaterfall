@@ -209,9 +209,9 @@
     
     <!-- Chart 1: Revenue Analysis -->
     <div class="chart-container">
-        <h2>Revenue Analysis - Interactive Tooltips Demo</h2>
+        <h2>Revenue Analysis - Interactive Features Demo</h2>
         <p style="text-align: center; color: #666; font-style: italic; margin-bottom: 20px;">
-            🖱️ Hover over any bar to see detailed information in interactive tooltips
+            Enable accessibility, tooltips, and export features - Tab + Arrow keys navigation - Smart tooltips - Export ready
         </p>
         <div class="theme-selector">
             <label>Theme: </label>
@@ -222,6 +222,21 @@
                 <option value="accessible">Accessible</option>
                 <option value="colorful">Colorful</option>
             </select>
+        </div>
+        
+        <!-- Interactive Feature Controls -->
+        <div class="feature-controls" style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #147B58;">
+            <h4 style="margin: 0 0 10px 0; color: #147B58;">Interactive Features</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center;">
+                <button onclick="toggleAccessibility('chart1')" id="accessibility-btn-chart1" style="background: linear-gradient(45deg, #2c3e50, #34495e);">Enable Accessibility</button>
+                <button onclick="toggleTooltips('chart1')" id="tooltips-btn-chart1" style="background: linear-gradient(45deg, #8e44ad, #9b59b6);">Enable Tooltips</button>
+                <select onchange="changeTooltipTheme('chart1', this.value)" id="tooltip-theme-chart1" style="padding: 8px; border-radius: 6px;">
+                    <option value="default">Default Tooltip</option>
+                    <option value="light">Light Tooltip</option>
+                    <option value="minimal">Minimal Tooltip</option>
+                    <option value="corporate">Corporate Tooltip</option>
+                </select>
+            </div>
         </div>
         <svg id="chart1" width="1100" height="400"></svg>
         <div class="controls">
@@ -239,7 +254,25 @@
 
     <!-- Chart 2: Cost Analysis -->
     <div class="chart-container">
-        <h2>Cost Analysis - Animation & Data Processing Demo</h2>
+        <h2>Cost Analysis - Interactive Features + Animation Demo</h2>
+        <p style="text-align: center; color: #666; font-style: italic; margin-bottom: 10px;">
+            Test interactive features in waterfall mode - Full accessibility support - Professional tooltips
+        </p>
+        
+        <!-- Interactive Feature Controls -->
+        <div class="feature-controls" style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #147B58;">
+            <h4 style="margin: 0 0 10px 0; color: #147B58;">Interactive Features</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center;">
+                <button onclick="toggleAccessibility('chart2')" id="accessibility-btn-chart2" style="background: linear-gradient(45deg, #2c3e50, #34495e);">Enable Accessibility</button>
+                <button onclick="toggleTooltips('chart2')" id="tooltips-btn-chart2" style="background: linear-gradient(45deg, #8e44ad, #9b59b6);">Enable Tooltips</button>
+                <select onchange="changeTooltipTheme('chart2', this.value)" id="tooltip-theme-chart2" style="padding: 8px; border-radius: 6px;">
+                    <option value="default">Default Tooltip</option>
+                    <option value="light">Light Tooltip</option>
+                    <option value="minimal">Minimal Tooltip</option>
+                    <option value="corporate">Corporate Tooltip</option>
+                </select>
+            </div>
+        </div>
         <svg id="chart2" width="1100" height="400"></svg>
         <div class="controls">
             <button onclick="toggleStacked('chart2')">Switch to Stacked</button>
@@ -304,9 +337,9 @@
 
     <!-- Enhanced Features Demo Chart -->
     <div class="chart-container">
-        <h2>🚀 Enhanced Features Demo - Brush Selection & Staggered Animations</h2>
+        <h2>Enhanced Features Demo - Brush Selection & Staggered Animations</h2>
         <p style="text-align: center; color: #666; font-style: italic; margin-bottom: 20px;">
-            🖱️ Drag to select data ranges • ⚡ Staggered animations • 📊 Advanced scales
+            Drag to select data ranges - Staggered animations - Advanced scales
         </p>
         <svg id="chartAdvanced" width="1100" height="400"></svg>
         <div class="controls">
@@ -322,15 +355,19 @@
     </div>
 
     <script type="module">
-        // Import all MintWaterfall modules including new features
+        // Import all MintWaterfall modules including interactive features
         import { waterfallChart } from './mintwaterfall-chart.js';
         import { themes, applyTheme } from './mintwaterfall-themes.js';
         import { dataProcessor } from './mintwaterfall-data.js';
         import { animationSystem } from './mintwaterfall-animations.js';
-        import { createTooltip } from './mintwaterfall-tooltip.js';
+        import { createTooltipSystem } from './mintwaterfall-tooltip.js';
+        import { createAccessibilitySystem } from './mintwaterfall-accessibility.js';
+        import { createExportSystem } from './mintwaterfall-export.js';
 
-        // Create tooltip instance for interactive charts
-        const tooltip = createTooltip();
+        // Create interactive system instances
+        const tooltipSystem = createTooltipSystem();
+        const accessibilitySystem = createAccessibilitySystem();
+        const exportSystem = createExportSystem();
 
         // Sample data
         let revenueData = [
@@ -384,45 +421,45 @@
 
         let costData = [
             {
-                label: "Initial Budget",
-                stacks: [
-                    { value: 100, color: "#2ecc71", label: "100K" }
-                ]
-            },
-            {
                 label: "Marketing",
                 stacks: [
-                    { value: -25, color: "#e74c3c", label: "-25K" }
+                    { value: 15, color: "#e74c3c", label: "Digital: 15K" },
+                    { value: 10, color: "#c0392b", label: "Print: 10K" }
                 ]
             },
             {
                 label: "Development",
                 stacks: [
-                    { value: -35, color: "#e67e22", label: "-35K" }
+                    { value: 20, color: "#e67e22", label: "Frontend: 20K" },
+                    { value: 15, color: "#d35400", label: "Backend: 15K" }
                 ]
             },
             {
                 label: "Operations",
                 stacks: [
-                    { value: -15, color: "#f39c12", label: "-15K" }
+                    { value: 8, color: "#f39c12", label: "Staff: 8K" },
+                    { value: 7, color: "#f1c40f", label: "Tools: 7K" }
                 ]
             },
             {
                 label: "Infrastructure",
                 stacks: [
-                    { value: -20, color: "#9b59b6", label: "-20K" }
+                    { value: 12, color: "#9b59b6", label: "Servers: 12K" },
+                    { value: 8, color: "#8e44ad", label: "Network: 8K" }
                 ]
             },
             {
                 label: "Support",
                 stacks: [
-                    { value: -12, color: "#34495e", label: "-12K" }
+                    { value: 7, color: "#34495e", label: "Help Desk: 7K" },
+                    { value: 5, color: "#2c3e50", label: "Training: 5K" }
                 ]
             },
             {
-                label: "Savings",
+                label: "Quality Assurance",
                 stacks: [
-                    { value: 10, color: "#27ae60", label: "+10K" }
+                    { value: 10, color: "#27ae60", label: "Testing: 10K" },
+                    { value: 8, color: "#16a085", label: "Review: 8K" }
                 ]
             }
         ];
@@ -611,7 +648,7 @@
             }
         ];
 
-        // Chart configurations
+        // Chart configurations with interactive features
         const charts = {
             chart1: {
                 chart: waterfallChart()
@@ -619,19 +656,29 @@
                     .height(400)
                     .showTotal(true)
                     .totalLabel('Total Revenue')
-                    .stacked(true),
+                    .stacked(true)
+                    .accessibility(false)
+                    .tooltips(false),
                 data: revenueData,
-                currentTheme: 'default'
+                currentTheme: 'default',
+                accessibilityEnabled: false,
+                tooltipsEnabled: false,
+                currentTooltipTheme: 'default'
             },
             chart2: {
                 chart: waterfallChart()
                     .width(1100)
                     .height(400)
                     .showTotal(true)
-                    .totalLabel('Remaining Budget')
-                    .stacked(false),
+                    .totalLabel('Total Budget')
+                    .stacked(false)
+                    .accessibility(false)
+                    .tooltips(false),
                 data: costData,
-                currentTheme: 'default'
+                currentTheme: 'default',
+                accessibilityEnabled: false,
+                tooltipsEnabled: false,
+                currentTooltipTheme: 'default'
             },
             chart3: {
                 chart: waterfallChart()
@@ -686,27 +733,9 @@
             // Add event listeners
             chart.on('barClick', function(event, d) {
                 const total = d.stacks.reduce((sum, s) => sum + s.value, 0);
+                console.log(`Clicked on ${d.label}: ${total}`);
                 alert(`Clicked on ${d.label}: ${total}`);
             });
-
-            // Add tooltip functionality specifically to chart1
-            if (chartId === 'chart1') {
-                chart.on('barMouseover', function(event, d) {
-                    tooltip.show(event, d);
-                });
-
-                chart.on('barMouseout', function(event, d) {
-                    tooltip.hide();
-                });
-            } else {
-                chart.on('barMouseover', function(event, d) {
-                    // Handle bar hover events for other charts
-                });
-
-                chart.on('barMouseout', function(event, d) {
-                    // Handle bar mouse leave events for other charts
-                });
-            }
 
             // Enhanced features for advanced chart
             if (chartId === 'chartAdvanced') {
@@ -751,6 +780,87 @@
                 d3.select(`#${chartId}`).datum(data).call(chart);
             }
         });
+
+        // Interactive Feature Control Functions
+        window.toggleAccessibility = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                const newState = !chartConfig.accessibilityEnabled;
+                chartConfig.accessibilityEnabled = newState;
+                
+                // Update chart configuration
+                chartConfig.chart.accessibility(newState);
+                
+                // Re-render chart
+                d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                
+                // Update button text
+                const button = document.getElementById(`accessibility-btn-${chartId}`);
+                if (button) {
+                    button.textContent = newState ? 'Disable Accessibility' : 'Enable Accessibility';
+                    button.style.background = newState ? 
+                        'linear-gradient(45deg, #27ae60, #2ecc71)' : 
+                        'linear-gradient(45deg, #2c3e50, #34495e)';
+                }
+                
+                console.log(`Chart ${chartId}: Accessibility ${newState ? 'enabled' : 'disabled'}`);
+            }
+        };
+
+        window.toggleTooltips = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                const newState = !chartConfig.tooltipsEnabled;
+                chartConfig.tooltipsEnabled = newState;
+                
+                // Update chart configuration
+                chartConfig.chart.tooltips(newState);
+                
+                // Configure tooltip theme if enabling
+                if (newState) {
+                    const tooltipConfig = {
+                        theme: chartConfig.currentTooltipTheme,
+                        content: undefined // Use default content
+                    };
+                    chartConfig.chart.tooltipConfig(tooltipConfig);
+                }
+                
+                // Re-render chart
+                d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                
+                // Update button text
+                const button = document.getElementById(`tooltips-btn-${chartId}`);
+                if (button) {
+                    button.textContent = newState ? 'Disable Tooltips' : 'Enable Tooltips';
+                    button.style.background = newState ? 
+                        'linear-gradient(45deg, #27ae60, #2ecc71)' : 
+                        'linear-gradient(45deg, #8e44ad, #9b59b6)';
+                }
+                
+                console.log(`Chart ${chartId}: Tooltips ${newState ? 'enabled' : 'disabled'}`);
+            }
+        };
+
+        window.changeTooltipTheme = function(chartId, themeName) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                chartConfig.currentTooltipTheme = themeName;
+                
+                // Update tooltip configuration if tooltips are enabled
+                if (chartConfig.tooltipsEnabled) {
+                    const tooltipConfig = {
+                        theme: themeName,
+                        content: undefined // Use default content
+                    };
+                    chartConfig.chart.tooltipConfig(tooltipConfig);
+                    
+                    // Re-render chart to apply new tooltip theme
+                    d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                }
+                
+                console.log(`Chart ${chartId}: Tooltip theme changed to ${themeName}`);
+            }
+        };
 
         // Global functions for UI controls
         window.changeTheme = function(chartId, themeName) {
@@ -1024,12 +1134,12 @@
                         }, 1600);
                     }, 50);
                     
-                    showFeedback(chartId, `✓ Applied ${easingType} easing animation`, 'success');
+                    showFeedback(chartId, `Applied ${easingType} easing animation`, 'success');
                 } catch (error) {
-                    showFeedback(chartId, '✗ Error applying easing: ' + error.message, 'error');
+                    showFeedback(chartId, 'Error applying easing: ' + error.message, 'error');
                 }
             } else {
-                showFeedback(chartId, '✗ No chart config found', 'error');
+                showFeedback(chartId, 'No chart config found', 'error');
             }
         };
 
@@ -1045,7 +1155,7 @@
                 chartConfig.data = sortedData;
                 d3.select(`#${chartId}`).datum(sortedData).call(chartConfig.chart);
                 
-                showFeedback(chartId, '✓ Sorted by total value (waterfall order affects cumulative totals)', 'success');
+                showFeedback(chartId, 'Sorted by total value (waterfall order affects cumulative totals)', 'success');
             }
         };
 
@@ -1055,7 +1165,7 @@
                 chartConfig.data = JSON.parse(JSON.stringify(chartConfig.originalData));
                 d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
             } else {
-                showFeedback(chartId, '✗ No original data to reset to', 'error');
+                showFeedback(chartId, 'No original data to reset to', 'error');
             }
         };
 
@@ -1068,12 +1178,12 @@
                     d3.select(`#${chartId}`).datum(normalizedData).call(chartConfig.chart);
                     
                     // Show visual feedback
-                    showFeedback(chartId, '✓ Data normalized to max value of 100', 'success');
+                    showFeedback(chartId, 'Data normalized to max value of 100', 'success');
                 } catch (error) {
-                    showFeedback(chartId, '✗ Error normalizing data: ' + error.message, 'error');
+                    showFeedback(chartId, 'Error normalizing data: ' + error.message, 'error');
                 }
             } else {
-                showFeedback(chartId, '✗ No chart config found', 'error');
+                showFeedback(chartId, 'No chart config found', 'error');
             }
         };
 
@@ -1231,12 +1341,15 @@
         };
 
         // Log successful initialization
-        console.log('🚀 MintWaterfall v0.5.6 initialized with Enhanced D3.js Features!');
-        console.log('📊 Charts:', Object.keys(charts));
-        console.log('🎨 Available themes:', Object.keys(themes));
-        console.log('🔧 Data processor loaded with', Object.keys(dataProcessor).length, 'methods');
-        console.log('✨ Animation system loaded with', Object.keys(animationSystem).length, 'features');
-        console.log('🎯 New Features: Staggered Animations, Brush Selection, Advanced Scales');
+        console.log('MintWaterfall v0.5.6 initialized with Interactive Features!');
+        console.log('Charts:', Object.keys(charts));
+        console.log('Available themes:', Object.keys(themes));
+        console.log('Data processor loaded with', Object.keys(dataProcessor).length, 'methods');
+        console.log('Animation system loaded with', Object.keys(animationSystem).length, 'features');
+        console.log('Interactive Features: Accessibility (WCAG 2.1 AA), Professional Tooltips, Export System');
+        console.log('Accessibility: Tab navigation, Arrow keys, Screen reader support');
+        console.log('Tooltips: Smart positioning, Multiple themes, Rich content');
+        console.log('Export: SVG, PNG, JSON, CSV formats available');
 
     </script>
 
