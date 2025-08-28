@@ -71,6 +71,13 @@ export interface WaterfallChart {
     scaleType(): string;
     scaleType(value: string): WaterfallChart;
     
+    // Zoom and pan functionality
+    zoom(): boolean;
+    zoom(value: boolean): WaterfallChart;
+    
+    zoomConfig(): any;
+    zoomConfig(value: any): WaterfallChart;
+    
     // Event handling
     on(event: string, handler: BarEventHandler): WaterfallChart;
     on(event: string, handler: null): WaterfallChart;
@@ -120,15 +127,19 @@ export declare const animationSystem: {
 export declare function createAccessibilitySystem(): any;
 export declare function createTooltipSystem(): any;
 export declare function createExportSystem(): any;
+export declare function createZoomSystem(): any;
 
 export declare const accessibilitySystem: any;
 export declare const tooltip: any;
 export declare const exportSystem: any;
+export declare const zoomSystem: any;
 
 // Utility functions
 export declare function makeChartAccessible(chart: any, data: ChartData[]): void;
 export declare function createChartTooltip(config?: any): any;
 export declare function addExportToChart(chart: any, data: ChartData[]): void;
+export declare function createZoomControls(): any;
+export declare function addZoomToChart(chart: any, options?: any): any;
 
 // Enhanced features
 export declare const brushSystem: any;

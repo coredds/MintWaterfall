@@ -15,6 +15,9 @@ export { createAccessibilitySystem, accessibilitySystem, makeChartAccessible } f
 export { createTooltipSystem, createChartTooltip, tooltip } from "../mintwaterfall-tooltip.js";
 export { createExportSystem, addExportToChart, exportSystem } from "../mintwaterfall-export.js";
 
+// Phase 2: Enhanced Interactivity Features  
+export { createZoomSystem, createZoomControls, addZoomToChart, zoomSystem } from "../mintwaterfall-zoom.js";
+
 // Version information
 export const version = "0.5.6";
 

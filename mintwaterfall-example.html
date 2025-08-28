@@ -9,23 +9,50 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
+        /* Reset and base styles */
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Roboto', sans-serif;
-            margin: 20px;
+            margin: 0;
+            padding: 10px;
             background: #147B58;
             color: white;
             min-height: 100vh;
+            line-height: 1.6;
         }
 
         .chart-container {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 15px;
-            padding: 30px;
-            margin: 20px auto;
+            padding: 20px;
+            margin: 10px auto;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             color: #333;
             max-width: 1200px;
             text-align: center;
+            width: 100%;
+        }
+
+        /* Responsive container for charts */
+        .chart-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            margin: 15px 0;
+            /* Remove fixed min-height to prevent empty space */
+        }
+
+        /* Ensure SVG charts are visible and responsive */
+        svg {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+            /* Prevent iOS Safari from hiding SVG content */
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
         }
 
         .waterfall-container {
@@ -121,10 +148,14 @@
             margin-top: 4px;
         }
 
-        /* Controls */
+        /* Controls - Responsive */
         .controls {
             margin: 20px 0;
             text-align: center;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
         }
 
         button {
@@ -132,7 +163,6 @@
             color: white;
             border: none;
             padding: 10px 20px;
-            margin: 5px;
             border-radius: 25px;
             cursor: pointer;
             font-family: 'Roboto', sans-serif;
@@ -140,12 +170,60 @@
             font-size: 14px;
             transition: all 0.2s ease;
             box-shadow: 0 4px 8px rgba(20, 123, 88, 0.3);
+            min-width: 120px;
+            white-space: nowrap;
         }
 
         button:hover {
             background: linear-gradient(45deg, #1a9d6b, #20b377);
             transform: translateY(-2px);
             box-shadow: 0 6px 12px rgba(20, 123, 88, 0.4);
+        }
+
+        /* Feature controls - override inline styles */
+        .feature-controls {
+            margin: 15px 0 !important;
+            padding: 15px !important;
+            background: #f8f9fa !important;
+            border-radius: 8px !important;
+            border-left: 4px solid #147B58 !important;
+            text-align: center;
+        }
+
+        .feature-controls h4 {
+            margin: 0 0 10px 0 !important;
+            color: #147B58 !important;
+            font-size: 16px;
+        }
+
+        .feature-controls > div {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 10px !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        .control-group {
+            background: rgba(20, 123, 88, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(20, 123, 88, 0.2);
+            text-align: center;
+        }
+
+        .control-group h4 {
+            margin: 0 0 10px 0;
+            color: #147B58;
+            font-size: 16px;
+        }
+
+        .feature-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
         }
 
         button:active {
@@ -189,11 +267,13 @@
             background: linear-gradient(45deg, #f39c12, #f1c40f);
         }
 
+        /* Responsive Typography */
         h1 {
             text-align: center;
             margin-bottom: 30px;
-            font-size: 2.5em;
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            line-height: 1.2;
         }
 
         h2 {
@@ -201,6 +281,124 @@
             border-bottom: 3px solid #147B58;
             padding-bottom: 10px;
             margin-bottom: 20px;
+            font-size: clamp(1.4rem, 3vw, 1.8rem);
+            line-height: 1.3;
+        }
+
+        h3 {
+            color: #147B58;
+            margin: 20px 0 15px 0;
+            font-weight: 500;
+            font-size: clamp(1.2rem, 2.5vw, 1.4rem);
+            line-height: 1.4;
+        }
+
+        p {
+            font-size: clamp(0.9rem, 2vw, 1rem);
+            line-height: 1.6;
+            margin: 10px 0;
+        }
+
+        /* Responsive Breakpoints */
+        /* iPad and tablet styles */
+        @media (max-width: 1024px) and (min-width: 769px) {
+            .chart-container {
+                padding: 20px;
+                margin: 15px auto;
+            }
+            
+            .chart-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                /* Remove min-height for tablets */
+            }
+            
+            svg {
+                width: 100% !important;
+                max-width: 900px !important;
+                height: auto !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+            
+            .chart-container {
+                padding: 15px;
+                margin: 5px auto;
+                border-radius: 10px;
+            }
+            
+            .controls {
+                gap: 8px;
+            }
+            
+            button {
+                padding: 8px 16px;
+                font-size: 13px;
+                min-width: 100px;
+            }
+            
+            .feature-controls {
+                margin: 10px 0 !important;
+                padding: 10px !important;
+            }
+            
+            .control-group {
+                padding: 12px;
+            }
+            
+            .chart-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                /* Remove min-height for mobile */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .chart-container {
+                padding: 10px;
+                border-radius: 8px;
+            }
+            
+            button {
+                padding: 6px 12px;
+                font-size: 12px;
+                min-width: 80px;
+            }
+            
+            .control-group {
+                padding: 10px;
+            }
+            
+            .control-group h4 {
+                font-size: 14px;
+            }
+            
+            .feature-controls {
+                margin: 5px 0 !important;
+                padding: 8px !important;
+            }
+            
+            .feature-controls h4 {
+                margin: 0 0 5px 0 !important;
+                font-size: 14px !important;
+            }
+            
+            .chart-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin: 10px 0; /* Reduce margin on mobile */
+                /* Remove min-height for small mobile */
+            }
+            
+            svg {
+                min-width: 320px; /* Minimum width for mobile */
+                width: auto !important;
+                height: auto !important;
+            }
         }
     </style>
 </head>
@@ -230,6 +428,7 @@
             <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center;">
                 <button onclick="toggleAccessibility('chart1')" id="accessibility-btn-chart1" style="background: linear-gradient(45deg, #2c3e50, #34495e);">Enable Accessibility</button>
                 <button onclick="toggleTooltips('chart1')" id="tooltips-btn-chart1" style="background: linear-gradient(45deg, #8e44ad, #9b59b6);">Enable Tooltips</button>
+                <button onclick="toggleZoom('chart1')" id="zoom-btn-chart1" style="background: linear-gradient(45deg, #e67e22, #f39c12);">Enable Zoom & Pan</button>
                 <select onchange="changeTooltipTheme('chart1', this.value)" id="tooltip-theme-chart1" style="padding: 8px; border-radius: 6px;">
                     <option value="default">Default Tooltip</option>
                     <option value="light">Light Tooltip</option>
@@ -238,7 +437,9 @@
                 </select>
             </div>
         </div>
-        <svg id="chart1" width="1100" height="400"></svg>
+        <div class="chart-wrapper">
+            <svg id="chart1" width="1100" height="400"></svg>
+        </div>
         <div class="controls">
             <button onclick="toggleStacked('chart1')">Switch to Waterfall</button>
             <button onclick="toggleTotal('chart1')">Toggle Total</button>
@@ -265,6 +466,7 @@
             <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center;">
                 <button onclick="toggleAccessibility('chart2')" id="accessibility-btn-chart2" style="background: linear-gradient(45deg, #2c3e50, #34495e);">Enable Accessibility</button>
                 <button onclick="toggleTooltips('chart2')" id="tooltips-btn-chart2" style="background: linear-gradient(45deg, #8e44ad, #9b59b6);">Enable Tooltips</button>
+                <button onclick="toggleZoom('chart2')" id="zoom-btn-chart2" style="background: linear-gradient(45deg, #e67e22, #f39c12);">Enable Zoom & Pan</button>
                 <select onchange="changeTooltipTheme('chart2', this.value)" id="tooltip-theme-chart2" style="padding: 8px; border-radius: 6px;">
                     <option value="default">Default Tooltip</option>
                     <option value="light">Light Tooltip</option>
@@ -273,7 +475,9 @@
                 </select>
             </div>
         </div>
-        <svg id="chart2" width="1100" height="400"></svg>
+        <div class="chart-wrapper">
+            <svg id="chart2" width="1100" height="400"></svg>
+        </div>
         <div class="controls">
             <button onclick="toggleStacked('chart2')">Switch to Stacked</button>
             <button class="animation-btn" onclick="animateChart('chart2')">Animate</button>
@@ -363,11 +567,13 @@
         import { createTooltipSystem } from './mintwaterfall-tooltip.js';
         import { createAccessibilitySystem } from './mintwaterfall-accessibility.js';
         import { createExportSystem } from './mintwaterfall-export.js';
+        import { createZoomSystem, createZoomControls } from './mintwaterfall-zoom.js';
 
         // Create interactive system instances
         const tooltipSystem = createTooltipSystem();
         const accessibilitySystem = createAccessibilitySystem();
         const exportSystem = createExportSystem();
+        const zoomSystem = createZoomSystem();
 
         // Sample data
         let revenueData = [
@@ -1340,18 +1546,198 @@
             }
         };
 
+        // Interactive feature toggle functions
+        window.toggleAccessibility = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                const currentState = chartConfig.chart.accessibility();
+                chartConfig.chart.accessibility(!currentState);
+                d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                
+                const button = document.getElementById(`accessibility-btn-${chartId}`);
+                if (button) {
+                    button.textContent = !currentState ? 'Disable Accessibility' : 'Enable Accessibility';
+                    button.style.background = !currentState ? 
+                        'linear-gradient(45deg, #27ae60, #2ecc71)' : 
+                        'linear-gradient(45deg, #2c3e50, #34495e)';
+                }
+                
+                showFeedback(chartId, 
+                    `Accessibility ${!currentState ? 'enabled' : 'disabled'}`, 
+                    'success'
+                );
+            }
+        };
+
+        window.toggleTooltips = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                const currentState = chartConfig.chart.tooltips();
+                chartConfig.chart.tooltips(!currentState);
+                d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                
+                const button = document.getElementById(`tooltips-btn-${chartId}`);
+                if (button) {
+                    button.textContent = !currentState ? 'Disable Tooltips' : 'Enable Tooltips';
+                    button.style.background = !currentState ? 
+                        'linear-gradient(45deg, #8e44ad, #9b59b6)' : 
+                        'linear-gradient(45deg, #8e44ad, #9b59b6)';
+                }
+                
+                showFeedback(chartId, 
+                    `Tooltips ${!currentState ? 'enabled' : 'disabled'}`, 
+                    'success'
+                );
+            }
+        };
+
+        window.toggleZoom = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                const currentState = chartConfig.chart.zoom();
+                chartConfig.chart.zoom(!currentState);
+                d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                
+                const button = document.getElementById(`zoom-btn-${chartId}`);
+                if (button) {
+                    button.textContent = !currentState ? 'Disable Zoom & Pan' : 'Enable Zoom & Pan';
+                    button.style.background = !currentState ? 
+                        'linear-gradient(45deg, #27ae60, #2ecc71)' : 
+                        'linear-gradient(45deg, #e67e22, #f39c12)';
+                }
+                
+                showFeedback(chartId, 
+                    `Zoom & Pan ${!currentState ? 'enabled - Use mouse wheel to zoom, drag to pan' : 'disabled'}`, 
+                    'success'
+                );
+            }
+        };
+
+        window.changeTooltipTheme = function(chartId, themeName) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                chartConfig.chart.tooltipConfig({ theme: themeName });
+                d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                
+                showFeedback(chartId, `Tooltip theme: ${themeName}`, 'success');
+            }
+        };
+
+        // Responsive chart functionality - improved for touch devices
+        function makeChartsResponsive() {
+            // Wait for charts to be fully rendered first
+            const checkChartsReady = () => {
+                const chartElements = document.querySelectorAll('svg[id^="chart"]');
+                let allChartsReady = true;
+                
+                chartElements.forEach(svg => {
+                    // Check if chart has actual content (bars, not just empty SVG)
+                    const hasContent = svg.querySelector('.bar-group') || svg.querySelector('rect') || svg.querySelector('g');
+                    if (!hasContent) {
+                        allChartsReady = false;
+                    }
+                });
+                
+                if (!allChartsReady) {
+                    // Charts not ready yet, check again in 200ms
+                    setTimeout(checkChartsReady, 200);
+                    return;
+                }
+                
+                // Charts are ready, apply responsive behavior
+                chartElements.forEach(svg => {
+                    const chartId = svg.id;
+                    const container = svg.parentElement;
+                    
+                    // Get original dimensions from the rendered chart
+                    const bbox = svg.getBBox ? svg.getBBox() : { width: 1100, height: 400 };
+                    const originalWidth = parseInt(svg.getAttribute('width')) || bbox.width || 1100;
+                    const originalHeight = parseInt(svg.getAttribute('height')) || bbox.height || 400;
+                    
+                    function resizeChart() {
+                        const containerWidth = container.clientWidth;
+                        const availableWidth = containerWidth - 40; // 20px padding on each side
+                        
+                        // For tablets and mobile, ensure chart is visible
+                        if (availableWidth < originalWidth && availableWidth > 320) {
+                            // Set responsive styles without changing chart dimensions
+                            svg.style.width = '100%';
+                            svg.style.maxWidth = `${availableWidth}px`;
+                            svg.style.height = 'auto';
+                            svg.setAttribute('viewBox', `0 0 ${originalWidth} ${originalHeight}`);
+                            svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+                        } else if (availableWidth >= originalWidth) {
+                            // Reset to original size for desktop
+                            svg.style.width = `${originalWidth}px`;
+                            svg.style.maxWidth = '100%';
+                            svg.style.height = `${originalHeight}px`;
+                            svg.removeAttribute('viewBox');
+                            svg.removeAttribute('preserveAspectRatio');
+                        }
+                    }
+                    
+                    // Set initial responsive styles
+                    svg.style.maxWidth = '100%';
+                    svg.style.display = 'block';
+                    svg.style.margin = '0 auto';
+                    
+                    // Initial resize
+                    resizeChart();
+                    
+                    // Add resize listener (debounced)
+                    let resizeTimeout;
+                    window.addEventListener('resize', () => {
+                        clearTimeout(resizeTimeout);
+                        resizeTimeout = setTimeout(resizeChart, 150);
+                    });
+                    
+                    // Add orientation change listener for mobile devices
+                    window.addEventListener('orientationchange', () => {
+                        setTimeout(resizeChart, 300); // Delay for orientation change
+                    });
+                });
+            };
+            
+            // Start checking for charts
+            checkChartsReady();
+        }
+        
+        // Initialize responsive charts after a longer delay to ensure full initialization
+        setTimeout(makeChartsResponsive, 1000);
+        
+        // Fallback: Ensure charts are visible even if responsive JS fails
+        setTimeout(() => {
+            const chartElements = document.querySelectorAll('svg[id^="chart"]');
+            chartElements.forEach(svg => {
+                if (!svg.style.maxWidth) {
+                    svg.style.maxWidth = '100%';
+                    svg.style.height = 'auto';
+                    svg.style.display = 'block';
+                    svg.style.margin = '0 auto';
+                }
+                
+                // Force visibility for touch devices
+                if ('ontouchstart' in window) {
+                    svg.style.visibility = 'visible';
+                    svg.style.opacity = '1';
+                    svg.setAttribute('viewBox', `0 0 ${svg.getAttribute('width') || 1100} ${svg.getAttribute('height') || 400}`);
+                    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+                }
+            });
+        }, 2000);
+        
         // Log successful initialization
         console.log('MintWaterfall v0.5.6 initialized with Interactive Features!');
         console.log('Charts:', Object.keys(charts));
         console.log('Available themes:', Object.keys(themes));
         console.log('Data processor loaded with', Object.keys(dataProcessor).length, 'methods');
         console.log('Animation system loaded with', Object.keys(animationSystem).length, 'features');
-        console.log('Interactive Features: Accessibility (WCAG 2.1 AA), Professional Tooltips, Export System');
+        console.log('Interactive Features: Accessibility (WCAG 2.1 AA), Professional Tooltips, Export System, Zoom & Pan, Responsive Design');
         console.log('Accessibility: Tab navigation, Arrow keys, Screen reader support');
         console.log('Tooltips: Smart positioning, Multiple themes, Rich content');
         console.log('Export: SVG, PNG, JSON, CSV formats available');
-
-    </script>
+        console.log('Zoom & Pan: Mouse wheel zoom, drag to pan, zoom controls');
+        console.log('Responsive: Mobile-first design, Adaptive charts, Flexible layouts');
 
     </script>
 </body>

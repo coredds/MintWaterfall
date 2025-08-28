@@ -6,6 +6,7 @@ import { createBrushSystem } from "./mintwaterfall-brush.js";
 import { createAccessibilitySystem } from "./mintwaterfall-accessibility.js";
 import { createTooltipSystem } from "./mintwaterfall-tooltip.js";
 import { createExportSystem } from "./mintwaterfall-export.js";
+import { createZoomSystem } from "./mintwaterfall-zoom.js";
 
 // Utility function to get bar width from any scale type
 function getBarWidth(scale, barCount, totalWidth) {
@@ -58,6 +59,8 @@ export function waterfallChart() {
     let tooltipConfig = {};
     let enableExport = true;
     let exportConfig = {};
+    let enableZoom = false;
+    let zoomConfig = {};
     
     // Initialize systems
     const scaleSystem = createScaleSystem();
@@ -65,6 +68,7 @@ export function waterfallChart() {
     const accessibilitySystem = createAccessibilitySystem();
     const tooltipSystem = createTooltipSystem();
     const exportSystem = createExportSystem();
+    const zoomSystem = createZoomSystem();
     
     // Event listeners - enhanced with brush events
     const listeners = d3.dispatch("barClick", "barMouseover", "barMouseout", "chartUpdate", "brushSelection");
@@ -101,16 +105,29 @@ export function waterfallChart() {
             const svg = d3.select(this);
             const container = svg.selectAll(".waterfall-container").data([data]);
             
+            // Store reference for zoom system
+            const svgContainer = svg;
+            
             // Create main container group
             const containerEnter = container.enter()
                 .append("g")
                 .attr("class", "waterfall-container");
             
             const containerUpdate = containerEnter.merge(container);
+            
+            // Create chart group for zoom transforms
+            let chartGroup = containerUpdate.select(".chart-group");
+            if (chartGroup.empty()) {
+                chartGroup = containerUpdate.append("g")
+                    .attr("class", "chart-group");
+            }
 
             try {
                 // Prepare data with cumulative calculations
                 const processedData = prepareData(data);
+                
+                // Calculate intelligent margins based on data
+                const intelligentMargins = calculateIntelligentMargins(processedData, margin);
                 
                 // Set up scales using enhanced scale system
                 let xScale;
@@ -132,8 +149,8 @@ export function waterfallChart() {
                         .padding(barPadding);
                 }
                 
-                // Set range for x scale
-                xScale.range([margin.left, width - margin.right]);
+                // Set range for x scale using intelligent margins
+                xScale.range([intelligentMargins.left, width - intelligentMargins.right]);
 
                 // Enhanced Y scale using d3.extent and nice()
                 const yValues = processedData.map(d => d.cumulativeTotal);
@@ -149,11 +166,11 @@ export function waterfallChart() {
                     const padding = range * 0.05; // 5% padding
                     yScale = d3.scaleLinear()
                         .domain([min - padding, max + padding])
-                        .range([height - margin.bottom, margin.top]);
+                        .range([height - intelligentMargins.bottom, intelligentMargins.top]);
                 } else {
                     // For positive-only data, start at 0
                     yScale = scaleSystem.createLinearScale(yValues, {
-                        range: [height - margin.bottom, margin.top],
+                        range: [height - intelligentMargins.bottom, intelligentMargins.top],
                         nice: true,
                         padding: 0.02,
                         includeZero: true
@@ -161,20 +178,16 @@ export function waterfallChart() {
                 }
 
                 // Create/update grid
-                drawGrid(containerUpdate, yScale);
+                drawGrid(containerUpdate, yScale, intelligentMargins);
                 
-                // Create/update axes
-                drawAxes(containerUpdate, xScale, yScale);
+                // Create/update axes (on container, not chart group)
+                drawAxes(containerUpdate, xScale, yScale, intelligentMargins);
                 
-                // Create/update bars with enhanced animations
-                if (staggeredAnimations) {
-                    drawBarsWithStagger(containerUpdate, processedData, xScale, yScale);
-                } else {
-                    drawBars(containerUpdate, processedData, xScale, yScale);
-                }
+                // Create/update bars with enhanced animations (in chart group for zoom)
+                drawBars(chartGroup, processedData, xScale, yScale, intelligentMargins);
                 
-                // Create/update connectors
-                drawConnectors(containerUpdate, processedData, xScale, yScale);
+                // Create/update connectors (in chart group for zoom)
+                drawConnectors(chartGroup, processedData, xScale, yScale);
                 
                 // Add brush functionality if enabled
                 if (enableBrush) {
@@ -193,6 +206,14 @@ export function waterfallChart() {
                     if (enableExport) {
                         initializeExport(svg, processedData);
                     }
+                    
+                    if (enableZoom) {
+                        initializeZoom(svgContainer, { width, height, margin: intelligentMargins });
+                    } else {
+                        // Disable zoom if it was previously enabled
+                        zoomSystem.enabled(false);
+                        svgContainer.on('.zoom', null);
+                    }
                 }, 50); // Small delay to ensure DOM is ready
                 
             } catch (error) {
@@ -210,6 +231,86 @@ export function waterfallChart() {
                     .text(`Chart Error: ${error.message}`);
             }
         });
+    }
+
+    function calculateIntelligentMargins(processedData, baseMargin) {
+        // Calculate required space for labels - handle all edge cases
+        const allValues = processedData.flatMap(d => [d.cumulativeTotal, d.prevCumulativeTotal || 0]);
+        const maxValue = d3.max(allValues);
+        const minValue = d3.min(allValues);
+        
+        // Estimate label dimensions
+        const labelHeight = 14;
+        const labelPadding = 5;
+        const requiredLabelSpace = labelHeight + labelPadding;
+        const safetyBuffer = 10;
+        
+        // Handle edge cases for different data scenarios
+        const hasNegativeValues = minValue < 0;
+        const hasPositiveValues = maxValue > 0;
+        
+        // Create temporary scale that matches the actual rendering logic
+        let tempYScale;
+        const tempRange = [height - baseMargin.bottom, baseMargin.top];
+        
+        if (hasNegativeValues) {
+            // Match the actual scale logic for negative values
+            const range = maxValue - minValue;
+            const padding = range * 0.05; // 5% padding (same as actual scale)
+            tempYScale = d3.scaleLinear()
+                .domain([minValue - padding, maxValue + padding])
+                .range(tempRange);
+        } else {
+            // For positive-only data, start at 0 with padding
+            const paddedMax = maxValue * 1.02; // 2% padding (same as actual scale)
+            tempYScale = d3.scaleLinear()
+                .domain([0, paddedMax])
+                .range(tempRange)
+                .nice(); // Apply nice() like the actual scale
+        }
+        
+        // Find the highest point where any label will be positioned
+        const allLabelPositions = processedData.map(d => {
+            const barTop = tempYScale(d.cumulativeTotal);
+            return barTop - labelPadding;
+        });
+        
+        const highestLabelPosition = Math.min(...allLabelPositions);
+        
+        // Calculate required top margin
+        const spaceNeededFromTop = baseMargin.top - highestLabelPosition + requiredLabelSpace;
+        const extraTopMarginNeeded = Math.max(0, spaceNeededFromTop);
+        
+        // For negative values, we might also need bottom space
+        let extraBottomMargin = 0;
+        if (hasNegativeValues) {
+            const lowestLabelPosition = Math.max(
+                ...processedData
+                    .filter(d => d.cumulativeTotal < 0)
+                    .map(d => tempYScale(d.cumulativeTotal) + labelHeight + labelPadding)
+            );
+            
+            if (lowestLabelPosition > height - baseMargin.bottom) {
+                extraBottomMargin = lowestLabelPosition - (height - baseMargin.bottom);
+            }
+        }
+        
+        // Calculate required right margin for labels
+        // Check if any labels might extend beyond the right edge
+        const maxLabelLength = Math.max(...processedData.map(d => 
+            formatNumber(d.cumulativeTotal).length
+        ));
+        const estimatedLabelWidth = maxLabelLength * 8; // Rough estimate: 8px per character
+        const minRightMargin = Math.max(baseMargin.right, estimatedLabelWidth / 2 + 10);
+        
+        const intelligentMargin = {
+            top: baseMargin.top + extraTopMarginNeeded + safetyBuffer,
+            right: minRightMargin,
+            bottom: baseMargin.bottom + extraBottomMargin + (hasNegativeValues ? safetyBuffer : 5),
+            left: baseMargin.left
+        };
+        
+        return intelligentMargin;
     }
 
     function prepareData(data) {
@@ -249,7 +350,7 @@ export function waterfallChart() {
         return processedData;
     }
 
-    function drawGrid(container, yScale) {
+    function drawGrid(container, yScale, intelligentMargins) {
         const gridGroup = container.selectAll(".grid-group").data([0]);
         const gridGroupEnter = gridGroup.enter()
             .append("g")
@@ -262,8 +363,8 @@ export function waterfallChart() {
         gridLines.enter()
             .append("line")
             .attr("class", "grid-line")
-            .attr("x1", margin.left)
-            .attr("x2", width - margin.right)
+            .attr("x1", intelligentMargins.left)
+            .attr("x2", width - intelligentMargins.right)
             .attr("stroke", theme?.gridColor || "#e0e0e0")
             .attr("stroke-width", 1)
             .merge(gridLines)
@@ -276,13 +377,13 @@ export function waterfallChart() {
         gridLines.exit().remove();
     }
 
-    function drawAxes(container, xScale, yScale) {
+    function drawAxes(container, xScale, yScale, intelligentMargins) {
         // Y-axis
         const yAxisGroup = container.selectAll(".y-axis").data([0]);
         const yAxisGroupEnter = yAxisGroup.enter()
             .append("g")
             .attr("class", "y-axis")
-            .attr("transform", `translate(${margin.left},0)`);
+            .attr("transform", `translate(${intelligentMargins.left},0)`);
         
         yAxisGroupEnter.merge(yAxisGroup)
             .transition()
@@ -295,7 +396,7 @@ export function waterfallChart() {
         const xAxisGroupEnter = xAxisGroup.enter()
             .append("g")
             .attr("class", "x-axis")
-            .attr("transform", `translate(0,${height - margin.bottom})`);
+            .attr("transform", `translate(0,${height - intelligentMargins.bottom})`);
         
         xAxisGroupEnter.merge(xAxisGroup)
             .transition()
@@ -304,7 +405,7 @@ export function waterfallChart() {
             .call(d3.axisBottom(xScale));
     }
 
-    function drawBars(container, processedData, xScale, yScale) {
+    function drawBars(container, processedData, xScale, yScale, intelligentMargins) {
         const barsGroup = container.selectAll(".bars-group").data([0]);
         const barsGroupEnter = barsGroup.enter()
             .append("g")
@@ -342,7 +443,7 @@ export function waterfallChart() {
         }
 
         // Add value labels
-        drawValueLabels(barGroupsUpdate, xScale, yScale);
+        drawValueLabels(barGroupsUpdate, xScale, yScale, intelligentMargins);
 
         barGroups.exit()
             .transition()
@@ -484,10 +585,11 @@ export function waterfallChart() {
         });
     }
 
-    function drawValueLabels(barGroups, xScale, yScale) {
+    function drawValueLabels(barGroups, xScale, yScale, intelligentMargins) {
+        const innerWidth = width - intelligentMargins.left - intelligentMargins.right;
         const barWidth = getBarWidth(xScale, barGroups.size(), innerWidth);
         
-        // Cumulative total labels
+        // Cumulative total labels with intelligent positioning
         const totalLabels = barGroups.selectAll(".total-label").data(d => [d]);
         
         totalLabels.enter()
@@ -501,8 +603,17 @@ export function waterfallChart() {
             .transition()
             .duration(duration)
             .ease(ease)
-            .attr("y", d => yScale(d.cumulativeTotal) - 10)
+            .attr("y", d => {
+                const barTop = yScale(d.cumulativeTotal);
+                const padding = 5;
+                
+                // Always position labels above bars - we've ensured there's enough space
+                return barTop - padding;
+            })
             .style("opacity", 1)
+            .style("fill", "#333") // Always dark text since labels are always above bars
+            .style("font-weight", "bold")
+            .style("font-size", "12px")
             .text(d => formatNumber(d.cumulativeTotal));
 
         totalLabels.exit()
@@ -632,7 +743,7 @@ export function waterfallChart() {
         }
 
         // Add value labels
-        drawValueLabels(barGroupsUpdate, xScale, yScale);
+        drawValueLabels(barGroupsUpdate, xScale, yScale, intelligentMargins);
 
         barGroups.exit()
             .transition()
@@ -729,6 +840,40 @@ export function waterfallChart() {
             
         } catch (error) {
             console.warn("MintWaterfall: Export initialization failed:", error);
+        }
+    }
+    
+    // Initialize zoom functionality
+    function initializeZoom(svg, dimensions) {
+        try {
+            console.log("Initializing zoom system...");
+            
+            // Configure zoom system
+            zoomSystem
+                .enabled(enableZoom)
+                .scaleExtent(zoomConfig.scaleExtent || [0.1, 10])
+                .constrain(zoomConfig.constrain || { x: true, y: true });
+            
+            // Only set wheelDelta if explicitly configured
+            if (zoomConfig.wheelDelta !== undefined) {
+                zoomSystem.wheelDelta(zoomConfig.wheelDelta);
+            }
+            
+            // Apply zoom to SVG container
+            zoomSystem(svg, dimensions);
+            
+            // Set up zoom event handlers
+            zoomSystem
+                .on("zoom", (event, transform) => {
+                    console.log("Zoom transform:", transform);
+                })
+                .on("zoomend", (event, transform) => {
+                    console.log("Zoom ended at:", transform);
+                });
+            
+            console.log("Zoom system initialized successfully");
+        } catch (error) {
+            console.error("Failed to initialize zoom system:", error);
         }
     }
 
@@ -892,6 +1037,15 @@ export function waterfallChart() {
     
     chart.exportConfig = function(_) {
         return arguments.length ? (exportConfig = { ...exportConfig, ..._ }, chart) : exportConfig;
+    };
+    
+    // Zoom configuration
+    chart.zoom = function(_) {
+        return arguments.length ? (enableZoom = _, chart) : enableZoom;
+    };
+    
+    chart.zoomConfig = function(_) {
+        return arguments.length ? (zoomConfig = { ...zoomConfig, ..._ }, chart) : zoomConfig;
     };
 
     // Event handling methods
