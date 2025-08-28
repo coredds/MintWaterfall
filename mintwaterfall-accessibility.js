@@ -311,14 +311,23 @@ export function createAccessibilitySystem() {
         }
     }
     
-    // High contrast mode detection and support (Updated: 2025-08-25)
+    // High contrast mode detection and support (Updated: 2025-08-27)
     function detectHighContrast() {
         // Check for modern forced colors mode and high contrast preferences
         if (window.matchMedia) {
-            return window.matchMedia("(forced-colors: active)").matches ||
-                   window.matchMedia("(prefers-contrast: high)").matches ||
-                   // Fallback for older browsers that still use the deprecated property
-                   window.matchMedia("(-ms-high-contrast: active)").matches;
+            // First check for modern forced-colors mode (preferred)
+            if (window.matchMedia("(forced-colors: active)").matches) {
+                return true;
+            }
+            
+            // Then check for prefers-contrast
+            if (window.matchMedia("(prefers-contrast: high)").matches) {
+                return true;
+            }
+            
+            // Only as a last resort, check the deprecated property
+            // This will eventually be removed in future browsers
+            return window.matchMedia("(-ms-high-contrast: active)").matches;
         }
         return false;
     }

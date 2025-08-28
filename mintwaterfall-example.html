@@ -61,7 +61,7 @@
 
         /* Grid styling */
         .grid-line {
-            stroke: #e0e0e0;
+            stroke: rgba(224, 224, 224, 0.5); /* 50% transparency */
             stroke-width: 1;
         }
 
@@ -1108,7 +1108,7 @@
                     // Add inline styles to ensure proper rendering
                     const styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style");
                     styleElement.textContent = `
-                        .grid-line { stroke: #e0e0e0; stroke-width: 1; }
+                        .grid-line { stroke: rgba(224, 224, 224, 0.5); stroke-width: 1; }
                         .x-axis, .y-axis { font-size: 12px; font-family: Arial, sans-serif; }
                         .x-axis text, .y-axis text { fill: #333; }
                         .x-axis path, .y-axis path, .x-axis line, .y-axis line { stroke: #666; stroke-width: 1; }
@@ -1139,7 +1139,7 @@
                     // Add inline styles for proper PNG rendering
                     const styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style");
                     styleElement.textContent = `
-                        .grid-line { stroke: #e0e0e0; stroke-width: 1; }
+                        .grid-line { stroke: rgba(224, 224, 224, 0.5); stroke-width: 1; }
                         .x-axis, .y-axis { font-size: 12px; font-family: Arial, sans-serif; }
                         .x-axis text, .y-axis text { fill: #333; }
                         .x-axis path, .y-axis path, .x-axis line, .y-axis line { stroke: #666; stroke-width: 1; }
