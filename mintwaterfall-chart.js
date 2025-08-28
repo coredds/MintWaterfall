@@ -212,7 +212,7 @@ export function waterfallChart() {
                     } else {
                         // Disable zoom if it was previously enabled
                         zoomSystem.enabled(false);
-                        svgContainer.on('.zoom', null);
+                        svgContainer.on(".zoom", null);
                     }
                 }, 50); // Small delay to ensure DOM is ready
                 

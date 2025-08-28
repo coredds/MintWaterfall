@@ -19,8 +19,8 @@ describe("Chart - Minimal Tests", () => {
   });
 
   test("should have width and height functions", () => {
-    expect(typeof chart.width).toBe('function');
-    expect(typeof chart.height).toBe('function');
+    expect(typeof chart.width).toBe("function");
+    expect(typeof chart.height).toBe("function");
   });
 
   test("should set and get width", () => {

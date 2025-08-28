@@ -49,7 +49,7 @@ export function createZoomSystem() {
     
     function defaultFilter(event) {
         // Allow zoom on wheel, but prevent on right-click
-        return (!event.ctrlKey || event.type === 'wheel') && !event.button;
+        return (!event.ctrlKey || event.type === "wheel") && !event.button;
     }
     
     function updateTranslateExtent() {
@@ -97,7 +97,7 @@ export function createZoomSystem() {
     
     function applyTransform(container, transform) {
         // Apply transform to the main chart group
-        const chartGroup = container.select('.chart-group');
+        const chartGroup = container.select(".chart-group");
         if (!chartGroup.empty()) {
             chartGroup.attr("transform", transform);
         }
@@ -120,7 +120,7 @@ export function createZoomSystem() {
     function getScaleFromAxis(axisGroup) {
         // Helper to extract scale from axis group
         // This is a simplified version - in practice, you'd store the original scales
-        const domain = axisGroup.selectAll('.tick text').data();
+        const domain = axisGroup.selectAll(".tick text").data();
         if (domain.length > 0) {
             return d3.scaleLinear().domain(d3.extent(domain));
         }
@@ -140,7 +140,7 @@ export function createZoomSystem() {
             container.call(behavior);
         } else {
             // Remove any existing zoom behavior
-            container.on('.zoom', null);
+            container.on(".zoom", null);
         }
         
         return zoom;
@@ -155,7 +155,7 @@ export function createZoomSystem() {
             if (value) {
                 chartContainer.call(createZoomBehavior());
             } else {
-                chartContainer.on('.zoom', null);
+                chartContainer.on(".zoom", null);
             }
         }
         return zoom;
@@ -177,7 +177,7 @@ export function createZoomSystem() {
     
     zoom.constrain = function(value) {
         if (!arguments.length) return config.constrain;
-        if (typeof value === 'object') {
+        if (typeof value === "object") {
             config.constrain = { ...config.constrain, ...value };
         } else {
             config.constrain = { x: value, y: value };
@@ -397,7 +397,7 @@ export function addZoomToChart(chart, options = {}) {
     
     // Configure zoom system with options
     Object.keys(options).forEach(key => {
-        if (typeof zoomSystem[key] === 'function') {
+        if (typeof zoomSystem[key] === "function") {
             zoomSystem[key](options[key]);
         }
     });
@@ -409,9 +409,9 @@ export function addZoomToChart(chart, options = {}) {
             zoomSystem.enabled(false);
         } else if (value === true) {
             zoomSystem.enabled(true);
-        } else if (typeof value === 'object') {
+        } else if (typeof value === "object") {
             Object.keys(value).forEach(key => {
-                if (typeof zoomSystem[key] === 'function') {
+                if (typeof zoomSystem[key] === "function") {
                     zoomSystem[key](value[key]);
                 }
             });
