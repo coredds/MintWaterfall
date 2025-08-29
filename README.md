@@ -8,28 +8,28 @@
 
 A production-ready, D3.js-compatible waterfall chart component with enterprise features including breakdown analysis, conditional formatting, and advanced visualization capabilities.
 
-**[🚀 Live Demo](https://coredds.github.io/MintWaterfall/mintwaterfall-example.html)** | **[� Interactive Showcase](https://coredds.github.io/MintWaterfall/mintwaterfall-example.html)**
+**[Live Demo](https://coredds.github.io/MintWaterfall/mintwaterfall-example.html)**
 
-## ✨ Key Features
+## Key Features
 
-### 🏢 **Enterprise Edition**
+### **Enterprise Edition**
 - **Breakdown Analysis**: Hierarchical data drill-down with smart grouping and interactive exploration
 - **Conditional Formatting**: Dynamic styling based on values, thresholds, and custom business rules
 - **Advanced Analytics**: Fortune 500-level data visualization capabilities
 
-### 🎯 **Core Functionality**
+### **Core Functionality**
 - **Dual Visualization Modes**: Toggle between stacked and waterfall chart types
 - **Advanced Export**: High-DPI PNG (2x), SVG, JPEG, PDF with quality controls
 - **Data Loading**: CSV, JSON, TSV support with HTTP URL loading and auto-detection
 - **Trend Analysis**: Linear, moving average, and polynomial overlays
 
-### 💎 **Production Quality**
+### **Production Quality**
 - **210 Comprehensive Tests**: Extensive test coverage with zero errors
 - **Perfect Code Quality**: Zero ESLint warnings, clean architecture
 - **D3.js v7 Compatible**: Full integration with modern D3.js ecosystem
 - **Accessibility**: WCAG 2.1 compliance with Forced Colors Mode support
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -80,7 +80,7 @@ d3.select('#chart')
     .call(chart);
 ```
 
-## 🏢 Enterprise Features
+## Enterprise Features
 
 ### Breakdown Analysis
 Hierarchical data drill-down with smart grouping and interactive visualization.
@@ -162,7 +162,7 @@ const data = [{
 }];
 ```
 
-## 🛠️ Development
+## Development
 
 ### Setup
 ```bash
@@ -180,12 +180,12 @@ npm run dev           # Development server (port 8080)
 ```
 
 ### Quality Standards
-- **✅ 210 Test Cases**: Comprehensive coverage including enterprise features
-- **✅ Zero Lint Issues**: Perfect ESLint compliance
-- **✅ Production Ready**: Enterprise-grade code quality
-- **✅ D3.js v7 Compatible**: Full API compatibility validation
+- **210 Test Cases**: Comprehensive coverage including enterprise features
+- **Zero Lint Issues**: Perfect ESLint compliance
+- **Production Ready**: Enterprise-grade code quality
+- **D3.js v7 Compatible**: Full API compatibility validation
 
-## 🌐 Browser Support
+## Browser Support
 
 **Minimum Requirements**: ES6 Modules, D3.js v7+, SVG Support  
 **Tested**: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
@@ -194,29 +194,29 @@ npm run dev           # Development server (port 8080)
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## 🤝 Contributing
+## Contributing
 
 Contributions welcome! Please ensure:
-- ✅ D3.js v7+ compatibility maintained
-- ✅ Tests included (we maintain 210+ test cases)
-- ✅ Zero linting errors (strict policy)
-- ✅ Documentation updated
+- D3.js v7+ compatibility maintained
+- Tests included (we maintain 210+ test cases)
+- Zero linting errors (strict policy)
+- Documentation updated
 
 See [Contributing Guide](CONTRIBUTING.md) for details.
 
-## 📈 Changelog
+## Changelog
 
 ### v0.8.0 (Current) - Enterprise Edition
-- **🏢 Enterprise Features**: Breakdown analysis + conditional formatting
-- **📊 Advanced Analytics**: Interactive drill-down with smart grouping
-- **✅ Production Quality**: 210 tests passing, zero lint errors
-- **🎯 Enhanced Rendering**: Fixed waterfall visualization issues
-- **� Clean Architecture**: Modular ES6 with full D3.js compatibility
+- **Enterprise Features**: Breakdown analysis + conditional formatting
+- **Advanced Analytics**: Interactive drill-down with smart grouping
+- **Production Quality**: 210 tests passing, zero lint errors
+- **Enhanced Rendering**: Fixed waterfall visualization issues
+- **Clean Architecture**: Modular ES6 with full D3.js compatibility
 
 ### v0.6.0
-- **📈 Trend Analysis**: Linear, moving average, polynomial overlays
-- **🔄 Data Loading**: CSV, JSON, TSV with HTTP URL support
-- **🖼️ High-DPI Export**: 2x scaling PNG, SVG, JPEG, PDF
-- **♿ Accessibility**: WCAG 2.1 compliance, Forced Colors Mode
+- **Trend Analysis**: Linear, moving average, polynomial overlays
+- **Data Loading**: CSV, JSON, TSV with HTTP URL support
+- **High-DPI Export**: 2x scaling PNG, SVG, JPEG, PDF
+- **Accessibility**: WCAG 2.1 compliance, Forced Colors Mode
 
 For complete version history, see [Releases](https://github.com/coredds/MintWaterfall/releases).
