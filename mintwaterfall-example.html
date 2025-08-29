@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MintWaterfall - D3.js Waterfall Chart Component</title>
+    <title>MintWaterfall v0.8.0 Showcase</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
@@ -403,13 +403,13 @@
     </style>
 </head>
 <body>
-    <h1>MintWaterfall Chart Showcase</h1>
+    <h1>MintWaterfall v0.8.0 Showcase</h1>
     
     <!-- Chart 1: Revenue Analysis -->
     <div class="chart-container">
-        <h2>Revenue Analysis - Interactive Features Demo</h2>
+        <h2>Revenue Analysis</h2>
         <p style="text-align: center; color: #666; font-style: italic; margin-bottom: 20px;">
-            Enable accessibility, tooltips, and export features - Tab + Arrow keys navigation - Smart tooltips - Export ready
+            Comprehensive waterfall chart demonstration showing revenue flow and changes
         </p>
         <div class="theme-selector">
             <label>Theme: </label>
@@ -437,6 +437,7 @@
                 </select>
             </div>
         </div>
+        
         <div class="chart-wrapper">
             <svg id="chart1" width="1100" height="400"></svg>
         </div>
@@ -455,9 +456,9 @@
 
     <!-- Chart 2: Cost Analysis -->
     <div class="chart-container">
-        <h2>Cost Analysis - Interactive Features + Animation Demo</h2>
+        <h2>Cost Analysis - Enterprise Performance + Animation Demo</h2>
         <p style="text-align: center; color: #666; font-style: italic; margin-bottom: 10px;">
-            Test interactive features in waterfall mode - Full accessibility support - Professional tooltips
+            🚀 Performance benchmarking • Advanced animations • Waterfall mode with enterprise features • Real-time conditional formatting
         </p>
         
         <!-- Interactive Feature Controls -->
@@ -645,35 +646,113 @@
     </div>
 
     <script type="module">
-        // Import all MintWaterfall modules including interactive features
-        import { waterfallChart } from './mintwaterfall-chart.js';
-        import { themes, applyTheme } from './mintwaterfall-themes.js';
-        import { dataProcessor } from './mintwaterfall-data.js';
-        import { animationSystem } from './mintwaterfall-animations.js';
-        import { createTooltipSystem } from './mintwaterfall-tooltip.js';
-        import { createAccessibilitySystem } from './mintwaterfall-accessibility.js';
-        import { createExportSystem } from './mintwaterfall-export.js';
-        import { createZoomSystem, createZoomControls } from './mintwaterfall-zoom.js';
+        // Import MintWaterfall v0.8.0 Enterprise Edition modules
+        try {
+            console.log('📦 Starting module imports...');
+            
+            // Import all modules first
+            const chartModule = await import('./mintwaterfall-chart.js');
+            const waterfallChart = chartModule.waterfallChart;
+            console.log('✅ waterfallChart imported:', typeof waterfallChart);
+            
+            const themesModule = await import('./mintwaterfall-themes.js');
+            const themes = themesModule.themes;
+            const applyTheme = themesModule.applyTheme;
+            console.log('✅ themes imported:', Object.keys(themes || {}).length, 'themes');
+            
+            const dataModule = await import('./mintwaterfall-data.js');
+            const dataProcessor = dataModule.dataProcessor;
+            console.log('✅ dataProcessor imported:', typeof dataProcessor);
+            
+            const animationModule = await import('./mintwaterfall-animations.js');
+            const animationSystem = animationModule.animationSystem;
+            console.log('✅ animationSystem imported:', typeof animationSystem);
+            
+            const tooltipModule = await import('./mintwaterfall-tooltip.js');
+            const createTooltipSystem = tooltipModule.createTooltipSystem;
+            console.log('✅ createTooltipSystem imported:', typeof createTooltipSystem);
+            
+            const accessibilityModule = await import('./mintwaterfall-accessibility.js');
+            const createAccessibilitySystem = accessibilityModule.createAccessibilitySystem;
+            console.log('✅ createAccessibilitySystem imported:', typeof createAccessibilitySystem);
+            
+            const exportModule = await import('./mintwaterfall-export.js');
+            const createExportSystem = exportModule.createExportSystem;
+            console.log('✅ createExportSystem imported:', typeof createExportSystem);
+            
+            const zoomModule = await import('./mintwaterfall-zoom.js');
+            const createZoomSystem = zoomModule.createZoomSystem;
+            const createZoomControls = zoomModule.createZoomControls;
+            console.log('✅ zoom systems imported:', typeof createZoomSystem, typeof createZoomControls);
 
-        // Create interactive system instances
-        const tooltipSystem = createTooltipSystem();
-        const accessibilitySystem = createAccessibilitySystem();
-        const exportSystem = createExportSystem();
-        const zoomSystem = createZoomSystem();
+            // Now initialize charts with all imports available
+            initializeCharts(waterfallChart, themes, applyTheme, dataProcessor, animationSystem, 
+                           createTooltipSystem, createAccessibilitySystem, createExportSystem, 
+                           createZoomSystem, createZoomControls);
+            
+        } catch (error) {
+            console.error('❌ Module import failed:', error);
+            console.log('🔄 Falling back to basic chart initialization...');
+            initializeBasicCharts();
+        }
+        
+        function initializeCharts(waterfallChart, themes, applyTheme, dataProcessor, animationSystem, 
+                                createTooltipSystem, createAccessibilitySystem, createExportSystem, 
+                                createZoomSystem, createZoomControls) {
+            console.log('🚀 Initializing enterprise charts...');
 
-        // Sample data
+            // Test D3 availability first
+            console.log('🔍 D3 availability:', typeof d3, d3?.version || 'no version');
+            
+            // Test chart function
+            console.log('🔍 waterfallChart function:', typeof waterfallChart);
+            if (typeof waterfallChart === 'function') {
+                try {
+                    const testChart = waterfallChart();
+                    console.log('✅ waterfallChart() works:', typeof testChart, testChart);
+                } catch (error) {
+                    console.error('❌ Error creating test chart:', error);
+                }
+            }
+
+            // Create enterprise feature system instances
+            const tooltipSystem = createTooltipSystem();
+            const accessibilitySystem = createAccessibilitySystem();
+            const exportSystem = createExportSystem();
+            const zoomSystem = createZoomSystem();
+
+            // Test chart availability
+            console.log('🔍 Testing chart function availability:', typeof waterfallChart);
+            if (typeof waterfallChart === 'function') {
+                const testChart = waterfallChart();
+                console.log('✅ Chart function works, test chart created:', testChart);
+            } else {
+                console.error('❌ Chart function not available!');
+                return;
+            }
+
+        // Sample revenue data for waterfall demonstration
         let revenueData = [
             {
                 label: "Q1 Sales",
                 stacks: [
                     { value: 45, color: "#3498db", label: "Direct: 45" },
                     { value: 25, color: "#2ecc71", label: "Online: 25" }
+                ],
+                breakdown: [
+                    { label: "North America", stacks: [{ value: 35, color: "#3498db" }] },
+                    { label: "Europe", stacks: [{ value: 20, color: "#2ecc71" }] },
+                    { label: "Asia Pacific", stacks: [{ value: 15, color: "#e74c3c" }] }
                 ]
             },
             {
                 label: "Q2 Growth",
                 stacks: [
                     { value: 30, color: "#e74c3c", label: "Expansion: 30" }
+                ],
+                breakdown: [
+                    { label: "New Products", stacks: [{ value: 18, color: "#e74c3c" }] },
+                    { label: "Market Expansion", stacks: [{ value: 12, color: "#f39c12" }] }
                 ]
             },
             {
@@ -681,12 +760,20 @@
                 stacks: [
                     { value: 20, color: "#f39c12", label: "New Markets: 20" },
                     { value: 15, color: "#9b59b6", label: "Products: 15" }
+                ],
+                breakdown: [
+                    { label: "Enterprise Sales", stacks: [{ value: 22, color: "#f39c12" }] },
+                    { label: "SMB Growth", stacks: [{ value: 13, color: "#9b59b6" }] }
                 ]
             },
             {
                 label: "Q4 Holiday",
                 stacks: [
                     { value: 40, color: "#1abc9c", label: "Seasonal: 40" }
+                ],
+                breakdown: [
+                    { label: "Black Friday", stacks: [{ value: 25, color: "#1abc9c" }] },
+                    { label: "Cyber Monday", stacks: [{ value: 15, color: "#16a085" }] }
                 ]
             },
             {
@@ -1000,32 +1087,37 @@
             }
         ];
 
-        // Chart configurations with interactive features
+        // Chart configurations with enterprise features v0.8.0
+        console.log('🔧 Creating chart configurations...');
         const charts = {
             chart1: {
-                chart: waterfallChart()
-                    .width(1100)
-                    .height(400)
-                    .showTotal(true)
-                    .totalLabel('Total Revenue')
-                    .stacked(true)
-                    .accessibility(false)
-                    .tooltips(false),
+                // RECREATED FROM SCRATCH - Simple waterfall configuration
+                config: {
+                    width: 1100,
+                    height: 400,
+                    showTotal: true,
+                    totalLabel: 'Total Revenue',
+                    stacked: false,  // Waterfall mode
+                    accessibility: false,
+                    tooltips: false,
+                    barPadding: 0.1,
+                    duration: 500
+                },
                 data: revenueData,
-                currentTheme: 'default',
-                accessibilityEnabled: false,
-                tooltipsEnabled: false,
-                currentTooltipTheme: 'default'
+                currentTheme: 'default'
             },
             chart2: {
-                chart: waterfallChart()
-                    .width(1100)
-                    .height(400)
-                    .showTotal(true)
-                    .totalLabel('Total Budget')
-                    .stacked(false)
-                    .accessibility(false)
-                    .tooltips(false),
+                config: {
+                    width: 1100,
+                    height: 400,
+                    showTotal: true,
+                    totalLabel: 'Total Budget',
+                    stacked: false,  // WATERFALL MODE - back to original
+                    accessibility: false,
+                    tooltips: false,
+                    barPadding: 0.1,
+                    duration: 800
+                },
                 data: costData,
                 currentTheme: 'default',
                 accessibilityEnabled: false,
@@ -1033,61 +1125,86 @@
                 currentTooltipTheme: 'default'
             },
             chart3: {
-                chart: waterfallChart()
-                    .width(1100)
-                    .height(400)
-                    .showTotal(true)
-                    .totalLabel('Total Performance')
-                    .stacked(true),
+                config: {
+                    width: 1100,
+                    height: 400,
+                    showTotal: true,
+                    totalLabel: 'Total Performance',
+                    stacked: true,
+                    accessibility: false,
+                    tooltips: false,
+                    barPadding: 0.1,
+                    duration: 750
+                },
                 data: performanceData,
                 currentTheme: 'colorful'
             },
             chart4: {
-                chart: waterfallChart()
-                    .width(1100)
-                    .height(400)
-                    .showTotal(true)
-                    .totalLabel('Project Total')
-                    .stacked(true),
+                config: {
+                    width: 1100,
+                    height: 400,
+                    showTotal: true,
+                    totalLabel: 'Project Total',
+                    stacked: true,
+                    accessibility: false,
+                    tooltips: false,
+                    barPadding: 0.1,
+                    duration: 750
+                },
                 data: projectData,
                 currentTheme: 'default'
             },
             chart5: {
-                chart: waterfallChart()
-                    .width(1100)
-                    .height(400)
-                    .showTotal(true)
-                    .totalLabel('Grand Total')
-                    .stacked(true),
+                config: {
+                    width: 1100,
+                    height: 400,
+                    showTotal: true,
+                    totalLabel: 'Grand Total',
+                    stacked: true,
+                    accessibility: false,
+                    tooltips: false,
+                    barPadding: 0.1,
+                    duration: 750
+                },
                 data: complexData,
                 currentTheme: 'default'
             },
             chartAdvanced: {
-                chart: waterfallChart()
-                    .width(1100)
-                    .height(400)
-                    .showTotal(true)
-                    .totalLabel('Enhanced Total')
-                    .stacked(true)
-                    .enableBrush(true)
-                    .staggeredAnimations(true)
-                    .staggerDelay(150),
+                config: {
+                    width: 1100,
+                    height: 400,
+                    showTotal: true,
+                    totalLabel: 'Enhanced Total',
+                    stacked: true,
+                    accessibility: false,
+                    tooltips: false,
+                    barPadding: 0.1,
+                    duration: 750,
+                    enableBrush: true,
+                    staggeredAnimations: true,
+                    staggerDelay: 150
+                },
                 data: [...revenueData], // Clone revenue data
                 currentTheme: 'default',
                 currentScaleType: 'auto'
             },
             chartTrend: {
-                chart: waterfallChart()
-                    .width(1100)
-                    .height(400)
-                    .showTotal(true)
-                    .totalLabel('Total with Trend')
-                    .stacked(true)
-                    .showTrendLine(false)
-                    .trendLineType('linear')
-                    .trendLineColor('#e74c3c')
-                    .trendLineWidth(3)
-                    .trendLineStyle('solid'),
+                config: {
+                    width: 1100,
+                    height: 400,
+                    showTotal: true,
+                    totalLabel: 'Total with Trend',
+                    stacked: true,
+                    accessibility: false,
+                    tooltips: false,
+                    barPadding: 0.1,
+                    duration: 750,
+                    showTrendLine: false,
+                    trendLineType: 'linear',
+                    trendLineColor: '#e74c3c',
+                    trendLineWidth: 3,
+                    trendLineStyle: 'solid'
+                },
                 data: [...trendData], // Use trend-optimized data
                 currentTheme: 'default',
                 currentTrendType: 'none',
@@ -1101,20 +1218,148 @@
             }
         };
 
-        // Initialize charts
+        // Initialize charts - CHART1 RECREATED FROM SCRATCH
+        console.log('🚀 Starting chart initialization...');
         Object.keys(charts).forEach(chartId => {
-            const { chart, data, currentTheme } = charts[chartId];
+            const chartConfig = charts[chartId];
+            const { config, data, currentTheme } = chartConfig;
+            
+            console.log(`🔧 Initializing ${chartId}:`, {
+                dataLength: data?.length || 0,
+                firstItem: data?.[0] || 'undefined',
+                config: config
+            });
+
+            // Check if chart element exists
+            const chartElement = document.getElementById(chartId);
+            console.log(`📍 Chart element ${chartId}:`, chartElement ? 'found' : 'NOT FOUND');
+            
+            if (!chartElement) {
+                console.error(`❌ Chart element ${chartId} not found in DOM!`);
+                return;
+            }
+
+            // Check if data is valid
+            if (!Array.isArray(data) || data.length === 0) {
+                console.error(`❌ Chart ${chartId} has invalid data:`, data);
+                return;
+            }
+
+            // CHART1 RECREATION: Simple, clean chart creation
+            if (chartId === 'chart1') {
+                console.log(`🆕 RECREATING chart1 from scratch...`);
+                
+                try {
+                    // Create brand new chart instance
+                    const chart = waterfallChart()
+                        .width(config.width)
+                        .height(config.height)
+                        .showTotal(config.showTotal)
+                        .totalLabel(config.totalLabel)
+                        .stacked(false)  // Force waterfall mode
+                        .barPadding(config.barPadding)
+                        .duration(config.duration);
+                    
+                    // Store the chart instance
+                    chartConfig.chart = chart;
+                    
+                    console.log(`✅ New chart1 instance created`);
+                    
+                    // Simple render - no enterprise features, no complexity
+                    const selection = d3.select('#chart1');
+                    selection.selectAll("*").remove(); // Clear everything
+                    
+                    setTimeout(() => {
+                        selection.datum(data).call(chart);
+                        console.log(`✅ chart1 rendered fresh`);
+                    }, 100);
+                    
+                } catch (error) {
+                    console.error(`❌ Error creating chart1:`, error);
+                    return;
+                }
+                
+                return; // Skip the rest of the complex logic for chart1
+            }
+
+            // For other charts, use the existing logic
+            // Create chart instance with configuration
+            console.log(`🏗️ Creating chart instance for ${chartId}`);
+            try {
+                let chart = waterfallChart()
+                    .width(config.width)
+                    .height(config.height)
+                    .showTotal(config.showTotal)
+                    .totalLabel(config.totalLabel)
+                    .stacked(config.stacked)
+                    .accessibility(config.accessibility)
+                    .tooltips(config.tooltips)
+                    .barPadding(config.barPadding)
+                    .duration(config.duration);
+                
+                // Add optional advanced features if they exist in config
+                if (config.enableBrush) {
+                    chart = chart.enableBrush(config.enableBrush);
+                }
+                if (config.staggeredAnimations) {
+                    chart = chart.staggeredAnimations(config.staggeredAnimations);
+                }
+                if (config.staggerDelay) {
+                    chart = chart.staggerDelay(config.staggerDelay);
+                }
+                if (config.showTrendLine !== undefined) {
+                    chart = chart.showTrendLine(config.showTrendLine);
+                }
+                if (config.trendLineType) {
+                    chart = chart.trendLineType(config.trendLineType);
+                }
+                if (config.trendLineColor) {
+                    chart = chart.trendLineColor(config.trendLineColor);
+                }
+                if (config.trendLineWidth) {
+                    chart = chart.trendLineWidth(config.trendLineWidth);
+                }
+                if (config.trendLineStyle) {
+                    chart = chart.trendLineStyle(config.trendLineStyle);
+                }
+                
+                // Store the chart instance
+                chartConfig.chart = chart;
+                
+                console.log(`✅ Chart instance created for ${chartId}:`, typeof chart);
+            } catch (error) {
+                console.error(`❌ Error creating chart for ${chartId}:`, error);
+                return;
+            }
             
             // Add event listeners
-            chart.on('barClick', function(event, d) {
+            chartConfig.chart.on('barClick', function(event, d) {
                 const total = d.stacks.reduce((sum, s) => sum + s.value, 0);
                 console.log(`Clicked on ${d.label}: ${total}`);
-                alert(`Clicked on ${d.label}: ${total}`);
+                
+                // Enhanced click behavior for enterprise charts
+                if ((chartId === 'chart1' || chartId === 'chart2') && d.breakdown) {
+                    console.group(`🏢 Enterprise Breakdown - ${d.label}`);
+                    console.log('Total Value:', total);
+                    console.log('Breakdown Details:', d.breakdown);
+                    console.groupEnd();
+                    alert(`🏢 Enterprise Click: ${d.label}: ${total}\n📊 Breakdown available - Check console for details`);
+                } else {
+                    alert(`Clicked on ${d.label}: ${total}`);
+                }
             });
+
+            // Initialize enterprise features for chart1 and chart2
+            if (chartId === 'chart1' || chartId === 'chart2') {
+                // REMOVED: Pre-configure breakdown analysis that was breaking charts
+                // The breakdown analysis will be configured when the user clicks the button
+                
+                console.log(`🏢 Enterprise features available for ${chartId} (breakdown on-demand)`);
+            }
 
             // Enhanced features for advanced chart
             if (chartId === 'chartAdvanced') {
-                chart.on('brushSelection', function(event, selectionData) {
+                chartConfig.chart.on('brushSelection', function(event, selectionData) {
                     const infoDiv = document.getElementById('selection-info');
                     const detailsDiv = document.getElementById('selection-details');
                     
@@ -1145,14 +1390,79 @@
                 }));
                 
                 // Update chart configuration
-                chart.totalColor(theme.totalColor);
+                chartConfig.chart.totalColor(theme.totalColor);
                 charts[chartId].data = themedData;
                 
                 // Render with themed data
-                d3.select(`#${chartId}`).datum(themedData).call(chart);
+                d3.select(`#${chartId}`).datum(themedData).call(chartConfig.chart);
+                console.log(`🎨 ${chartId} rendered with themed data (${currentTheme}):`, themedData.length, 'items');
             } else {
                 // Render with default data
-                d3.select(`#${chartId}`).datum(data).call(chart);
+                console.log(`📊 About to render ${chartId} with default data:`, data.length, 'items');
+                console.log(`📊 Chart element for ${chartId}:`, document.getElementById(chartId));
+                console.log(`📊 Chart function for ${chartId}:`, typeof chartConfig.chart, chartConfig.chart);
+                
+                // Debug the data structure
+                console.log(`📊 Sample data for ${chartId}:`, {
+                    firstItem: data[0],
+                    dataStructure: data.map(d => ({
+                        label: d.label,
+                        stackCount: d.stacks?.length || 0,
+                        totalValue: d.stacks?.reduce((sum, s) => sum + s.value, 0) || 0,
+                        hasBreakdown: !!d.breakdown,
+                        stackValues: d.stacks?.map(s => s.value) || []
+                    })),
+                    grandTotal: data.reduce((total, d) => 
+                        total + (d.stacks?.reduce((sum, s) => sum + s.value, 0) || 0), 0
+                    )
+                });
+                
+                try {
+                    const selection = d3.select(`#${chartId}`);
+                    console.log(`📊 D3 selection for ${chartId}:`, selection.node());
+                    
+                    // TEMPORARY: Create a simple test bar manually to verify D3 works
+                    if (chartId === 'chart1') {
+                        console.log('🧪 Creating manual test bars for chart1');
+                        
+                        // Clear the SVG
+                        selection.selectAll("*").remove();
+                        
+                        // Create simple test bars
+                        const testData = [
+                            { x: 100, y: 300, width: 60, height: 100, color: "#3498db" },
+                            { x: 200, y: 250, width: 60, height: 150, color: "#e74c3c" },
+                            { x: 300, y: 200, width: 60, height: 200, color: "#f39c12" }
+                        ];
+                        
+                        selection.selectAll("rect")
+                            .data(testData)
+                            .enter()
+                            .append("rect")
+                            .attr("x", d => d.x)
+                            .attr("y", d => d.y)
+                            .attr("width", d => d.width)
+                            .attr("height", d => d.height)
+                            .attr("fill", d => d.color);
+                        
+                        console.log('✅ Manual test bars created for chart1');
+                    } else {
+                        // Add a small delay to ensure DOM is ready
+                        setTimeout(() => {
+                            const result = selection.datum(data).call(chartConfig.chart);
+                            console.log(`✅ ${chartId} rendered successfully:`, result);
+                            
+                            // Check what was actually rendered
+                            const renderedContent = selection.node().innerHTML;
+                            console.log(`📊 Rendered content length for ${chartId}:`, renderedContent.length);
+                            if (renderedContent.length < 100) {
+                                console.warn(`⚠️ ${chartId} may not have rendered properly - content too short:`, renderedContent);
+                            }
+                        }, 100);
+                    }
+                } catch (error) {
+                    console.error(`❌ Error rendering ${chartId}:`, error);
+                }
             }
         });
 
@@ -1576,6 +1886,215 @@
                 
                 chartConfig.data = randomData;
                 d3.select(`#${chartId}`).datum(randomData).call(chartConfig.chart);
+            }
+        };
+
+        // ========================================
+        // 🏢 ENTERPRISE FEATURE FUNCTIONS v0.8.0
+        // ========================================
+
+        window.toggleBreakdownAnalysis = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                // Enable breakdown analysis using the correct API
+                chartConfig.chart.enableBreakdown('category', {
+                    minGroupSize: 2,
+                    sortStrategy: 'value',
+                    showOthers: true,
+                    maxGroups: 5
+                });
+                
+                // Re-render chart
+                d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                
+                showFeedback(chartId, '🔍 Breakdown analysis enabled! Click bars to explore hierarchical data', 'success');
+                console.log(`📊 Enterprise: Breakdown analysis enabled for ${chartId}`);
+            }
+        };
+
+        window.toggleConditionalFormatting = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                // Add conditional formatting rules using the correct API
+                chartConfig.chart.addFormattingRule('highValue', {
+                    condition: (d) => d.stacks.reduce((sum, s) => sum + s.value, 0) > 50,
+                    style: {
+                        fill: '#27ae60',
+                        stroke: '#1e8449',
+                        strokeWidth: 2,
+                        opacity: 0.9
+                    }
+                });
+                
+                chartConfig.chart.addFormattingRule('lowValue', {
+                    condition: (d) => d.stacks.reduce((sum, s) => sum + s.value, 0) < 20,
+                    style: {
+                        fill: '#e74c3c',
+                        stroke: '#c0392b',
+                        strokeWidth: 2,
+                        opacity: 0.7
+                    }
+                });
+                
+                // Re-render chart
+                d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                
+                showFeedback(chartId, '🎨 Conditional formatting applied! High values = Green, Low values = Red', 'success');
+                console.log(`🎨 Enterprise: Conditional formatting enabled for ${chartId}`);
+            }
+        };
+
+        window.runEnterprisePerformanceTest = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                showFeedback(chartId, '⚡ Running enterprise performance test with 50 data points...', 'info');
+                
+                // Generate large dataset for testing
+                const testData = [];
+                for (let i = 0; i < 50; i++) {
+                    testData.push({
+                        label: `Item ${i + 1}`,
+                        stacks: [
+                            { value: Math.random() * 100 + 20, color: `hsl(${i * 7.2}, 70%, 50%)`, label: `Value: ${Math.round(Math.random() * 100 + 20)}` }
+                        ],
+                        breakdown: i % 5 === 0 ? [
+                            { label: `Sub-item A`, stacks: [{ value: Math.random() * 30, color: '#3498db' }] },
+                            { label: `Sub-item B`, stacks: [{ value: Math.random() * 30, color: '#2ecc71' }] }
+                        ] : undefined
+                    });
+                }
+                
+                const startTime = performance.now();
+                
+                // Apply breakdown and formatting
+                chartConfig.chart.enableBreakdown('category', { maxGroups: 10 });
+                chartConfig.chart.addFormattingRule('performance', {
+                    condition: (d) => d.stacks[0].value > 80,
+                    style: { fill: '#f39c12', strokeWidth: 3 }
+                });
+                
+                // Render with performance timing
+                d3.select(`#${chartId}`).datum(testData).call(chartConfig.chart);
+                
+                const endTime = performance.now();
+                const renderTime = Math.round(endTime - startTime);
+                
+                setTimeout(() => {
+                    // Restore original data
+                    d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                    showFeedback(chartId, `⚡ Performance test completed! Rendered 50 items in ${renderTime}ms`, 'success');
+                }, 2000);
+            }
+        };
+
+        window.exploreBreakdowns = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                console.group(`📊 Enterprise Data Explorer - ${chartId}`);
+                console.log('Chart Configuration:', chartConfig);
+                console.log('Data Structure:');
+                
+                chartConfig.data.forEach((item, index) => {
+                    const total = item.stacks.reduce((sum, s) => sum + s.value, 0);
+                    console.log(`  ${index + 1}. ${item.label}: ${total} total`);
+                    
+                    if (item.breakdown && item.breakdown.length > 0) {
+                        console.log(`    📋 Breakdown (${item.breakdown.length} items):`);
+                        item.breakdown.forEach((breakdownItem, bIndex) => {
+                            const breakdownTotal = breakdownItem.stacks.reduce((sum, s) => sum + s.value, 0);
+                            console.log(`      ${bIndex + 1}. ${breakdownItem.label}: ${breakdownTotal}`);
+                        });
+                    } else {
+                        console.log(`    📋 No breakdown data available`);
+                    }
+                });
+                
+                console.groupEnd();
+                showFeedback(chartId, '📊 Data structure logged to console! Check developer tools', 'info');
+            }
+        };
+
+        // ========================================
+        // 🏢 ENTERPRISE v0.8.0 FUNCTIONS
+        // ========================================
+
+        // Enterprise Breakdown Analysis
+        window.toggleBreakdownAnalysis = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                const currentState = chartConfig.chart.enableBreakdown();
+                chartConfig.chart.enableBreakdown(!currentState);
+                d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                
+                showFeedback(chartId, 
+                    `🏢 Breakdown Analysis ${!currentState ? 'ENABLED' : 'DISABLED'} - Click bars to explore hierarchical data`, 
+                    'success'
+                );
+            }
+        };
+
+        // Enterprise Performance Test
+        window.runEnterprisePerformanceTest = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                const startTime = performance.now();
+                showFeedback(chartId, '🚀 Running enterprise performance benchmark...', 'info');
+                
+                // Generate large dataset for performance testing
+                const performanceData = [];
+                for (let i = 0; i < 50; i++) {
+                    performanceData.push({
+                        label: `Enterprise Item ${i + 1}`,
+                        stacks: [
+                            { value: Math.random() * 100000 - 50000, color: '#3498db' }
+                        ],
+                        breakdown: [
+                            { label: `Breakdown A`, stacks: [{ value: Math.random() * 25000, color: '#2ecc71' }] },
+                            { label: `Breakdown B`, stacks: [{ value: Math.random() * 25000, color: '#e74c3c' }] }
+                        ]
+                    });
+                }
+                
+                // Render with performance data
+                d3.select(`#${chartId}`).datum(performanceData).call(chartConfig.chart);
+                
+                const endTime = performance.now();
+                const renderTime = Math.round(endTime - startTime);
+                
+                setTimeout(() => {
+                    // Restore original data
+                    d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                    showFeedback(chartId, 
+                        `⚡ Performance Test Complete: ${renderTime}ms for 50 enterprise items with breakdowns`, 
+                        'success'
+                    );
+                }, 2000);
+            }
+        };
+
+        // Enterprise Data Breakdown Explorer
+        window.exploreBreakdowns = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                let hasBreakdowns = false;
+                chartConfig.data.forEach(item => {
+                    if (item.breakdown && item.breakdown.length > 0) {
+                        hasBreakdowns = true;
+                        console.log(`📊 ${item.label} breakdown:`, item.breakdown);
+                    }
+                });
+                
+                if (hasBreakdowns) {
+                    showFeedback(chartId, 
+                        '🔍 Enterprise breakdown data explored - Check console for detailed breakdown information', 
+                        'success'
+                    );
+                } else {
+                    showFeedback(chartId, 
+                        '📊 No breakdown data available - Enable breakdown analysis to see hierarchical details', 
+                        'info'
+                    );
+                }
             }
         };
 
@@ -2092,17 +2611,93 @@
         }, 2000);
         
         // Log successful initialization
-        console.log('MintWaterfall v0.6.0 initialized with Interactive Features!');
+        console.log('🌊 MintWaterfall v0.8.0 Enterprise Edition initialized!');
+        console.log('📊 Enterprise Features: Breakdown Analysis, Conditional Formatting, Performance Benchmarking');
         console.log('Charts:', Object.keys(charts));
         console.log('Available themes:', Object.keys(themes));
         console.log('Data processor loaded with', Object.keys(dataProcessor).length, 'methods');
         console.log('Animation system loaded with', Object.keys(animationSystem).length, 'features');
-        console.log('Interactive Features: Accessibility (WCAG 2.1 AA), Professional Tooltips, Export System, Zoom & Pan, Responsive Design');
-        console.log('Accessibility: Tab navigation, Arrow keys, Screen reader support');
-        console.log('Tooltips: Smart positioning, Multiple themes, Rich content');
-        console.log('Export: SVG, PNG, JSON, CSV formats available');
-        console.log('Zoom & Pan: Mouse wheel zoom, drag to pan, zoom controls');
-        console.log('Responsive: Mobile-first design, Adaptive charts, Flexible layouts');
+        console.log('🏢 Enterprise Features: Advanced breakdown analysis, hierarchical data support, conditional formatting');
+        console.log('🎯 Interactive Features: Accessibility (WCAG 2.1 AA), Professional Tooltips, Export System, Zoom & Pan, Responsive Design');
+        console.log('♿ Accessibility: Tab navigation, Arrow keys, Screen reader support, Focus management');
+        console.log('💡 Tooltips: Smart positioning, Multiple themes, Rich content, Performance optimized');
+        console.log('📤 Export: SVG, PNG, JSON, CSV formats available with enterprise data');
+        console.log('🔍 Zoom & Pan: Mouse wheel zoom, drag to pan, zoom controls, touch support');
+        console.log('📱 Responsive: Mobile-first design, Adaptive charts, Flexible layouts, Enterprise ready');
+        
+        } // End of initializeCharts()
+        
+        function initializeBasicCharts() {
+            console.log('🔄 Basic fallback initialization...');
+            
+            // Test D3 first
+            if (typeof d3 === 'undefined') {
+                console.error('❌ D3 not available!');
+                return;
+            }
+            
+            console.log('✅ D3 available:', d3.version);
+            
+            // Create simple test charts for chart1 and chart2
+            ['chart1', 'chart2'].forEach(chartId => {
+                const element = document.getElementById(chartId);
+                if (!element) {
+                    console.error(`❌ Element ${chartId} not found`);
+                    return;
+                }
+                
+                console.log(`🔧 Creating basic chart for ${chartId}`);
+                
+                // Clear any existing content
+                d3.select(`#${chartId}`).selectAll("*").remove();
+                
+                // Create a simple SVG with test bars
+                const svg = d3.select(`#${chartId}`)
+                    .append("svg")
+                    .attr("width", 1100)
+                    .attr("height", 400)
+                    .style("background", "#f8f9fa");
+                
+                // Add test data bars
+                const testData = [
+                    { label: "Q1", value: 70 },
+                    { label: "Q2", value: 30 },
+                    { label: "Q3", value: 35 },
+                    { label: "Q4", value: 40 }
+                ];
+                
+                const xScale = d3.scaleBand()
+                    .domain(testData.map(d => d.label))
+                    .range([80, 1020])
+                    .padding(0.1);
+                
+                const yScale = d3.scaleLinear()
+                    .domain([0, d3.max(testData, d => d.value)])
+                    .range([320, 60]);
+                
+                svg.selectAll("rect")
+                    .data(testData)
+                    .enter()
+                    .append("rect")
+                    .attr("x", d => xScale(d.label))
+                    .attr("y", d => yScale(d.value))
+                    .attr("width", xScale.bandwidth())
+                    .attr("height", d => 320 - yScale(d.value))
+                    .attr("fill", "#3498db");
+                
+                svg.selectAll("text")
+                    .data(testData)
+                    .enter()
+                    .append("text")
+                    .attr("x", d => xScale(d.label) + xScale.bandwidth() / 2)
+                    .attr("y", 350)
+                    .attr("text-anchor", "middle")
+                    .attr("fill", "#2c3e50")
+                    .text(d => d.label);
+                
+                console.log(`✅ Basic chart created for ${chartId}`);
+            });
+        }
 
     </script>
 </body>

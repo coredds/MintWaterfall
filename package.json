@@ -1,7 +1,7 @@
 {
   "name": "mintwaterfall",
-  "version": "0.6.0",
-  "description": "A powerful, D3.js-compatible waterfall chart component with stacking capabilities, animations, and extensive customization options",
+  "version": "0.8.0",
+  "description": "A powerful, D3.js-compatible waterfall chart component with enterprise features including breakdown analysis, conditional formatting, stacking capabilities, animations, and extensive customization options",
   "main": "dist/mintwaterfall.cjs.js",
   "module": "dist/mintwaterfall.esm.js",
   "browser": "dist/mintwaterfall.min.js",
@@ -33,6 +33,8 @@
   "scripts": {
     "start": "python -m http.server 8080",
     "dev": "python -m http.server 8080",
+    "demo": "python -m http.server 8080",
+    "demo:breakdown": "python -m http.server 8080 && echo \"Demo available at: http://localhost:8080/breakdown-feature-demo.html\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "jest",

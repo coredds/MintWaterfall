@@ -71,3 +71,67 @@ global.d3 = {
 
 // Add d3 to global scope
 global.d3.waterfallChart = undefined; // Will be set by our module
+
+// Mock Canvas API for export tests
+const createMockCanvas = () => ({
+  getContext: jest.fn(() => ({
+    imageSmoothingEnabled: true,
+    imageSmoothingQuality: "high",
+    drawImage: jest.fn(),
+    fillRect: jest.fn(),
+    fillText: jest.fn(),
+    measureText: jest.fn(() => ({ width: 100 })),
+    save: jest.fn(),
+    restore: jest.fn(),
+    translate: jest.fn(),
+    scale: jest.fn()
+  })),
+  toDataURL: jest.fn(() => "data:image/png;base64,mock-image-data"),
+  width: 800,
+  height: 400
+});
+
+// Mock HTMLCanvasElement
+global.HTMLCanvasElement = jest.fn(() => createMockCanvas());
+global.HTMLCanvasElement.prototype.getContext = jest.fn(() => createMockCanvas().getContext());
+global.HTMLCanvasElement.prototype.toDataURL = jest.fn(() => "data:image/png;base64,mock-image-data");
+
+// Mock document.createElement for canvas
+const originalCreateElement = global.document.createElement;
+global.document.createElement = jest.fn((tagName) => {
+  if (tagName === "canvas") {
+    return createMockCanvas();
+  }
+  if (tagName === "svg") {
+    return createMockSVG();
+  }
+  return originalCreateElement.call(global.document, tagName);
+});
+
+// Mock SVG element for export tests
+const createMockSVG = () => {
+  const mockSVG = {
+    tagName: "svg",
+    cloneNode: jest.fn(() => createMockSVG()),
+    insertBefore: jest.fn(),
+    appendChild: jest.fn(),
+    removeChild: jest.fn(),
+    querySelector: jest.fn(),
+    querySelectorAll: jest.fn(() => []),
+    getAttribute: jest.fn(() => null),
+    setAttribute: jest.fn(),
+    style: {},
+    outerHTML: "<svg></svg>",
+    innerHTML: "",
+    firstChild: null,
+    children: [],
+    childNodes: []
+  };
+  return mockSVG;
+};
+
+// Mock SVGElement
+global.SVGElement = jest.fn(() => createMockSVG());
+global.SVGElement.prototype.insertBefore = jest.fn();
+global.SVGElement.prototype.appendChild = jest.fn();
+global.SVGElement.prototype.cloneNode = jest.fn(() => createMockSVG());

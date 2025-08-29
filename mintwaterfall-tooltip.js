@@ -281,6 +281,9 @@ export function createTooltipSystem() {
     function addTooltipStyles() {
         const styleId = "mintwaterfall-tooltip-styles";
         
+        // Check if we're in a browser environment
+        if (typeof document === "undefined") return; // Node.js environment
+        
         if (document.getElementById(styleId)) return;
         
         const styles = `
@@ -449,7 +452,7 @@ export function createChartTooltip(chart, config = {}) {
     return tooltip;
 }
 
-// Global tooltip instance
-export const tooltip = createTooltipSystem();
+// Global tooltip instance - only create in browser environment
+export const tooltip = typeof document !== "undefined" ? createTooltipSystem() : null;
 
 export default createTooltipSystem;
