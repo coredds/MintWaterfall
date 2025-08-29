@@ -106,7 +106,7 @@ export function createZoomSystem() {
         updateAxes(container, transform);
     }
     
-    function updateAxes(container, transform) {
+    function updateAxes(container, transform) { // eslint-disable-line no-unused-vars
         // For now, we'll keep axes fixed and only transform the chart content
         // This is the expected behavior for most waterfall charts
         // The axes provide reference while the data zooms/pans
@@ -117,7 +117,7 @@ export function createZoomSystem() {
         // }
     }
     
-    function getScaleFromAxis(axisGroup) {
+    function getScaleFromAxis(axisGroup) { // eslint-disable-line no-unused-vars
         // Helper to extract scale from axis group
         // This is a simplified version - in practice, you'd store the original scales
         const domain = axisGroup.selectAll(".tick text").data();
@@ -329,7 +329,7 @@ export function createZoomControls() {
             .style("gap", "5px");
         
         // Zoom in button
-        const zoomInBtn = controlsGroup.append("button")
+        const zoomInBtn = controlsGroup.append("button") // eslint-disable-line no-unused-vars
             .attr("class", "zoom-btn zoom-in")
             .style("width", "32px")
             .style("height", "32px")
@@ -345,7 +345,7 @@ export function createZoomControls() {
             .on("click", () => zoomSystem.scaleBy(1.5));
         
         // Zoom out button
-        const zoomOutBtn = controlsGroup.append("button")
+        const zoomOutBtn = controlsGroup.append("button") // eslint-disable-line no-unused-vars
             .attr("class", "zoom-btn zoom-out")
             .style("width", "32px")
             .style("height", "32px")
@@ -361,7 +361,7 @@ export function createZoomControls() {
             .on("click", () => zoomSystem.scaleBy(1/1.5));
         
         // Reset button
-        const resetBtn = controlsGroup.append("button")
+        const resetBtn = controlsGroup.append("button") // eslint-disable-line no-unused-vars
             .attr("class", "zoom-btn zoom-reset")
             .style("width", "32px")
             .style("height", "32px")

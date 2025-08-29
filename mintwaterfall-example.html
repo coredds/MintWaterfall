@@ -558,6 +558,92 @@
         </div>
     </div>
 
+    <!-- Trend Line Demo Chart -->
+    <div class="chart-container">
+        <h2>📈 Trend Line Overlays - Interactive Demonstration</h2>
+        <p style="text-align: center; color: #666; font-style: italic; margin-bottom: 20px;">
+            Visualize trends with linear, moving average, and polynomial overlays - Real-time configuration
+        </p>
+        
+        <!-- Trend Line Controls -->
+        <div class="feature-controls" style="margin: 15px 0; padding: 20px; background: linear-gradient(135deg, #f8f9fa, #e3f2fd); border-radius: 12px; border-left: 5px solid #147B58;">
+            <h4 style="margin: 0 0 15px 0; color: #147B58; font-size: 18px;">📊 Trend Line Configuration</h4>
+            
+            <div class="control-group" style="margin-bottom: 15px;">
+                <h4>Trend Line Type</h4>
+                <div class="feature-buttons">
+                    <button onclick="setTrendLine('chartTrend', 'linear')" id="linear-btn" style="background: linear-gradient(45deg, #3498db, #2980b9);">Linear Trend</button>
+                    <button onclick="setTrendLine('chartTrend', 'moving-average')" id="moving-btn" style="background: linear-gradient(45deg, #e74c3c, #c0392b);">Moving Average</button>
+                    <button onclick="setTrendLine('chartTrend', 'polynomial')" id="polynomial-btn" style="background: linear-gradient(45deg, #f39c12, #e67e22);">Polynomial</button>
+                    <button onclick="setTrendLine('chartTrend', 'none')" id="none-btn" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d);">No Trend</button>
+                </div>
+            </div>
+            
+            <div class="control-group" style="margin-bottom: 15px;">
+                <h4>Styling Options</h4>
+                <div class="feature-buttons">
+                    <select onchange="changeTrendColor('chartTrend', this.value)" id="color-select" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd; margin-right: 10px;">
+                        <option value="#e74c3c">Red</option>
+                        <option value="#3498db">Blue</option>
+                        <option value="#2ecc71">Green</option>
+                        <option value="#f39c12">Orange</option>
+                        <option value="#9b59b6">Purple</option>
+                        <option value="#1abc9c">Teal</option>
+                        <option value="#34495e">Dark Gray</option>
+                    </select>
+                    <select onchange="changeTrendWidth('chartTrend', this.value)" id="width-select" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd; margin-right: 10px;">
+                        <option value="2">Thin (2px)</option>
+                        <option value="3" selected>Medium (3px)</option>
+                        <option value="4">Thick (4px)</option>
+                        <option value="5">Extra Thick (5px)</option>
+                    </select>
+                    <select onchange="changeTrendStyle('chartTrend', this.value)" id="style-select" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd;">
+                        <option value="solid">Solid Line</option>
+                        <option value="dashed">Dashed Line</option>
+                        <option value="dotted">Dotted Line</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h4>Advanced Settings</h4>
+                <div class="feature-buttons">
+                    <label style="margin-right: 15px; color: #147B58; font-weight: 500;">
+                        Moving Average Window: 
+                        <input type="range" min="2" max="5" value="3" onchange="changeTrendWindow('chartTrend', this.value)" id="window-slider" style="margin-left: 5px;">
+                        <span id="window-value">3</span>
+                    </label>
+                    <label style="margin-right: 15px; color: #147B58; font-weight: 500;">
+                        Polynomial Degree: 
+                        <input type="range" min="2" max="4" value="2" onchange="changeTrendDegree('chartTrend', this.value)" id="degree-slider" style="margin-left: 5px;">
+                        <span id="degree-value">2</span>
+                    </label>
+                    <button onclick="animateTrendChange('chartTrend')" style="background: linear-gradient(45deg, #8e44ad, #9b59b6);">Animate Trend Change</button>
+                </div>
+            </div>
+        </div>
+        
+        <svg id="chartTrend" width="1100" height="400"></svg>
+        <div class="controls">
+            <button onclick="toggleStacked('chartTrend')">Switch Mode</button>
+            <button onclick="generateTrendData('chartTrend')">Generate New Data</button>
+            <button class="animation-btn" onclick="animateChart('chartTrend')">Animate Chart</button>
+        </div>
+        <div class="export-controls">
+            <button class="export-btn" onclick="exportChart('chartTrend', 'svg')">Export SVG</button>
+            <button class="export-btn" onclick="exportChart('chartTrend', 'png')">Export PNG</button>
+            <button class="export-btn" onclick="exportChart('chartTrend', 'json')">Export JSON</button>
+            <button class="export-btn" onclick="exportChart('chartTrend', 'csv')">Export CSV</button>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db;">
+            <h4 style="color: #3498db; margin: 0 0 10px 0;">💡 Trend Line Information</h4>
+            <div id="trend-info" style="color: #666; font-size: 14px; line-height: 1.5;">
+                <strong>Current:</strong> No trend line selected. Choose a trend type above to see overlays on your data.
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         // Import all MintWaterfall modules including interactive features
         import { waterfallChart } from './mintwaterfall-chart.js';
@@ -854,6 +940,66 @@
             }
         ];
 
+        // Trend line demo data - optimized for trend visualization
+        let trendData = [
+            {
+                label: "Q1 2023",
+                stacks: [
+                    { value: 45, color: "#3498db", label: "Revenue: 45M" },
+                    { value: 12, color: "#2ecc71", label: "Profit: 12M" }
+                ]
+            },
+            {
+                label: "Q2 2023",
+                stacks: [
+                    { value: 52, color: "#3498db", label: "Revenue: 52M" },
+                    { value: 18, color: "#2ecc71", label: "Profit: 18M" }
+                ]
+            },
+            {
+                label: "Q3 2023",
+                stacks: [
+                    { value: 48, color: "#3498db", label: "Revenue: 48M" },
+                    { value: 15, color: "#2ecc71", label: "Profit: 15M" }
+                ]
+            },
+            {
+                label: "Q4 2023",
+                stacks: [
+                    { value: 65, color: "#3498db", label: "Revenue: 65M" },
+                    { value: 25, color: "#2ecc71", label: "Profit: 25M" }
+                ]
+            },
+            {
+                label: "Q1 2024",
+                stacks: [
+                    { value: 58, color: "#3498db", label: "Revenue: 58M" },
+                    { value: 22, color: "#2ecc71", label: "Profit: 22M" }
+                ]
+            },
+            {
+                label: "Q2 2024",
+                stacks: [
+                    { value: 72, color: "#3498db", label: "Revenue: 72M" },
+                    { value: 30, color: "#2ecc71", label: "Profit: 30M" }
+                ]
+            },
+            {
+                label: "Q3 2024",
+                stacks: [
+                    { value: 68, color: "#3498db", label: "Revenue: 68M" },
+                    { value: 28, color: "#2ecc71", label: "Profit: 28M" }
+                ]
+            },
+            {
+                label: "Q4 2024",
+                stacks: [
+                    { value: 85, color: "#3498db", label: "Revenue: 85M" },
+                    { value: 38, color: "#2ecc71", label: "Profit: 38M" }
+                ]
+            }
+        ];
+
         // Chart configurations with interactive features
         const charts = {
             chart1: {
@@ -929,6 +1075,29 @@
                 data: [...revenueData], // Clone revenue data
                 currentTheme: 'default',
                 currentScaleType: 'auto'
+            },
+            chartTrend: {
+                chart: waterfallChart()
+                    .width(1100)
+                    .height(400)
+                    .showTotal(true)
+                    .totalLabel('Total with Trend')
+                    .stacked(true)
+                    .showTrendLine(false)
+                    .trendLineType('linear')
+                    .trendLineColor('#e74c3c')
+                    .trendLineWidth(3)
+                    .trendLineStyle('solid'),
+                data: [...trendData], // Use trend-optimized data
+                currentTheme: 'default',
+                currentTrendType: 'none',
+                trendSettings: {
+                    color: '#e74c3c',
+                    width: 3,
+                    style: 'solid',
+                    window: 3,
+                    degree: 2
+                }
             }
         };
 
@@ -1623,6 +1792,202 @@
             }
         };
 
+        // Trend Line Functions
+        window.setTrendLine = function(chartId, trendType) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                chartConfig.currentTrendType = trendType;
+                
+                // Update button states
+                ['linear', 'moving-average', 'polynomial', 'none'].forEach(type => {
+                    const btnId = type === 'moving-average' ? 'moving-btn' : 
+                                  type === 'polynomial' ? 'polynomial-btn' : 
+                                  type === 'linear' ? 'linear-btn' : 'none-btn';
+                    const btn = document.getElementById(btnId);
+                    if (btn) {
+                        if (type === trendType) {
+                            btn.style.background = 'linear-gradient(45deg, #27ae60, #2ecc71)';
+                            btn.style.color = 'white';
+                        } else {
+                            // Reset to original colors
+                            if (type === 'linear') btn.style.background = 'linear-gradient(45deg, #3498db, #2980b9)';
+                            else if (type === 'moving-average') btn.style.background = 'linear-gradient(45deg, #e74c3c, #c0392b)';
+                            else if (type === 'polynomial') btn.style.background = 'linear-gradient(45deg, #f39c12, #e67e22)';
+                            else btn.style.background = 'linear-gradient(45deg, #95a5a6, #7f8c8d)';
+                        }
+                    }
+                });
+
+                // Configure chart
+                if (trendType === 'none') {
+                    chartConfig.chart.showTrendLine(false);
+                } else {
+                    chartConfig.chart
+                        .showTrendLine(true)
+                        .trendLineType(trendType)
+                        .trendLineColor(chartConfig.trendSettings.color)
+                        .trendLineWidth(chartConfig.trendSettings.width)
+                        .trendLineStyle(chartConfig.trendSettings.style);
+                }
+
+                // Update chart
+                d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                
+                // Update info display
+                updateTrendInfo(chartId, trendType);
+                
+                showFeedback(chartId, `Trend line: ${trendType === 'none' ? 'disabled' : trendType}`, 'success');
+            }
+        };
+
+        window.changeTrendColor = function(chartId, color) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                chartConfig.trendSettings.color = color;
+                chartConfig.chart.trendLineColor(color);
+                d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                showFeedback(chartId, `Trend line color: ${color}`, 'success');
+            }
+        };
+
+        window.changeTrendWidth = function(chartId, width) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                chartConfig.trendSettings.width = parseInt(width);
+                chartConfig.chart.trendLineWidth(parseInt(width));
+                d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                showFeedback(chartId, `Trend line width: ${width}px`, 'success');
+            }
+        };
+
+        window.changeTrendStyle = function(chartId, style) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                chartConfig.trendSettings.style = style;
+                chartConfig.chart.trendLineStyle(style);
+                d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                showFeedback(chartId, `Trend line style: ${style}`, 'success');
+            }
+        };
+
+        window.changeTrendWindow = function(chartId, window) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                chartConfig.trendSettings.window = parseInt(window);
+                
+                if (chartConfig.currentTrendType === 'moving-average') {
+                    d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                }
+                
+                document.getElementById('window-value').textContent = window;
+                updateTrendInfo(chartId, chartConfig.currentTrendType);
+                showFeedback(chartId, `Moving average window: ${window}`, 'success');
+            }
+        };
+
+        window.changeTrendDegree = function(chartId, degree) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                chartConfig.trendSettings.degree = parseInt(degree);
+                
+                if (chartConfig.currentTrendType === 'polynomial') {
+                    d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                }
+                
+                document.getElementById('degree-value').textContent = degree;
+                updateTrendInfo(chartId, chartConfig.currentTrendType);
+                showFeedback(chartId, `Polynomial degree: ${degree}`, 'success');
+            }
+        };
+
+        window.animateTrendChange = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                // Create a smooth transition effect
+                const svg = d3.select(`#${chartId}`);
+                const trendLine = svg.select('.trend-line');
+                
+                if (!trendLine.empty()) {
+                    const totalLength = trendLine.node().getTotalLength();
+                    
+                    trendLine
+                        .attr('stroke-dasharray', totalLength + ' ' + totalLength)
+                        .attr('stroke-dashoffset', totalLength)
+                        .transition()
+                        .duration(2000)
+                        .ease(d3.easeElastic)
+                        .attr('stroke-dashoffset', 0)
+                        .on('end', function() {
+                            d3.select(this).attr('stroke-dasharray', 'none');
+                        });
+                        
+                    showFeedback(chartId, 'Trend line animated!', 'success');
+                } else {
+                    showFeedback(chartId, 'Enable a trend line first to see animation', 'info');
+                }
+            }
+        };
+
+        window.generateTrendData = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (chartConfig) {
+                // Generate new trend-oriented data with growth pattern
+                const baseValue = 40;
+                const growth = 1.15; // 15% growth trend
+                const volatility = 0.3; // 30% volatility
+                
+                const newData = [];
+                for (let i = 0; i < 8; i++) {
+                    const trend = baseValue * Math.pow(growth, i / 2);
+                    const noise = (Math.random() - 0.5) * volatility * trend;
+                    const revenue = Math.round(trend + noise);
+                    const profit = Math.round(revenue * (0.25 + Math.random() * 0.15));
+                    
+                    newData.push({
+                        label: `Q${(i % 4) + 1} ${2023 + Math.floor(i / 4)}`,
+                        stacks: [
+                            { value: revenue, color: "#3498db", label: `Revenue: ${revenue}M` },
+                            { value: profit, color: "#2ecc71", label: `Profit: ${profit}M` }
+                        ]
+                    });
+                }
+                
+                chartConfig.data = newData;
+                d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+                
+                updateTrendInfo(chartId, chartConfig.currentTrendType);
+                showFeedback(chartId, 'New trend data generated!', 'success');
+            }
+        };
+
+        function updateTrendInfo(chartId, trendType) {
+            const infoDiv = document.getElementById('trend-info');
+            if (infoDiv && chartId === 'chartTrend') {
+                const chartConfig = charts[chartId];
+                let infoText = '';
+                
+                switch (trendType) {
+                    case 'linear':
+                        infoText = '<strong>Linear Trend:</strong> Shows a straight-line trend through the data points using least squares regression. Best for identifying consistent growth or decline patterns.';
+                        break;
+                    case 'moving-average':
+                        const window = chartConfig.trendSettings.window;
+                        infoText = `<strong>Moving Average (${window}-period):</strong> Smooths out short-term fluctuations to reveal underlying trends. Each point represents the average of ${window} consecutive data points.`;
+                        break;
+                    case 'polynomial':
+                        const degree = chartConfig.trendSettings.degree;
+                        infoText = `<strong>Polynomial Trend (degree ${degree}):</strong> Fits a curved line that can capture more complex patterns in the data. Higher degrees can show turning points and cycles.`;
+                        break;
+                    case 'none':
+                    default:
+                        infoText = '<strong>Current:</strong> No trend line selected. Choose a trend type above to see overlays on your data.';
+                        break;
+                }
+                
+                infoDiv.innerHTML = infoText;
+            }
+        }
+
         // Responsive chart functionality - improved for touch devices
         function makeChartsResponsive() {
             // Wait for charts to be fully rendered first
@@ -1727,7 +2092,7 @@
         }, 2000);
         
         // Log successful initialization
-        console.log('MintWaterfall v0.5.6 initialized with Interactive Features!');
+        console.log('MintWaterfall v0.6.0 initialized with Interactive Features!');
         console.log('Charts:', Object.keys(charts));
         console.log('Available themes:', Object.keys(themes));
         console.log('Data processor loaded with', Object.keys(dataProcessor).length, 'methods');

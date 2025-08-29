@@ -1,6 +1,6 @@
 {
   "name": "mintwaterfall",
-  "version": "0.5.6",
+  "version": "0.6.0",
   "description": "A powerful, D3.js-compatible waterfall chart component with stacking capabilities, animations, and extensive customization options",
   "main": "dist/mintwaterfall.cjs.js",
   "module": "dist/mintwaterfall.esm.js",

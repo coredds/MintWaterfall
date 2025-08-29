@@ -58,9 +58,14 @@ export function createExportSystem() {
         }
     }
     
-    // Export chart as PNG
+    // Export chart as PNG with enhanced features
     function exportPNG(chartContainer, options = {}) {
-        const opts = { ...config, ...options };
+        const opts = { 
+            ...config, 
+            scale: 2, // Default to 2x for high-DPI
+            quality: 0.95,
+            ...options 
+        };
         
         return new Promise((resolve, reject) => {
             try {
@@ -75,11 +80,15 @@ export function createExportSystem() {
                 const width = (bbox.width + opts.padding * 2) * opts.scale;
                 const height = (bbox.height + opts.padding * 2) * opts.scale;
                 
-                // Create canvas
+                // Create high-DPI canvas
                 const canvas = document.createElement("canvas");
                 canvas.width = width;
                 canvas.height = height;
                 const ctx = canvas.getContext("2d");
+                
+                // Enable high-quality rendering
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = "high";
                 
                 // Set background
                 if (opts.background && opts.background !== "transparent") {
@@ -87,7 +96,7 @@ export function createExportSystem() {
                     ctx.fillRect(0, 0, width, height);
                 }
                 
-                // Convert SVG to image
+                // Convert SVG to image with enhanced error handling
                 const svgExport = exportSVG(chartContainer, { 
                     ...opts, 
                     includeStyles: true 
@@ -96,8 +105,12 @@ export function createExportSystem() {
                 const img = new Image();
                 img.onload = function() {
                     try {
-                        ctx.drawImage(img, opts.padding, opts.padding, 
-                                     bbox.width * opts.scale, bbox.height * opts.scale);
+                        // Apply transforms for better quality
+                        ctx.save();
+                        ctx.scale(opts.scale, opts.scale);
+                        ctx.drawImage(img, opts.padding / opts.scale, opts.padding / opts.scale, 
+                                     bbox.width, bbox.height);
+                        ctx.restore();
                         
                         canvas.toBlob((blob) => {
                             if (blob) {
@@ -105,6 +118,9 @@ export function createExportSystem() {
                                     blob,
                                     url: URL.createObjectURL(blob),
                                     canvas,
+                                    width: canvas.width,
+                                    height: canvas.height,
+                                    scale: opts.scale,
                                     download: () => downloadBlob(blob, `${opts.filename}.png`)
                                 });
                             } else {
@@ -113,15 +129,23 @@ export function createExportSystem() {
                         }, "image/png", opts.quality);
                         
                     } catch (error) {
-                        reject(error);
+                        reject(new Error(`PNG rendering failed: ${error.message}`));
                     }
                 };
                 
-                img.onerror = () => reject(new Error("Failed to load SVG image"));
+                img.onerror = () => reject(new Error("Failed to load SVG image for PNG conversion"));
+                
+                // Add timeout for image loading
+                setTimeout(() => {
+                    if (!img.complete) {
+                        reject(new Error("PNG export timeout - SVG image failed to load"));
+                    }
+                }, 5000);
+                
                 img.src = svgExport.url;
                 
             } catch (error) {
-                reject(error);
+                reject(new Error(`PNG export failed: ${error.message}`));
             }
         });
     }

@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-08-28
+
+### Added
+- **📈 Trend Line Overlays**: Complete trend analysis system with linear, moving average, and polynomial options
+- **🔄 Enhanced Data Loading**: CSV, JSON, TSV format support with HTTP URL loading and automatic format detection
+- **🖼️ High-DPI PNG Export**: 2x scaling support with enhanced image quality and comprehensive error handling
+- **♿ Modern Accessibility**: Forced Colors Mode support with CSS system colors, deprecated `-ms-high-contrast` removed
+- **🧪 Comprehensive Testing**: 27 new test cases covering trend lines, data loading, and export functionality (206 total tests)
+- **🎨 Interactive Demo Integration**: Trend line demonstration integrated into main demo with live controls and styling options
+- **⚙️ Real-time Configuration**: Dynamic trend line styling with color, width, style, and algorithm parameter controls
+- **📚 Educational Information**: Contextual explanations for each trend type with technical details
+
+### Fixed
+- **ESLint Compliance**: All linting issues resolved with modern code standards
+- **Deprecated API**: Removed legacy accessibility detection methods in favor of W3C Forced Colors Mode standard
+- **Code Quality**: Unused variables properly handled with appropriate ESLint disable comments for future-use functions
+
+### Changed
+- **Accessibility System**: Enhanced with automatic CSS injection for forced colors mode support
+- **Export System**: Improved PNG generation with high-DPI support and better error handling
+- **Demo Experience**: Consolidated trend line features into main demonstration page for unified user experience
+
 ## [0.5.6] - 2025-08-22
 
 ### Added

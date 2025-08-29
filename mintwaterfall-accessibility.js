@@ -311,7 +311,7 @@ export function createAccessibilitySystem() {
         }
     }
     
-    // High contrast mode detection and support (Updated: 2025-08-27)
+    // High contrast mode detection and support (Updated: 2025-08-28)
     function detectHighContrast() {
         // Check for modern forced colors mode and high contrast preferences
         if (window.matchMedia) {
@@ -325,9 +325,33 @@ export function createAccessibilitySystem() {
                 return true;
             }
             
-            // Only as a last resort, check the deprecated property
-            // This will eventually be removed in future browsers
-            return window.matchMedia("(-ms-high-contrast: active)").matches;
+            // Additional modern checks for high contrast scenarios
+            if (window.matchMedia("(prefers-contrast: more)").matches) {
+                return true;
+            }
+            
+            // Check for inverted colors which often indicates high contrast mode
+            if (window.matchMedia("(inverted-colors: inverted)").matches) {
+                return true;
+            }
+            
+            // Fallback: detect if system colors are being used (indicates forced colors)
+            try {
+                const testElement = document.createElement("div");
+                testElement.style.color = "rgb(1, 2, 3)";
+                testElement.style.position = "absolute";
+                testElement.style.visibility = "hidden";
+                document.body.appendChild(testElement);
+                
+                const computedColor = window.getComputedStyle(testElement).color;
+                document.body.removeChild(testElement);
+                
+                // If the computed color doesn't match what we set, forced colors is likely active
+                return computedColor !== "rgb(1, 2, 3)";
+            } catch (e) { // eslint-disable-line no-unused-vars
+                // If detection fails, assume no high contrast for safety
+                return false;
+            }
         }
         return false;
     }
@@ -337,20 +361,89 @@ export function createAccessibilitySystem() {
         
         const svg = chartContainer.select("svg");
         
-        // Apply high contrast colors
+        // Apply modern forced colors mode compatible styles using CSS system colors
         svg.selectAll(".bar-group rect")
-           .style("stroke", "#000000")
-           .style("stroke-width", "2px");
+           .style("stroke", "CanvasText")
+           .style("stroke-width", "2px")
+           .style("fill", "ButtonFace");
            
         svg.selectAll(".x-axis, .y-axis")
-           .style("stroke", "#000000")
+           .style("stroke", "CanvasText")
            .style("stroke-width", "2px");
            
         svg.selectAll("text")
-           .style("fill", "#000000")
+           .style("fill", "CanvasText")
            .style("font-weight", "bold");
+           
+        // Apply high contrast styles to trend lines if present
+        svg.selectAll(".trend-line")
+           .style("stroke", "Highlight")
+           .style("stroke-width", "3px");
+           
+        // Ensure tooltips work in forced colors mode
+        svg.selectAll(".tooltip")
+           .style("background", "Canvas")
+           .style("border", "2px solid CanvasText")
+           .style("color", "CanvasText");
     }
     
+    // Inject CSS for forced colors mode support
+    function injectForcedColorsCSS() {
+        const cssId = "mintwaterfall-forced-colors-css";
+        if (document.getElementById(cssId)) return; // Already injected
+        
+        const css = `
+            @media (forced-colors: active) {
+                .mintwaterfall-chart svg {
+                    forced-color-adjust: none;
+                }
+                
+                .mintwaterfall-chart .bar-group rect {
+                    stroke: CanvasText !important;
+                    stroke-width: 2px !important;
+                }
+                
+                .mintwaterfall-chart .x-axis,
+                .mintwaterfall-chart .y-axis {
+                    stroke: CanvasText !important;
+                    stroke-width: 2px !important;
+                }
+                
+                .mintwaterfall-chart text {
+                    fill: CanvasText !important;
+                    font-weight: bold !important;
+                }
+                
+                .mintwaterfall-chart .trend-line {
+                    stroke: Highlight !important;
+                    stroke-width: 3px !important;
+                }
+                
+                .mintwaterfall-tooltip {
+                    background: Canvas !important;
+                    border: 2px solid CanvasText !important;
+                    color: CanvasText !important;
+                    forced-color-adjust: none;
+                }
+            }
+            
+            @media (prefers-contrast: high) {
+                .mintwaterfall-chart .bar-group rect {
+                    stroke-width: 2px !important;
+                }
+                
+                .mintwaterfall-chart text {
+                    font-weight: bold !important;
+                }
+            }
+        `;
+        
+        const style = document.createElement("style");
+        style.id = cssId;
+        style.textContent = css;
+        document.head.appendChild(style);
+    }
+
     // Reduced motion support
     function respectsReducedMotion() {
         if (window.matchMedia) {
@@ -396,6 +489,7 @@ export function createAccessibilitySystem() {
         announce,
         detectHighContrast,
         applyHighContrastStyles,
+        injectForcedColorsCSS,
         respectsReducedMotion,
         getAccessibleAnimationDuration,
         validateColorContrast,
@@ -419,9 +513,15 @@ export function createAccessibilitySystem() {
 // Global accessibility system instance
 export const accessibilitySystem = createAccessibilitySystem();
 
+// Inject CSS support immediately for global instance
+accessibilitySystem.injectForcedColorsCSS();
+
 // Utility function to make any chart accessible
 export function makeChartAccessible(chartContainer, data, config = {}) {
     const a11y = createAccessibilitySystem();
+    
+    // Inject forced colors CSS support
+    a11y.injectForcedColorsCSS();
     
     // Create live region for announcements
     a11y.createLiveRegion(d3.select("body"));

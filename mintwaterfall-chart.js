@@ -53,6 +53,14 @@ export function waterfallChart() {
     let staggerDelay = 100;
     let scaleType = "auto"; // 'auto', 'linear', 'time', 'ordinal'
     
+    // Trend line features
+    let showTrendLine = false;
+    let trendLineColor = "#e74c3c";
+    let trendLineWidth = 2;
+    let trendLineStyle = "solid"; // 'solid', 'dashed', 'dotted'
+    let trendLineOpacity = 0.8;
+    let trendLineType = "linear"; // 'linear', 'moving-average', 'polynomial'
+    
     // Accessibility and UX features
     let enableAccessibility = true;
     let enableTooltips = false;
@@ -189,6 +197,11 @@ export function waterfallChart() {
                 // Create/update connectors (in chart group for zoom)
                 drawConnectors(chartGroup, processedData, xScale, yScale);
                 
+                // Create/update trend line if enabled (in chart group for zoom)
+                if (showTrendLine) {
+                    drawTrendLine(chartGroup, processedData, xScale, yScale);
+                }
+                
                 // Add brush functionality if enabled
                 if (enableBrush) {
                     addBrushSelection(containerUpdate, processedData, xScale, yScale);
@@ -247,7 +260,7 @@ export function waterfallChart() {
         
         // Handle edge cases for different data scenarios
         const hasNegativeValues = minValue < 0;
-        const hasPositiveValues = maxValue > 0;
+        // const hasPositiveValues = maxValue > 0; // Reserved for future use
         
         // Create temporary scale that matches the actual rendering logic
         let tempYScale;
@@ -679,6 +692,122 @@ export function waterfallChart() {
             .remove();
     }
 
+    function drawTrendLine(container, processedData, xScale, yScale) {
+        const trendGroup = container.selectAll(".trend-group").data([0]);
+        const trendGroupEnter = trendGroup.enter()
+            .append("g")
+            .attr("class", "trend-group");
+        const trendGroupUpdate = trendGroupEnter.merge(trendGroup);
+
+        // Calculate trend line points
+        const barWidth = getBarWidth(xScale, processedData.length, innerWidth);
+        const trendPoints = processedData.map(d => {
+            const x = getBarPosition(xScale, d.label, barWidth) + barWidth / 2;
+            const y = yScale(d.cumulativeTotal);
+            return [x, y];
+        });
+
+        // Create line generator
+        const lineGenerator = d3.line()
+            .x(d => d[0])
+            .y(d => d[1]);
+
+        // Apply curve based on trend line type
+        switch (trendLineType) {
+            case "linear":
+                lineGenerator.curve(d3.curveLinear);
+                break;
+            case "moving-average":
+                // Simple 3-point moving average
+                const smoothedPoints = [];
+                for (let i = 0; i < trendPoints.length; i++) {
+                    const start = Math.max(0, i - 1);
+                    const end = Math.min(trendPoints.length - 1, i + 1);
+                    const avgY = trendPoints.slice(start, end + 1)
+                        .reduce((sum, point) => sum + point[1], 0) / (end - start + 1);
+                    smoothedPoints.push([trendPoints[i][0], avgY]);
+                }
+                trendPoints.splice(0, trendPoints.length, ...smoothedPoints);
+                lineGenerator.curve(d3.curveCardinal);
+                break;
+            case "polynomial":
+                lineGenerator.curve(d3.curveCardinal.tension(0.5));
+                break;
+            default:
+                lineGenerator.curve(d3.curveLinear);
+        }
+
+        // Set stroke style
+        let strokeDasharray = "none";
+        switch (trendLineStyle) {
+            case "dashed":
+                strokeDasharray = "8,4";
+                break;
+            case "dotted":
+                strokeDasharray = "2,2";
+                break;
+            default:
+                strokeDasharray = "none";
+        }
+
+        // Draw trend line
+        const trendLine = trendGroupUpdate.selectAll(".trend-line").data([trendPoints]);
+        
+        trendLine.enter()
+            .append("path")
+            .attr("class", "trend-line")
+            .attr("fill", "none")
+            .attr("stroke", trendLineColor)
+            .attr("stroke-width", trendLineWidth)
+            .attr("stroke-dasharray", strokeDasharray)
+            .attr("opacity", 0)
+            .attr("d", lineGenerator)
+            .merge(trendLine)
+            .transition()
+            .duration(duration)
+            .ease(ease)
+            .attr("opacity", trendLineOpacity)
+            .attr("d", lineGenerator)
+            .attr("stroke", trendLineColor)
+            .attr("stroke-width", trendLineWidth)
+            .attr("stroke-dasharray", strokeDasharray);
+
+        trendLine.exit()
+            .transition()
+            .duration(duration)
+            .ease(ease)
+            .style("opacity", 0)
+            .remove();
+
+        // Add trend line points (optional circles)
+        const trendCircles = trendGroupUpdate.selectAll(".trend-point").data(trendPoints);
+        
+        trendCircles.enter()
+            .append("circle")
+            .attr("class", "trend-point")
+            .attr("r", 0)
+            .attr("fill", trendLineColor)
+            .attr("stroke", "white")
+            .attr("stroke-width", 1)
+            .attr("cx", d => d[0])
+            .attr("cy", d => d[1])
+            .merge(trendCircles)
+            .transition()
+            .duration(duration)
+            .ease(ease)
+            .attr("r", 3)
+            .attr("cx", d => d[0])
+            .attr("cy", d => d[1])
+            .attr("fill", trendLineColor);
+
+        trendCircles.exit()
+            .transition()
+            .duration(duration)
+            .ease(ease)
+            .attr("r", 0)
+            .remove();
+    }
+
     function mixColors(stacks) {
         // Use the color of the stack with the largest absolute value
         let maxValue = 0;
@@ -695,6 +824,7 @@ export function waterfallChart() {
     }
     
     // Enhanced bar drawing with staggered animations
+    // eslint-disable-next-line no-unused-vars
     function drawBarsWithStagger(container, processedData, xScale, yScale) {
         const barsGroup = container.selectAll(".bars-group").data([0]);
         const barsGroupEnter = barsGroup.enter()
@@ -993,6 +1123,31 @@ export function waterfallChart() {
 
     chart.scaleType = function(_) {
         return arguments.length ? (scaleType = _, chart) : scaleType;
+    };
+    
+    // Trend line configuration
+    chart.showTrendLine = function(_) {
+        return arguments.length ? (showTrendLine = _, chart) : showTrendLine;
+    };
+
+    chart.trendLineColor = function(_) {
+        return arguments.length ? (trendLineColor = _, chart) : trendLineColor;
+    };
+
+    chart.trendLineWidth = function(_) {
+        return arguments.length ? (trendLineWidth = _, chart) : trendLineWidth;
+    };
+
+    chart.trendLineStyle = function(_) {
+        return arguments.length ? (trendLineStyle = _, chart) : trendLineStyle;
+    };
+
+    chart.trendLineOpacity = function(_) {
+        return arguments.length ? (trendLineOpacity = _, chart) : trendLineOpacity;
+    };
+
+    chart.trendLineType = function(_) {
+        return arguments.length ? (trendLineType = _, chart) : trendLineType;
     };
     
     // Accessibility configuration

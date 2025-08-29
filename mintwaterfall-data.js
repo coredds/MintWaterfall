@@ -1,6 +1,106 @@
 // MintWaterfall Data Processing Utilities
 // Provides data transformation, aggregation, and manipulation functions
 
+// Data loading utilities
+export async function loadData(source, options = {}) {
+    const {
+        // parseNumbers = true, // Reserved for future use
+        // dateColumns = [], // Reserved for future use
+        // valueColumn = "value", // Reserved for future use
+        // labelColumn = "label", // Reserved for future use
+        // colorColumn = "color", // Reserved for future use
+        // stacksColumn = "stacks" // Reserved for future use
+    } = options;
+
+    try {
+        let rawData;
+        
+        if (typeof source === "string") {
+            // URL or file path
+            if (source.endsWith(".csv")) {
+                rawData = await d3.csv(source);
+            } else if (source.endsWith(".json")) {
+                rawData = await d3.json(source);
+            } else if (source.endsWith(".tsv")) {
+                rawData = await d3.tsv(source);
+            } else {
+                // Try to detect if it's a URL by checking for http/https
+                if (source.startsWith("http")) {
+                    const response = await fetch(source);
+                    const contentType = response.headers.get("content-type");
+                    
+                    if (contentType?.includes("application/json")) {
+                        rawData = await response.json();
+                    } else if (contentType?.includes("text/csv")) {
+                        const text = await response.text();
+                        rawData = d3.csvParse(text);
+                    } else {
+                        rawData = await response.json(); // fallback
+                    }
+                } else {
+                    throw new Error(`Unsupported file format: ${source}`);
+                }
+            }
+        } else if (Array.isArray(source)) {
+            // Already an array
+            rawData = source;
+        } else {
+            throw new Error("Source must be a URL, file path, or data array");
+        }
+
+        // Transform raw data to MintWaterfall format if needed
+        return transformToWaterfallFormat(rawData, options);
+        
+    } catch (error) {
+        console.error("Error loading data:", error);
+        throw error;
+    }
+}
+
+// Transform various data formats to MintWaterfall format
+export function transformToWaterfallFormat(data, options = {}) {
+    const {
+        valueColumn = "value",
+        labelColumn = "label", 
+        colorColumn = "color",
+        // stacksColumn = "stacks", // Reserved for future use
+        defaultColor = "#3498db",
+        parseNumbers = true
+    } = options;
+    
+    if (!Array.isArray(data)) {
+        throw new Error("Data must be an array");
+    }
+    
+    return data.map((item, index) => {
+        // If already in correct format, return as-is
+        if (item.label && Array.isArray(item.stacks)) {
+            return item;
+        }
+        
+        // Transform flat format to stacked format
+        const label = item[labelColumn] || `Item ${index + 1}`;
+        let value = item[valueColumn];
+        
+        if (parseNumbers && typeof value === "string") {
+            value = parseFloat(value.replace(/[,$]/g, "")) || 0;
+        } else if (typeof value !== "number") {
+            value = 0;
+        }
+        
+        const color = item[colorColumn] || defaultColor;
+        
+        return {
+            label: String(label),
+            stacks: [{
+                value: value,
+                color: color,
+                label: item.stackLabel || `${value >= 0 ? "+" : ""}${value}`
+            }]
+        };
+    });
+}
+
 export function createDataProcessor() {
     
     function validateData(data) {

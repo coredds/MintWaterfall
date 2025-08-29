@@ -3,7 +3,7 @@
 [![CI](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml/badge.svg?branch=main)](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml)
 [![Security Audit](https://github.com/coredds/MintWaterfall/actions/workflows/security.yml/badge.svg)](https://github.com/coredds/MintWaterfall/actions/workflows/security.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.5.6-blue.svg)](https://github.com/coredds/MintWaterfall/releases)
+[![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)](https://github.com/coredds/MintWaterfall/releases)
 [![codecov](https://codecov.io/gh/coredds/MintWaterfall/branch/main/graph/badge.svg)](https://codecov.io/gh/coredds/MintWaterfall)
 
 A D3.js-compatible waterfall chart component with comprehensive testing and automated CI/CD.
@@ -12,28 +12,25 @@ A D3.js-compatible waterfall chart component with comprehensive testing and auto
 
 ## Features
 
-- **Production Ready**: 168 comprehensive tests with 51% code coverage
-- **Enhanced D3.js v7 Compatibility**: Full scale system support (band, linear, ordinal, time)
-- **Advanced Interactive Features**: Brush system, staggered animations, scale switching
-- **Automated CI/CD**: Full GitHub Actions pipeline with testing, security audits, and auto-deployment
-- **D3.js Compatible**: Full integration with D3.js v7+ ecosystem
-- **Dual Modes**: Toggle between stacked and waterfall visualizations
-- **Smooth Animations**: Configurable transitions with enhanced staggered effects
-- **Interactive Controls**: Dynamic data updates and real-time mode switching
-- **Responsive Design**: Adapts to different screen sizes and containers
-- **Method Chaining**: Fluent API for intuitive configuration
-- **Robust Validation**: Comprehensive data validation and error handling
-- **Advanced Features**: Themes, custom formatting, event handling, brush filtering
+- **🚀 Production Ready**: 206 comprehensive tests with extensive coverage
+- **📈 Trend Line Analysis**: Linear, moving average, and polynomial trend overlays with real-time configuration
+- **🔄 Advanced Data Loading**: CSV, JSON, TSV support with HTTP URL loading and automatic format detection
+- **🖼️ Enhanced Export Options**: High-DPI PNG (2x scaling), SVG, JPEG, PDF export capabilities
+- **⚡ D3.js v7 Compatible**: Full integration with D3.js v7+ ecosystem and scale system support
+- **🎨 Dual Visualization Modes**: Toggle between stacked and waterfall chart types
+- **✨ Advanced Interactions**: Brush system, staggered animations, scale switching, and responsive design
+- **🔧 Developer Friendly**: Method chaining API, robust validation, comprehensive error handling
+- **🎯 Automated CI/CD**: Complete GitHub Actions pipeline with testing, security audits, and deployment
+- **♿ Accessibility**: WCAG 2.1 compliance with modern Forced Colors Mode support
 
 ## Quality & Testing
 
-- **168 Test Cases**: Comprehensive test suite covering all major functionality
-- **51% Code Coverage**: Solid test coverage with detailed reporting across all modules  
-- **Zero Lint Issues**: Clean, maintainable code following best practices
-- **Security Audits**: Automated dependency vulnerability scanning
-- **Continuous Deployment**: Auto-deployment to GitHub Pages on updates
-- **D3.js v7 Compatibility**: Full scale system support and API compatibility
-- **Production Ready**: All critical functionality tested and verified
+- **206 Test Cases**: Comprehensive test suite covering all functionality including trend lines, data loading, and exports
+- **Enhanced Coverage**: Improved test coverage across all modules with detailed reporting
+- **Zero Lint Issues**: Clean, maintainable code following ESLint best practices
+- **Security Audits**: Automated dependency vulnerability scanning via GitHub Actions
+- **Continuous Deployment**: Auto-deployment to GitHub Pages with release automation
+- **D3.js v7 Compatibility**: Full scale system support and API compatibility validation
 
 ## Installation & Usage
 
@@ -102,6 +99,9 @@ const chart = d3.waterfallChart()
     .showTotal(true)
     .totalLabel("Net Total")
     .stacked(true)
+    .showTrendLine(true)           // 🆕 Enable trend line overlay
+    .trendLineColor("#e74c3c")     // 🆕 Set trend line color
+    .trendLineType("linear")       // 🆕 Set trend line type
     .on("barClick", (event, d) => {
         console.log("Clicked bar:", d.label);
     });
@@ -109,6 +109,26 @@ const chart = d3.waterfallChart()
 d3.select('#chart')
     .datum(data)
     .call(chart);
+
+// 🆕 Enhanced data loading from files
+import { loadData } from './mintwaterfall-data.js';
+
+// Load and display CSV data
+const csvData = await loadData('revenue-data.csv');
+d3.select('#chart').datum(csvData).call(chart);
+
+// Load JSON data from API
+const jsonData = await loadData('https://api.example.com/waterfall.json');
+d3.select('#chart').datum(jsonData).call(chart);
+
+// 🆕 Enhanced export with high-DPI PNG
+await chart.export('png', { 
+    scale: 2,           // High-DPI support
+    quality: 0.95,      // High quality
+    background: 'white' // Background color
+}).then(result => {
+    result.download();  // Download the file
+});
 ```
 
 ## API Reference
@@ -121,6 +141,49 @@ d3.select('#chart')
 - `.showTotal(boolean)` - Show/hide total bar (default: false)
 - `.stacked(boolean)` - Toggle stacked/waterfall mode (default: true)
 - `.scaleType(string)` - Set scale type: 'auto', 'linear', 'ordinal', 'time' (default: 'auto')
+
+### 🆕 Trend Line Features
+
+- `.showTrendLine(boolean)` - Enable/disable trend line overlay (default: false)
+- `.trendLineColor(color)` - Set trend line color (default: "#e74c3c")
+- `.trendLineWidth(pixels)` - Set trend line width (default: 2)
+- `.trendLineStyle(style)` - Set line style: 'solid', 'dashed', 'dotted' (default: 'solid')
+- `.trendLineOpacity(value)` - Set line opacity 0-1 (default: 0.8)
+- `.trendLineType(type)` - Set trend type: 'linear', 'moving-average', 'polynomial' (default: 'linear')
+
+### 🆕 Enhanced Data Loading
+
+```javascript
+import { loadData } from './mintwaterfall-data.js';
+
+// Load various formats with auto-detection
+const csvData = await loadData('data.csv');
+const jsonData = await loadData('https://api.example.com/data.json');
+const tsvData = await loadData('data.tsv');
+
+// Custom column mapping
+const data = await loadData('data.csv', {
+    labelColumn: 'category',
+    valueColumn: 'amount', 
+    colorColumn: 'theme'
+});
+```
+
+### 🆕 Enhanced Export Options
+
+```javascript
+// High-DPI PNG export (2x resolution)
+await chart.export('png', {
+    scale: 2,           // Retina display support
+    quality: 0.95,      // High quality
+    background: 'white' // Background color
+});
+
+// Multiple export formats
+await chart.export('svg', { includeStyles: true });
+await chart.export('jpeg', { quality: 0.9 });
+await chart.export('pdf', { orientation: 'landscape' });
+```
 
 ### Advanced Features
 
@@ -179,7 +242,7 @@ npm install
 ### Available Scripts
 
 ```bash
-npm test              # Run comprehensive test suite (168 tests)
+npm test              # Run comprehensive test suite (206 tests)
 npm run test:coverage # Run tests with detailed coverage report
 npm run lint          # Run ESLint code quality checks  
 npm run lint:fix      # Auto-fix lint issues
@@ -187,42 +250,42 @@ npm run build         # Build all distribution formats
 npm run dev           # Start development server on port 8080
 ```
 
-### Testing & Quality
+### Testing & Quality Assurance
 
-- **Comprehensive Testing**: 168 test cases covering all major functionality
-- **Code Coverage**: 51% coverage with detailed reporting across all modules
-- **Automated CI**: GitHub Actions run tests on Node.js 18.x and 20.x
-- **Security Audits**: Weekly automated dependency vulnerability scans
-- **Zero Lint Issues**: Clean, maintainable code following best practices
-- **D3.js v7 Compatibility**: Full scale system and API compatibility testing
+- **🧪 206 Test Cases**: Comprehensive test suite covering all functionality including trend lines and data loading
+- **📊 Enhanced Coverage**: Detailed coverage reporting across all modules and new features  
+- **🚀 Automated CI**: GitHub Actions pipeline running tests on Node.js 18.x and 20.x
+- **🔒 Security Audits**: Weekly automated dependency vulnerability scans
+- **✨ Zero Lint Issues**: Clean, maintainable code following ESLint best practices
+- **⚙️ D3.js v7 Compatibility**: Full scale system and API compatibility testing
 
 ### CI/CD Pipeline
 
 Our GitHub Actions workflow includes:
-- **Continuous Integration**: Automated testing and linting
-- **Code Coverage**: Automated coverage reporting to Codecov
-- **Security Audits**: Weekly dependency vulnerability scanning  
-- **Auto-Deployment**: GitHub Pages updates on every push to main
-- **Auto-Tagging**: Automatic git tags when package.json version changes
-- **Release Automation**: Automated releases with changelog generation
+- **🔄 Continuous Integration**: Automated testing and linting
+- **📈 Code Coverage**: Automated coverage reporting to Codecov
+- **🛡️ Security Audits**: Weekly dependency vulnerability scanning  
+- **🚀 Auto-Deployment**: GitHub Pages updates on every push to main
+- **🏷️ Auto-Tagging**: Automatic git tags when package.json version changes
+- **📦 Release Automation**: Automated releases with changelog generation
 
 ## Browser Support & Requirements
 
 ### Minimum Requirements
 - **ES6 Modules**: Modern browsers with import/export support
-- **D3.js v7+**: Required peer dependency
+- **D3.js v7+**: Required peer dependency  
 - **SVG Support**: For chart rendering
 
 ### Tested Browsers
-- **Chrome 90+** (Supported)
-- **Firefox 88+** (Supported)  
-- **Safari 14+** (Supported)
-- **Edge 90+** (Supported)
+- ✅ **Chrome 90+** 
+- ✅ **Firefox 88+**
+- ✅ **Safari 14+**
+- ✅ **Edge 90+**
 
-### Performance
-- **Small Bundle**: Lightweight ES6 modules
-- **Efficient Rendering**: Optimized D3.js integration
-- **Smooth Animations**: Hardware-accelerated CSS transitions
+### Performance Characteristics
+- **Lightweight**: Optimized ES6 modules with minimal overhead
+- **Efficient Rendering**: Leverages D3.js optimization and hardware acceleration  
+- **Smooth Animations**: CSS transitions with configurable duration and easing
 
 ## License
 
@@ -232,17 +295,25 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 MintWaterfall welcomes contributions! Please ensure all changes:
 
-- Maintain D3.js compatibility
-- Include appropriate tests (we have 121+ test cases)
-- Pass all linting checks (zero tolerance for lint issues)
-- Include documentation updates
-- Follow the existing code style
+- ✅ Maintain D3.js v7+ compatibility
+- ✅ Include appropriate tests (we maintain 206+ test cases)
+- ✅ Pass all linting checks (zero tolerance policy)
+- ✅ Include documentation updates for new features
+- ✅ Follow the existing code style and patterns
 
 See our [Contributing Guide](CONTRIBUTING.md) for detailed guidelines.
 
 ## Changelog & Releases
 
-### v0.5.6 (Current)
+### v0.6.0 (Current)
+- **📈 Trend Line Overlays**: Linear, moving average, and polynomial trend analysis with real-time configuration
+- **🔄 Enhanced Data Loading**: CSV, JSON, TSV support with HTTP URL loading and automatic format detection
+- **🖼️ High-DPI PNG Export**: 2x scaling support with enhanced quality and error handling
+- **♿ Modern Accessibility**: Forced Colors Mode support, deprecated `-ms-high-contrast` removed
+- **🧪 Comprehensive Testing**: 27 new tests for trend lines, data loading, and export functionality
+- **🎨 Interactive Demo**: Integrated trend line demonstration with live controls and styling options
+
+### v0.5.6
 - **Enhanced D3.js v7 compatibility**: Fixed scale system for band, linear, and ordinal scales
 - **Brush system improvements**: Resolved `scale.invert` and D3 API compatibility issues  
 - **Staggered animations**: Enhanced visual feedback with proper reset and progressive reveal

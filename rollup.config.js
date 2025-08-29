@@ -4,7 +4,7 @@ import filesize from "rollup-plugin-filesize";
 import cleanup from "rollup-plugin-cleanup";
 
 const banner = `/*!
- * MintWaterfall v${process.env.npm_package_version || "0.5.6"}
+ * MintWaterfall v${process.env.npm_package_version || "0.6.0"}
  * D3.js-compatible waterfall chart component
  * (c) 2024 David Duarte
  * Released under the MIT License

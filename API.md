@@ -655,4 +655,4 @@ if (validateChartData(myData)) {
 
 ---
 
-*This documentation reflects MintWaterfall v0.5.6 with comprehensive testing coverage and professional CI/CD pipeline.*
+*This documentation reflects MintWaterfall v0.6.0 with comprehensive testing coverage and professional CI/CD pipeline.*
