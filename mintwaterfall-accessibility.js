@@ -389,6 +389,9 @@ export function createAccessibilitySystem() {
     
     // Inject CSS for forced colors mode support
     function injectForcedColorsCSS() {
+        // Check if we're in a browser environment
+        if (typeof document === "undefined") return; // Node.js environment
+        
         const cssId = "mintwaterfall-forced-colors-css";
         if (document.getElementById(cssId)) return; // Already injected
         
@@ -513,15 +516,19 @@ export function createAccessibilitySystem() {
 // Global accessibility system instance
 export const accessibilitySystem = createAccessibilitySystem();
 
-// Inject CSS support immediately for global instance
-accessibilitySystem.injectForcedColorsCSS();
+// Inject CSS support immediately for global instance (only in browser)
+if (typeof document !== "undefined") {
+    accessibilitySystem.injectForcedColorsCSS();
+}
 
 // Utility function to make any chart accessible
 export function makeChartAccessible(chartContainer, data, config = {}) {
     const a11y = createAccessibilitySystem();
     
-    // Inject forced colors CSS support
-    a11y.injectForcedColorsCSS();
+    // Inject forced colors CSS support (only in browser)
+    if (typeof document !== "undefined") {
+        a11y.injectForcedColorsCSS();
+    }
     
     // Create live region for announcements
     a11y.createLiveRegion(d3.select("body"));

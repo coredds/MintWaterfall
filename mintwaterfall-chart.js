@@ -70,6 +70,10 @@ export function waterfallChart() {
     let enableZoom = false;
     let zoomConfig = {};
     
+    // Enterprise features
+    let breakdownConfig = null;
+    let formattingRules = new Map();
+    
     // Initialize systems
     const scaleSystem = createScaleSystem();
     const brushSystem = createBrushSystem();
@@ -133,6 +137,12 @@ export function waterfallChart() {
             try {
                 // Prepare data with cumulative calculations
                 const processedData = prepareData(data);
+                console.log("🔧 processedData in chart:", processedData.map(d => ({
+                    label: d.label,
+                    barTotal: d.barTotal,
+                    cumulativeTotal: d.cumulativeTotal,
+                    stackCount: d.stacks?.length
+                })));
                 
                 // Calculate intelligent margins based on data
                 const intelligentMargins = calculateIntelligentMargins(processedData, margin);
@@ -327,7 +337,13 @@ export function waterfallChart() {
     }
 
     function prepareData(data) {
-        const workingData = [...data];
+        let workingData = [...data];
+        
+        // Apply breakdown analysis if enabled
+        if (breakdownConfig && breakdownConfig.enabled) {
+            workingData = applyBreakdownAnalysis(workingData, breakdownConfig);
+        }
+        
         let cumulativeTotal = 0;
         let prevCumulativeTotal = 0;
 
@@ -337,8 +353,15 @@ export function waterfallChart() {
             prevCumulativeTotal = cumulativeTotal;
             cumulativeTotal += barTotal;
             
+            // Apply conditional formatting if enabled
+            let processedStacks = bar.stacks;
+            if (formattingRules.size > 0) {
+                processedStacks = applyConditionalFormatting(bar.stacks, bar, formattingRules);
+            }
+            
             return {
                 ...bar,
+                stacks: processedStacks,
                 barTotal,
                 cumulativeTotal,
                 prevCumulativeTotal,
@@ -354,13 +377,134 @@ export function waterfallChart() {
                 stacks: [{ value: finalTotal, color: totalColor, label: finalTotal.toString() }],
                 barTotal: finalTotal,
                 cumulativeTotal: finalTotal,
-                prevCumulativeTotal: 0,
+                prevCumulativeTotal: 0, // Total bar shows from zero to final value
                 isTotal: true,
                 index: processedData.length
             });
         }
 
         return processedData;
+    }
+
+    // Enterprise feature implementation functions
+    function applyBreakdownAnalysis(data, config) {
+        if (!config.field) return data;
+
+        // Group data by the breakdown field
+        const groups = new Map();
+        data.forEach(item => {
+            const fieldValue = item[config.field];
+            if (fieldValue) {
+                if (!groups.has(fieldValue)) {
+                    groups.set(fieldValue, []);
+                }
+                groups.get(fieldValue).push(item);
+            }
+        });
+
+        // Filter groups by minimum size
+        const filteredGroups = new Map();
+        const otherItems = [];
+        
+        for (const [key, items] of groups) {
+            if (items.length >= config.minGroupSize) {
+                filteredGroups.set(key, items);
+            } else if (config.showOthers) {
+                otherItems.push(...items);
+            }
+        }
+
+        // Create aggregated data
+        const aggregatedData = [];
+        
+        // Sort groups by strategy
+        const sortedGroups = [...filteredGroups.entries()].sort((a, b) => {
+            if (config.sortStrategy === "alphabetical") {
+                return a[0].localeCompare(b[0]);
+            } else if (config.sortStrategy === "count") {
+                return b[1].length - a[1].length;
+            } else { // 'value'
+                const aTotal = a[1].reduce((sum, item) => sum + (item.value || 0), 0);
+                const bTotal = b[1].reduce((sum, item) => sum + (item.value || 0), 0);
+                return Math.abs(bTotal) - Math.abs(aTotal);
+            }
+        });
+
+        // Apply max groups limit
+        const limitedGroups = sortedGroups.slice(0, config.maxGroups);
+        const excessGroups = sortedGroups.slice(config.maxGroups);
+        
+        if (excessGroups.length > 0 && config.showOthers) {
+            excessGroups.forEach(([, items]) => otherItems.push(...items));
+        }
+
+        // Create aggregated items
+        for (const [groupName, items] of limitedGroups) {
+            const aggregatedValue = items.reduce((sum, item) => sum + (item.value || 0), 0);
+            const aggregatedItem = {
+                label: `${groupName} (${items.length} items)`,
+                value: aggregatedValue,
+                type: aggregatedValue >= 0 ? "increase" : "decrease",
+                stacks: [{
+                    value: aggregatedValue,
+                    color: items[0].stacks ? items[0].stacks[0].color : (aggregatedValue >= 0 ? "#2ECC71" : "#E74C3C"),
+                    label: aggregatedValue.toString()
+                }],
+                originalItems: items,
+                isBreakdownGroup: true,
+                breakdownField: config.field,
+                breakdownValue: groupName
+            };
+            aggregatedData.push(aggregatedItem);
+        }
+
+        // Add "Others" group if needed
+        if (otherItems.length > 0 && config.showOthers) {
+            const othersValue = otherItems.reduce((sum, item) => sum + (item.value || 0), 0);
+            aggregatedData.push({
+                label: `${config.othersLabel} (${otherItems.length} items)`,
+                value: othersValue,
+                type: othersValue >= 0 ? "increase" : "decrease",
+                stacks: [{
+                    value: othersValue,
+                    color: "#95A5A6",
+                    label: othersValue.toString()
+                }],
+                originalItems: otherItems,
+                isBreakdownGroup: true,
+                isOthersGroup: true
+            });
+        }
+
+        return aggregatedData;
+    }
+
+    function applyConditionalFormatting(stacks, barData, rules) {
+        return stacks.map(stack => {
+            let newColor = stack.color;
+            
+            // Apply each formatting rule
+            for (const [, rule] of rules) {
+                const fieldValue = barData[rule.field];
+                
+                if (fieldValue !== undefined) {
+                    if (rule.type === "categorical" && rule.scale) {
+                        newColor = rule.scale[fieldValue] || rule.fallbackColor || newColor;
+                    } else if (rule.type === "continuous" && rule.scale && typeof fieldValue === "number") {
+                        newColor = rule.scale(fieldValue);
+                    } else if (rule.type === "threshold" && rule.threshold !== undefined && rule.colors) {
+                        newColor = fieldValue >= rule.threshold ? 
+                            (rule.colors.above || newColor) : 
+                            (rule.colors.below || newColor);
+                    }
+                }
+            }
+            
+            return {
+                ...stack,
+                color: newColor
+            };
+        });
     }
 
     function drawGrid(container, yScale, intelligentMargins) {
@@ -562,9 +706,11 @@ export function waterfallChart() {
             const barData = [{
                 value: d.barTotal,
                 color: d.stacks.length === 1 ? d.stacks[0].color : mixColors(d.stacks),
-                y: d.isTotal ? yScale(d.cumulativeTotal) : yScale(Math.max(d.prevCumulativeTotal, d.cumulativeTotal)),
+                y: d.isTotal ? 
+                    Math.min(yScale(0), yScale(d.cumulativeTotal)) : // Total bar: position correctly regardless of scale direction
+                    yScale(Math.max(d.prevCumulativeTotal, d.cumulativeTotal)),
                 height: d.isTotal ? 
-                    yScale(0) - yScale(d.cumulativeTotal) : 
+                    Math.abs(yScale(0) - yScale(d.cumulativeTotal)) : // Total bar: full height from zero to total
                     Math.abs(yScale(d.prevCumulativeTotal) - yScale(d.cumulativeTotal)),
                 parent: d
             }];
@@ -1201,6 +1347,70 @@ export function waterfallChart() {
     
     chart.zoomConfig = function(_) {
         return arguments.length ? (zoomConfig = { ...zoomConfig, ..._ }, chart) : zoomConfig;
+    };
+
+    // Enterprise Features - Breakdown Analysis
+    chart.enableBreakdown = function(field, config = {}) {
+        breakdownConfig = {
+            enabled: true,
+            field: field,
+            minGroupSize: config.minGroupSize || 2,
+            sortStrategy: config.sortStrategy || "value", // 'value', 'alphabetical', 'count'
+            showOthers: config.showOthers !== false,
+            othersLabel: config.othersLabel || "Others",
+            maxGroups: config.maxGroups || 10
+        };
+        return chart;
+    };
+
+    chart.disableBreakdown = function() {
+        breakdownConfig = null;
+        return chart;
+    };
+
+    chart.getBreakdownConfig = function() {
+        return breakdownConfig;
+    };
+
+    // Enterprise Features - Conditional Formatting
+    chart.addFormattingRule = function(ruleId, config) {
+        if (!ruleId || !config) {
+            console.warn("MintWaterfall: Rule ID and config are required for formatting rules");
+            return chart;
+        }
+
+        formattingRules.set(ruleId, {
+            field: config.field,
+            type: config.type, // 'categorical', 'continuous', 'threshold'
+            scale: config.scale,
+            threshold: config.threshold,
+            colors: config.colors,
+            fallbackColor: config.fallbackColor || "#6c757d"
+        });
+        return chart;
+    };
+
+    chart.removeFormattingRule = function(ruleId) {
+        formattingRules.delete(ruleId);
+        return chart;
+    };
+
+    chart.clearFormattingRules = function() {
+        formattingRules.clear();
+        return chart;
+    };
+
+    chart.getFormattingRules = function() {
+        return new Map(formattingRules);
+    };
+
+    // Enterprise Features - Helper Methods
+    chart.getEnterpriseFeatures = function() {
+        return {
+            breakdown: breakdownConfig,
+            formatting: Array.from(formattingRules.entries()),
+            version: "0.8.0"
+        };
     };
 
     // Event handling methods

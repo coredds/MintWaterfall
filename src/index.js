@@ -19,7 +19,7 @@ export { createExportSystem, addExportToChart, exportSystem } from "../mintwater
 export { createZoomSystem, createZoomControls, addZoomToChart, zoomSystem } from "../mintwaterfall-zoom.js";
 
 // Version information
-export const version = "0.6.0";
+export const version = "0.8.0";
 
 // Default export for convenience
 import { waterfallChart } from "../mintwaterfall-chart.js";
