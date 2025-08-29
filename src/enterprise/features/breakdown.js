@@ -1,7 +1,7 @@
 // Breakdown Feature - Hierarchical data drill-down with grouping
 // Enables users to break down waterfall segments into sub-components
 
-import { EnterpriseFeatureTemplate, ConfigValidator } from '../enterprise-feature-template.js';
+import { EnterpriseFeatureTemplate } from "../enterprise-feature-template.js";
 
 export class BreakdownFeature extends EnterpriseFeatureTemplate {
     constructor(config = {}) {
@@ -9,16 +9,16 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
             enabled: false,
             maxBreakdowns: 5,
             showOthers: true,
-            otherLabel: 'Others',
-            otherColor: '#95a5a6',
+            otherLabel: "Others",
+            otherColor: "#95a5a6",
             animation: {
                 enabled: true,
                 duration: 500,
                 stagger: 50
             },
             grouping: {
-                strategy: 'value', // 'value', 'alphabetical', 'custom'
-                direction: 'desc'   // 'asc', 'desc'
+                strategy: "value", // 'value', 'alphabetical', 'custom'
+                direction: "desc"   // 'asc', 'desc'
             },
             interaction: {
                 clickToExpand: true,
@@ -28,12 +28,12 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
             visual: {
                 indentSize: 20,
                 connectorLine: true,
-                connectorColor: '#bdc3c7',
+                connectorColor: "#bdc3c7",
                 highlightParent: true
             }
         };
         
-        super('breakdown', 'Hierarchical data breakdown with drill-down capability', defaultConfig);
+        super("breakdown", "Hierarchical data breakdown with drill-down capability", defaultConfig);
         
         // Apply the config passed to constructor
         this.configure(config);
@@ -55,15 +55,15 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
     
     getConfigSchema() {
         return {
-            enabled: { type: 'boolean', required: true },
-            maxBreakdowns: { type: 'number', min: 1, max: 20 },
-            showOthers: { type: 'boolean' },
-            otherLabel: { type: 'string' },
-            otherColor: { type: 'string' },
-            animation: { type: 'object' },
-            grouping: { type: 'object' },
-            interaction: { type: 'object' },
-            visual: { type: 'object' }
+            enabled: { type: "boolean", required: true },
+            maxBreakdowns: { type: "number", min: 1, max: 20 },
+            showOthers: { type: "boolean" },
+            otherLabel: { type: "string" },
+            otherColor: { type: "string" },
+            animation: { type: "object" },
+            grouping: { type: "object" },
+            interaction: { type: "object" },
+            visual: { type: "object" }
         };
     }
     
@@ -71,29 +71,29 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
         if (!this.enabled) return;
         
         // Create breakdown-specific groups
-        this.breakdownGroup = this.createGroup('breakdown-feature');
-        this.connectorGroup = this.createGroup('breakdown-connectors');
+        this.breakdownGroup = this.createGroup("breakdown-feature");
+        this.connectorGroup = this.createGroup("breakdown-connectors");
         
         // Set up event listeners
         if (this.config.interaction.clickToExpand) {
-            this.on('barClick', this.handleBarClick.bind(this));
+            this.on("barClick", this.handleBarClick.bind(this));
         }
         
         if (this.config.interaction.doubleClickToCollapse) {
-            this.on('barDoubleClick', this.handleBarDoubleClick.bind(this));
+            this.on("barDoubleClick", this.handleBarDoubleClick.bind(this));
         }
         
         if (this.config.interaction.keyboardNavigation) {
             this.setupKeyboardNavigation();
         }
         
-        console.log('BreakdownFeature: Initialized with config', this.config);
+        console.log("BreakdownFeature: Initialized with config", this.config);
     }
     
-    processBreakdownData(data, config) {
+    processBreakdownData(data) {
         if (!this.enabled) return data;  // Use this.enabled instead of config.enabled
         
-        const timer = this.startPerformanceTimer('processBreakdownData');
+        const timer = this.startPerformanceTimer("processBreakdownData");
         
         // Reset internal state
         this.breakdownData.clear();
@@ -102,11 +102,11 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
         this.maxLevel = 0;
         
         // Process each data item for breakdown capability
-        const processedData = data.map((item, index) => {
+        const processedData = data.map((item) => {
             const processed = { ...item };
             
             // Add breakdown metadata
-            processed._breakdownId = this.generateId('breakdown');
+            processed._breakdownId = this.generateId("breakdown");
             processed._level = 0;
             processed._hasBreakdown = !!(item.breakdown && Array.isArray(item.breakdown));
             processed._isExpanded = false;
@@ -128,7 +128,7 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
     }
     
     processBreakdownHierarchy(breakdown, parentId, level) {
-        const processed = breakdown.map((item, index) => {
+        const processed = breakdown.map((item) => {
             const breakdownItem = {
                 ...item,
                 _breakdownId: this.generateId(`breakdown-l${level}`),
@@ -167,18 +167,18 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
         const strategy = this.config.grouping.strategy;
         const direction = this.config.grouping.direction;
         
-        if (strategy === 'value') {
+        if (strategy === "value") {
             sortedItems.sort((a, b) => {
                 const aValue = this.getItemValue(a);
                 const bValue = this.getItemValue(b);
-                return direction === 'desc' ? bValue - aValue : aValue - bValue;
+                return direction === "desc" ? bValue - aValue : aValue - bValue;
             });
-        } else if (strategy === 'alphabetical') {
+        } else if (strategy === "alphabetical") {
             sortedItems.sort((a, b) => {
-                const aLabel = (a.label || '').toString();
-                const bLabel = (b.label || '').toString();
+                const aLabel = (a.label || "").toString();
+                const bLabel = (b.label || "").toString();
                 const result = aLabel.localeCompare(bLabel);
-                return direction === 'desc' ? -result : result;
+                return direction === "desc" ? -result : result;
             });
         }
         
@@ -195,7 +195,7 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
                     value: othersValue,
                     color: this.config.otherColor
                 }],
-                _breakdownId: this.generateId('others'),
+                _breakdownId: this.generateId("others"),
                 _level: otherItems[0]._level,
                 _parent: otherItems[0]._parent,
                 _hasBreakdown: false,
@@ -221,7 +221,7 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
         if (!this.breakdownData.has(itemId)) return false;
         
         this.expandedItems.add(itemId);
-        this.emit('itemExpanded', itemId);
+        this.emit("itemExpanded", itemId);
         
         // Update data and re-render
         this.updateExpandedData();
@@ -232,7 +232,7 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
         if (!this.expandedItems.has(itemId)) return false;
         
         this.expandedItems.delete(itemId);
-        this.emit('itemCollapsed', itemId);
+        this.emit("itemCollapsed", itemId);
         
         // Collapse all children recursively
         this.collapseChildren(itemId);
@@ -270,7 +270,7 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
         });
         
         // Update chart data
-        this.emit('dataChanged', flattenedData);
+        this.emit("dataChanged", flattenedData);
     }
     
     addExpandedChildren(parentId, flattenedData) {
@@ -327,26 +327,26 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
     setupKeyboardNavigation() {
         // Add keyboard event listeners for accessibility
         if (this.svg) {
-            this.svg.attr('tabindex', 0)
-                .on('keydown', (event) => {
+            this.svg.attr("tabindex", 0)
+                .on("keydown", (event) => {
                     switch (event.key) {
-                        case 'Enter':
-                        case ' ':
+                        case "Enter":
+                        case " ":
                             // Expand/collapse focused item
                             const focusedElement = document.activeElement;
                             if (focusedElement && focusedElement.__data__) {
                                 this.handleBarClick(event, focusedElement.__data__);
                             }
                             break;
-                        case 'Escape':
+                        case "Escape":
                             // Collapse all
                             this.collapseAll();
                             break;
-                        case 'ArrowLeft':
+                        case "ArrowLeft":
                             // Collapse current item or go to parent
                             this.navigateLeft(event);
                             break;
-                        case 'ArrowRight':
+                        case "ArrowRight":
                             // Expand current item or go to first child
                             this.navigateRight(event);
                             break;
@@ -355,7 +355,7 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
         }
     }
     
-    navigateLeft(event) {
+    navigateLeft() {
         const focusedElement = document.activeElement;
         if (focusedElement && focusedElement.__data__) {
             const data = focusedElement.__data__;
@@ -370,7 +370,7 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
         }
     }
     
-    navigateRight(event) {
+    navigateRight() {
         const focusedElement = document.activeElement;
         if (focusedElement && focusedElement.__data__) {
             const data = focusedElement.__data__;
@@ -401,7 +401,7 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
     collapseAll() {
         this.expandedItems.clear();
         this.updateExpandedData();
-        this.emit('allCollapsed');
+        this.emit("allCollapsed");
     }
     
     expandAll() {
@@ -414,7 +414,7 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
         });
         
         this.updateExpandedData();
-        this.emit('allExpanded');
+        this.emit("allExpanded");
     }
     
     expandAllChildren(parentId) {
@@ -442,29 +442,29 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
         if (!this.data) return;
         
         // Add breakdown indicators to items that have breakdowns
-        const indicators = this.breakdownGroup.selectAll('.breakdown-indicator')
+        const indicators = this.breakdownGroup.selectAll(".breakdown-indicator")
             .data(this.data.filter(d => d._hasBreakdown));
         
         const indicatorEnter = indicators.enter()
-            .append('g')
-            .attr('class', 'breakdown-indicator')
-            .attr('data-breakdown-id', d => d._breakdownId);
+            .append("g")
+            .attr("class", "breakdown-indicator")
+            .attr("data-breakdown-id", d => d._breakdownId);
         
         // Add expand/collapse icon
-        indicatorEnter.append('text')
-            .attr('class', 'breakdown-icon')
-            .attr('x', 0)
-            .attr('y', 0)
-            .attr('text-anchor', 'middle')
-            .attr('dominant-baseline', 'central')
-            .style('cursor', 'pointer')
-            .style('user-select', 'none')
-            .text(d => this.expandedItems.has(d._breakdownId) ? '−' : '+')
-            .on('click', (event, d) => this.handleBarClick(event, d));
+        indicatorEnter.append("text")
+            .attr("class", "breakdown-icon")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("text-anchor", "middle")
+            .attr("dominant-baseline", "central")
+            .style("cursor", "pointer")
+            .style("user-select", "none")
+            .text(d => this.expandedItems.has(d._breakdownId) ? "−" : "+")
+            .on("click", (event, d) => this.handleBarClick(event, d));
         
         // Update existing indicators
-        indicators.select('.breakdown-icon')
-            .text(d => this.expandedItems.has(d._breakdownId) ? '−' : '+');
+        indicators.select(".breakdown-icon")
+            .text(d => this.expandedItems.has(d._breakdownId) ? "−" : "+");
         
         indicators.exit().remove();
         
@@ -476,8 +476,8 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
         // This method would be called by the main chart to position indicators
         // Implementation depends on the main chart's bar positioning logic
         if (this.breakdownGroup) {
-            this.breakdownGroup.selectAll('.breakdown-indicator')
-                .attr('transform', (d, i) => {
+            this.breakdownGroup.selectAll(".breakdown-indicator")
+                .attr("transform", (d, i) => {
                     // Basic positioning - would be enhanced based on actual bar positions
                     const x = (d._visualIndent || 0) + 10;
                     const y = i * 40 + 20;
@@ -502,15 +502,15 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
             }
         });
         
-        const lines = this.connectorGroup.selectAll('.breakdown-connector')
+        const lines = this.connectorGroup.selectAll(".breakdown-connector")
             .data(connectors);
         
         lines.enter()
-            .append('line')
-            .attr('class', 'breakdown-connector')
-            .style('stroke', this.config.visual.connectorColor)
-            .style('stroke-width', 1)
-            .style('stroke-dasharray', '2,2');
+            .append("line")
+            .attr("class", "breakdown-connector")
+            .style("stroke", this.config.visual.connectorColor)
+            .style("stroke-width", 1)
+            .style("stroke-dasharray", "2,2");
         
         lines.exit().remove();
         
@@ -522,11 +522,11 @@ export class BreakdownFeature extends EnterpriseFeatureTemplate {
         // Position connector lines based on bar positions
         // Implementation would be enhanced with actual bar positioning data
         if (this.connectorGroup) {
-            this.connectorGroup.selectAll('.breakdown-connector')
-                .attr('x1', d => (d.level - 1) * this.config.visual.indentSize)
-                .attr('y1', 0)
-                .attr('x2', d => d.level * this.config.visual.indentSize)
-                .attr('y2', 0);
+            this.connectorGroup.selectAll(".breakdown-connector")
+                .attr("x1", d => (d.level - 1) * this.config.visual.indentSize)
+                .attr("y1", 0)
+                .attr("x2", d => d.level * this.config.visual.indentSize)
+                .attr("y2", 0);
         }
     }
     

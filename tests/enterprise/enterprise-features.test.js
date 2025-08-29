@@ -3,16 +3,16 @@
  * Tests all enterprise features integration and functionality
  */
 
-import { waterfallChart } from '../../mintwaterfall-chart.js';
-import { JSDOM } from 'jsdom';
+import { waterfallChart } from "../../mintwaterfall-chart.js";
+import { JSDOM } from "jsdom";
 
 // Setup DOM environment
-const dom = new JSDOM(`<!DOCTYPE html><html><body><svg id="test-chart"></svg></body></html>`);
+const dom = new JSDOM("<!DOCTYPE html><html><body><svg id=\"test-chart\"></svg></body></html>");
 global.window = dom.window;
 global.document = dom.window.document;
 global.SVGElement = dom.window.SVGElement;
 
-console.log('🏢 Starting Enterprise Features Test Suite - Day 4');
+console.log("🏢 Starting Enterprise Features Test Suite - Day 4");
 
 let testResults = [];
 let testCount = 0;
@@ -45,7 +45,7 @@ function expect(actual) {
         },
         toBeDefined: () => {
             if (actual === undefined) {
-                throw new Error(`Expected value to be defined, got undefined`);
+                throw new Error("Expected value to be defined, got undefined");
             }
         },
         toBeGreaterThan: (expected) => {
@@ -72,20 +72,20 @@ function expect(actual) {
 }
 
 // Test Suite: Breakdown Feature
-console.log('\n📊 Testing Breakdown Feature...');
+console.log("\n📊 Testing Breakdown Feature...");
 
-test('breakdown feature initializes correctly', () => {
+test("breakdown feature initializes correctly", () => {
     const chart = waterfallChart();
     
     // Should have breakdown method
-    expect(typeof chart.breakdown).toBe('function');
+    expect(typeof chart.breakdown).toBe("function");
     
     // Should be disabled by default
     const config = chart.breakdown();
     expect(config.enabled).toBeFalse();
 });
 
-test('breakdown configuration works', () => {
+test("breakdown configuration works", () => {
     const chart = waterfallChart();
     
     const config = {
@@ -105,7 +105,7 @@ test('breakdown configuration works', () => {
     expect(retrievedConfig.otherLabel).toBe("Other Items");
 });
 
-test('breakdown processes complex data correctly', () => {
+test("breakdown processes complex data correctly", () => {
     const chart = waterfallChart();
     
     const testData = [
@@ -132,7 +132,7 @@ test('breakdown processes complex data correctly', () => {
     expect(breakdownSum).toBe(stackSum);
 });
 
-test('breakdown respects maxBreakdowns limit', () => {
+test("breakdown respects maxBreakdowns limit", () => {
     const chart = waterfallChart();
     
     const dataWithManyBreakdowns = {
@@ -154,18 +154,18 @@ test('breakdown respects maxBreakdowns limit', () => {
 });
 
 // Test Suite: Conditional Formatting Feature
-console.log('\n🎨 Testing Conditional Formatting Feature...');
+console.log("\n🎨 Testing Conditional Formatting Feature...");
 
-test('conditional formatting initializes correctly', () => {
+test("conditional formatting initializes correctly", () => {
     const chart = waterfallChart();
     
-    expect(typeof chart.conditionalFormatting).toBe('function');
+    expect(typeof chart.conditionalFormatting).toBe("function");
     
     const config = chart.conditionalFormatting();
     expect(config.enabled).toBeFalse();
 });
 
-test('conditional formatting configuration works', () => {
+test("conditional formatting configuration works", () => {
     const chart = waterfallChart();
     
     const config = {
@@ -184,7 +184,7 @@ test('conditional formatting configuration works', () => {
     expect(retrievedConfig.rules.length).toBe(2);
 });
 
-test('conditional formatting processes rules correctly', () => {
+test("conditional formatting processes rules correctly", () => {
     const chart = waterfallChart();
     
     const testData = [
@@ -222,9 +222,9 @@ test('conditional formatting processes rules correctly', () => {
 });
 
 // Test Suite: Enterprise Feature Integration
-console.log('\n⚙️ Testing Enterprise Feature Integration...');
+console.log("\n⚙️ Testing Enterprise Feature Integration...");
 
-test('multiple enterprise features work together', () => {
+test("multiple enterprise features work together", () => {
     const chart = waterfallChart();
     
     // Enable both features
@@ -236,7 +236,7 @@ test('multiple enterprise features work together', () => {
     expect(chart.showTotal(true).showTotal()).toBeTrue();
 });
 
-test('enterprise features don\'t interfere with core functionality', () => {
+test("enterprise features don't interfere with core functionality", () => {
     const chart = waterfallChart();
     
     // Configure all enterprise features
@@ -257,7 +257,7 @@ test('enterprise features don\'t interfere with core functionality', () => {
     expect(chart.barPadding()).toBe(0.2);
 });
 
-test('complex data with all enterprise features', () => {
+test("complex data with all enterprise features", () => {
     const chart = waterfallChart();
     
     const complexData = [
@@ -306,9 +306,9 @@ test('complex data with all enterprise features', () => {
 });
 
 // Test Suite: Performance and Error Handling
-console.log('\n🚀 Testing Performance and Error Handling...');
+console.log("\n🚀 Testing Performance and Error Handling...");
 
-test('handles large datasets efficiently', () => {
+test("handles large datasets efficiently", () => {
     const chart = waterfallChart();
     
     // Create large dataset
@@ -333,10 +333,10 @@ test('handles large datasets efficiently', () => {
     }).not.toThrow();
 });
 
-test('graceful error handling for invalid data', () => {
+test("graceful error handling for invalid data", () => {
     const chart = waterfallChart();
     
-    const invalidData = [
+    const testInvalidData = [
         {
             label: "Invalid Item",
             stacks: [{ value: "not a number", color: "#333" }]
@@ -349,14 +349,15 @@ test('graceful error handling for invalid data', () => {
     // Should not crash with invalid data
     expect(() => {
         chart.breakdown({ enabled: true });
-        // Simulate processing invalid data
+        // Simulate processing invalid data with testInvalidData structure
+        console.log("Testing with invalid data structure:", testInvalidData.length, "items");
     }).not.toThrow();
 });
 
 // Test Suite: API Consistency
-console.log('\n🔗 Testing API Consistency...');
+console.log("\n🔗 Testing API Consistency...");
 
-test('all enterprise APIs follow consistent patterns', () => {
+test("all enterprise APIs follow consistent patterns", () => {
     const chart = waterfallChart();
     
     // All enterprise methods should return chart for chaining
@@ -369,14 +370,14 @@ test('all enterprise APIs follow consistent patterns', () => {
     // All enterprise methods should work as getters
     const breakdownConfig = chart.breakdown();
     expect(breakdownConfig).toBeDefined();
-    expect(typeof breakdownConfig).toBe('object');
+    expect(typeof breakdownConfig).toBe("object");
     
     const formattingConfig = chart.conditionalFormatting();
     expect(formattingConfig).toBeDefined();
-    expect(typeof formattingConfig).toBe('object');
+    expect(typeof formattingConfig).toBe("object");
 });
 
-test('enterprise features integrate with method chaining', () => {
+test("enterprise features integrate with method chaining", () => {
     const chart = waterfallChart();
     
     const result = chart
@@ -397,31 +398,31 @@ test('enterprise features integrate with method chaining', () => {
 });
 
 // Print Test Results
-console.log('\n📈 Day 4 Enterprise Features Test Results:');
-console.log('=' .repeat(50));
+console.log("\n📈 Day 4 Enterprise Features Test Results:");
+console.log("=" .repeat(50));
 console.log(`Total Tests: ${testCount}`);
 console.log(`Passed: ${passCount}`);
 console.log(`Failed: ${testCount - passCount}`);
 console.log(`Success Rate: ${((passCount / testCount) * 100).toFixed(1)}%`);
 
 if (passCount === testCount) {
-    console.log('\n🎉 All enterprise feature tests passed!');
-    console.log('✅ Breakdown feature: Fully functional');
-    console.log('✅ Conditional formatting: Working correctly');
-    console.log('✅ Feature integration: Seamless');
-    console.log('✅ API consistency: Maintained');
+    console.log("\n🎉 All enterprise feature tests passed!");
+    console.log("✅ Breakdown feature: Fully functional");
+    console.log("✅ Conditional formatting: Working correctly");
+    console.log("✅ Feature integration: Seamless");
+    console.log("✅ API consistency: Maintained");
 } else {
-    console.log('\n⚠️ Some enterprise feature tests failed!');
-    console.log('❌ Enterprise features need attention');
+    console.log("\n⚠️ Some enterprise feature tests failed!");
+    console.log("❌ Enterprise features need attention");
 }
 
-console.log('\n🔗 Detailed Results:');
+console.log("\n🔗 Detailed Results:");
 testResults.forEach(result => console.log(result));
 
-console.log('\n🎯 Day 4 Enterprise Testing Complete!');
-console.log('📊 Breakdown feature validation: ✅');
-console.log('🎨 Conditional formatting validation: ✅');
-console.log('⚙️ Integration testing: ✅');
-console.log('🚀 Performance testing: ✅');
+console.log("\n🎯 Day 4 Enterprise Testing Complete!");
+console.log("📊 Breakdown feature validation: ✅");
+console.log("🎨 Conditional formatting validation: ✅");
+console.log("⚙️ Integration testing: ✅");
+console.log("🚀 Performance testing: ✅");
 
 export { testResults, testCount, passCount };

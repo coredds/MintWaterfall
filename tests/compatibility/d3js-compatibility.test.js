@@ -3,17 +3,17 @@
  * Ensures all v0.6.0 APIs work unchanged in v0.8.0
  */
 
-import { waterfallChart } from '../../mintwaterfall-chart.js';
-import { JSDOM } from 'jsdom';
-import * as d3 from 'd3';
+import { waterfallChart } from "../../mintwaterfall-chart.js";
+import { JSDOM } from "jsdom";
+import * as d3 from "d3";
 
 // Setup DOM environment for testing
-const dom = new JSDOM(`<!DOCTYPE html><html><body><svg id="test-chart"></svg></body></html>`);
+const dom = new JSDOM("<!DOCTYPE html><html><body><svg id=\"test-chart\"></svg></body></html>");
 global.window = dom.window;
 global.document = dom.window.document;
 global.SVGElement = dom.window.SVGElement;
 
-console.log('🧪 Starting D3.js Compatibility Tests - Day 4');
+console.log("🧪 Starting D3.js Compatibility Tests - Day 4");
 
 let testResults = [];
 let testCount = 0;
@@ -46,7 +46,7 @@ function expect(actual) {
         },
         toBeDefined: () => {
             if (actual === undefined) {
-                throw new Error(`Expected value to be defined, got undefined`);
+                throw new Error("Expected value to be defined, got undefined");
             }
         },
         toBeInstanceOf: (constructor) => {
@@ -68,14 +68,14 @@ function expect(actual) {
 }
 
 // Test Suite: Basic API Compatibility
-console.log('\n📋 Testing Basic API Compatibility...');
+console.log("\n📋 Testing Basic API Compatibility...");
 
-test('chart instance creation works', () => {
+test("chart instance creation works", () => {
     const chart = waterfallChart();
     expect(chart).toBeDefined();
 });
 
-test('width getter/setter API preserved', () => {
+test("width getter/setter API preserved", () => {
     const chart = waterfallChart();
     
     // Test setter returns chart instance (method chaining)
@@ -86,7 +86,7 @@ test('width getter/setter API preserved', () => {
     expect(chart.width()).toBe(800);
 });
 
-test('height getter/setter API preserved', () => {
+test("height getter/setter API preserved", () => {
     const chart = waterfallChart();
     
     const result = chart.height(400);
@@ -95,7 +95,7 @@ test('height getter/setter API preserved', () => {
     expect(chart.height()).toBe(400);
 });
 
-test('showTotal getter/setter API preserved', () => {
+test("showTotal getter/setter API preserved", () => {
     const chart = waterfallChart();
     
     const result = chart.showTotal(true);
@@ -104,7 +104,7 @@ test('showTotal getter/setter API preserved', () => {
     expect(chart.showTotal()).toBeTrue();
 });
 
-test('stacked getter/setter API preserved', () => {
+test("stacked getter/setter API preserved", () => {
     const chart = waterfallChart();
     
     const result = chart.stacked(false);
@@ -113,7 +113,7 @@ test('stacked getter/setter API preserved', () => {
     expect(chart.stacked()).toBeFalse();
 });
 
-test('barPadding getter/setter API preserved', () => {
+test("barPadding getter/setter API preserved", () => {
     const chart = waterfallChart();
     
     const result = chart.barPadding(0.2);
@@ -123,9 +123,9 @@ test('barPadding getter/setter API preserved', () => {
 });
 
 // Test Suite: Method Chaining
-console.log('\n🔗 Testing Method Chaining...');
+console.log("\n🔗 Testing Method Chaining...");
 
-test('complex method chaining preserved', () => {
+test("complex method chaining preserved", () => {
     const chart = waterfallChart();
     
     const result = chart
@@ -146,9 +146,9 @@ test('complex method chaining preserved', () => {
 });
 
 // Test Suite: New Enterprise APIs
-console.log('\n🏢 Testing Enterprise APIs are Additive...');
+console.log("\n🏢 Testing Enterprise APIs are Additive...");
 
-test('new enterprise APIs exist but don\'t break basic functionality', () => {
+test("new enterprise APIs exist but don't break basic functionality", () => {
     const chart = waterfallChart();
     
     // Basic functionality should still work
@@ -157,11 +157,11 @@ test('new enterprise APIs exist but don\'t break basic functionality', () => {
     expect(basicChart.height()).toBe(300);
     
     // Enterprise APIs should exist
-    expect(typeof chart.breakdown).toBe('function');
-    expect(typeof chart.conditionalFormatting).toBe('function');
+    expect(typeof chart.breakdown).toBe("function");
+    expect(typeof chart.conditionalFormatting).toBe("function");
 });
 
-test('enterprise features disabled by default', () => {
+test("enterprise features disabled by default", () => {
     const chart = waterfallChart();
     
     // Breakdown feature should be disabled by default
@@ -173,7 +173,7 @@ test('enterprise features disabled by default', () => {
     expect(formattingConfig.enabled).toBeFalse();
 });
 
-test('enterprise features can be enabled without breaking basic APIs', () => {
+test("enterprise features can be enabled without breaking basic APIs", () => {
     const chart = waterfallChart();
     
     // Enable enterprise features
@@ -187,9 +187,9 @@ test('enterprise features can be enabled without breaking basic APIs', () => {
 });
 
 // Test Suite: Data Processing Compatibility
-console.log('\n📊 Testing Data Processing Compatibility...');
+console.log("\n📊 Testing Data Processing Compatibility...");
 
-test('v0.6.0 data format still works', () => {
+test("v0.6.0 data format still works", () => {
     const chart = waterfallChart();
     
     const legacyData = [
@@ -205,9 +205,9 @@ test('v0.6.0 data format still works', () => {
 });
 
 // Test Suite: Enterprise Feature Integration
-console.log('\n⚙️ Testing Enterprise Feature Integration...');
+console.log("\n⚙️ Testing Enterprise Feature Integration...");
 
-test('breakdown feature processes data correctly', () => {
+test("breakdown feature processes data correctly", () => {
     const chart = waterfallChart();
     
     const dataWithBreakdown = [
@@ -233,7 +233,7 @@ test('breakdown feature processes data correctly', () => {
     }).not.toThrow();
 });
 
-test('conditional formatting feature processes data correctly', () => {
+test("conditional formatting feature processes data correctly", () => {
     const chart = waterfallChart();
     
     const dataWithFormatting = [
@@ -259,9 +259,9 @@ test('conditional formatting feature processes data correctly', () => {
 });
 
 // Test Suite: Backward Compatibility Promise
-console.log('\n🔄 Testing Backward Compatibility Promise...');
+console.log("\n🔄 Testing Backward Compatibility Promise...");
 
-test('all v0.6.0 code runs without modification', () => {
+test("all v0.6.0 code runs without modification", () => {
     // Simulate exact v0.6.0 usage pattern
     const chart = waterfallChart();
     
@@ -281,14 +281,14 @@ test('all v0.6.0 code runs without modification', () => {
     expect(result).toBe(chart);
 });
 
-test('D3.js integration still works', () => {
+test("D3.js integration still works", () => {
     const chart = waterfallChart();
     
     // Create test SVG element
     const svg = d3.select(document.body)
-        .append('svg')
-        .attr('width', 800)
-        .attr('height', 400);
+        .append("svg")
+        .attr("width", 800)
+        .attr("height", 400);
     
     expect(svg.node()).toBeInstanceOf(dom.window.SVGSVGElement);
     
@@ -304,29 +304,29 @@ test('D3.js integration still works', () => {
 });
 
 // Print Test Results
-console.log('\n📈 Day 4 Compatibility Test Results:');
-console.log('=' .repeat(50));
+console.log("\n📈 Day 4 Compatibility Test Results:");
+console.log("=" .repeat(50));
 console.log(`Total Tests: ${testCount}`);
 console.log(`Passed: ${passCount}`);
 console.log(`Failed: ${testCount - passCount}`);
 console.log(`Success Rate: ${((passCount / testCount) * 100).toFixed(1)}%`);
 
 if (passCount === testCount) {
-    console.log('\n🎉 All compatibility tests passed!');
-    console.log('✅ v0.6.0 → v0.8.0 migration is seamless');
-    console.log('✅ Enterprise features are properly additive');
-    console.log('✅ Backward compatibility promise maintained');
+    console.log("\n🎉 All compatibility tests passed!");
+    console.log("✅ v0.6.0 → v0.8.0 migration is seamless");
+    console.log("✅ Enterprise features are properly additive");
+    console.log("✅ Backward compatibility promise maintained");
 } else {
-    console.log('\n⚠️ Some compatibility tests failed!');
-    console.log('❌ Migration issues detected');
+    console.log("\n⚠️ Some compatibility tests failed!");
+    console.log("❌ Migration issues detected");
 }
 
-console.log('\n🔗 Detailed Results:');
+console.log("\n🔗 Detailed Results:");
 testResults.forEach(result => console.log(result));
 
-console.log('\n🎯 Day 4 Testing Framework Complete!');
-console.log('📋 Compatibility validation: ✅');
-console.log('🏢 Enterprise integration: ✅');
-console.log('🔄 Backward compatibility: ✅');
+console.log("\n🎯 Day 4 Testing Framework Complete!");
+console.log("📋 Compatibility validation: ✅");
+console.log("🏢 Enterprise integration: ✅");
+console.log("🔄 Backward compatibility: ✅");
 
 export { testResults, testCount, passCount };

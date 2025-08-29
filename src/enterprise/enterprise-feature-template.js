@@ -51,7 +51,7 @@ export class EnterpriseFeatureTemplate {
         this.config = { ...this.config, ...config };
         
         // Update enabled flag if it changed
-        if (config.hasOwnProperty('enabled')) {
+        if (config.hasOwnProperty("enabled")) {
             this.enabled = config.enabled;
         }
         
@@ -130,14 +130,14 @@ export class EnterpriseFeatureTemplate {
     
     // Hook registration
     addDataProcessor(processor) {
-        if (typeof processor === 'function') {
+        if (typeof processor === "function") {
             this.dataProcessors.push(processor);
         }
         return this;
     }
     
     addRenderHook(hook) {
-        if (typeof hook === 'function') {
+        if (typeof hook === "function") {
             this.renderHooks.push(hook);
         }
         return this;
@@ -170,7 +170,7 @@ export class EnterpriseFeatureTemplate {
         
         let group = this.svg.select(`.${className}`);
         if (group.empty()) {
-            group = this.svg.append('g').attr('class', className);
+            group = this.svg.append("g").attr("class", className);
         }
         return group;
     }
@@ -187,7 +187,7 @@ export class EnterpriseFeatureTemplate {
     }
     
     // Configuration validation
-    validateConfig(config) {
+    validateConfig() {
         // Override in subclasses for specific validation
         return true;
     }
@@ -206,7 +206,7 @@ export class EnterpriseFeatureTemplate {
         // Called when feature is destroyed
     }
     
-    onConfigChange(oldConfig, newConfig) {
+    onConfigChange() {
         // Called when configuration changes
     }
     
@@ -235,10 +235,10 @@ export class EnterpriseFeatureTemplate {
     }
     
     // Utility methods
-    generateId(prefix = '') {
+    generateId(prefix = "") {
         const timestamp = Date.now();
         const random = Math.random().toString(36).substr(2, 9);
-        return `${prefix}${prefix ? '-' : ''}${timestamp}-${random}`;
+        return `${prefix}${prefix ? "-" : ""}${timestamp}-${random}`;
     }
     
     debounce(func, wait) {
@@ -255,11 +255,11 @@ export class EnterpriseFeatureTemplate {
     
     // Accessibility helpers
     addAriaLabels(selection, labelText) {
-        return selection.attr('aria-label', labelText);
+        return selection.attr("aria-label", labelText);
     }
     
     addRole(selection, role) {
-        return selection.attr('role', role);
+        return selection.attr("role", role);
     }
     
     // Performance monitoring
@@ -300,25 +300,25 @@ export function createEnterpriseFeature(name, description, implementation) {
         }
         
         onRender() {
-            if (implementation && typeof implementation.render === 'function') {
+            if (implementation && typeof implementation.render === "function") {
                 implementation.render.call(this);
             }
         }
         
         onUpdate() {
-            if (implementation && typeof implementation.update === 'function') {
+            if (implementation && typeof implementation.update === "function") {
                 implementation.update.call(this);
             }
         }
         
         onInit() {
-            if (implementation && typeof implementation.init === 'function') {
+            if (implementation && typeof implementation.init === "function") {
                 implementation.init.call(this);
             }
         }
         
         onDestroy() {
-            if (implementation && typeof implementation.destroy === 'function') {
+            if (implementation && typeof implementation.destroy === "function") {
                 implementation.destroy.call(this);
             }
         }
@@ -346,7 +346,7 @@ export class ConfigValidator {
                 }
                 
                 if (rules.enum && !rules.enum.includes(value)) {
-                    errors.push(`Field '${key}' must be one of: ${rules.enum.join(', ')}`);
+                    errors.push(`Field '${key}' must be one of: ${rules.enum.join(", ")}`);
                 }
                 
                 if (rules.min !== undefined && value < rules.min) {
@@ -357,7 +357,7 @@ export class ConfigValidator {
                     errors.push(`Field '${key}' must be <= ${rules.max}`);
                 }
                 
-                if (rules.validator && typeof rules.validator === 'function') {
+                if (rules.validator && typeof rules.validator === "function") {
                     const result = rules.validator(value);
                     if (result !== true) {
                         errors.push(`Field '${key}': ${result}`);

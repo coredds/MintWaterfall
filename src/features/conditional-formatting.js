@@ -8,9 +8,9 @@
 
 class ConditionalFormattingFeature {
     constructor() {
-        this.id = 'conditional-formatting';
-        this.name = 'Conditional Formatting';
-        this.version = '1.0.0';
+        this.id = "conditional-formatting";
+        this.name = "Conditional Formatting";
+        this.version = "1.0.0";
         this.enabled = false;
         
         // Formatting rules and conditions
@@ -79,35 +79,35 @@ class ConditionalFormattingFeature {
      */
     initializeDefaultColorScales() {
         // Green-Red scale for positive/negative values
-        this.colorScales.set('greenRed', {
-            type: 'diverging',
+        this.colorScales.set("greenRed", {
+            type: "diverging",
             domain: [-1, 0, 1],
-            range: ['#e74c3c', '#f39c12', '#2ecc71'],
-            interpolation: 'linear'
+            range: ["#e74c3c", "#f39c12", "#2ecc71"],
+            interpolation: "linear"
         });
         
         // Blue scale for sequential data
-        this.colorScales.set('blues', {
-            type: 'sequential',
+        this.colorScales.set("blues", {
+            type: "sequential",
             domain: [0, 1],
-            range: ['#ecf0f1', '#3498db'],
-            interpolation: 'linear'
+            range: ["#ecf0f1", "#3498db"],
+            interpolation: "linear"
         });
         
         // Performance scale (red-yellow-green)
-        this.colorScales.set('performance', {
-            type: 'diverging',
+        this.colorScales.set("performance", {
+            type: "diverging",
             domain: [0, 0.5, 1],
-            range: ['#e74c3c', '#f1c40f', '#2ecc71'],
-            interpolation: 'linear'
+            range: ["#e74c3c", "#f1c40f", "#2ecc71"],
+            interpolation: "linear"
         });
         
         // Viridis-inspired scale
-        this.colorScales.set('viridis', {
-            type: 'sequential',
+        this.colorScales.set("viridis", {
+            type: "sequential",
             domain: [0, 1],
-            range: ['#440154', '#31688e', '#35b779', '#fde725'],
-            interpolation: 'linear'
+            range: ["#440154", "#31688e", "#35b779", "#fde725"],
+            interpolation: "linear"
         });
     }
     
@@ -144,7 +144,7 @@ class ConditionalFormattingFeature {
      * Set color scale
      */
     setColorScale(scale) {
-        if (typeof scale === 'string') {
+        if (typeof scale === "string") {
             // Use predefined scale
             this.currentColorScale = this.colorScales.get(scale);
         } else {
@@ -171,7 +171,7 @@ class ConditionalFormattingFeature {
         this.thresholds.set(thresholdId, {
             id: thresholdId,
             value: threshold.value,
-            operator: threshold.operator || '>=',
+            operator: threshold.operator || ">=",
             style: threshold.style,
             priority: threshold.priority || 0
         });
@@ -183,7 +183,7 @@ class ConditionalFormattingFeature {
      * Set custom value formatter
      */
     setCustomFormatter(formatter) {
-        if (typeof formatter === 'function') {
+        if (typeof formatter === "function") {
             this.customFormatter = formatter;
         }
         return this.chart || this;
@@ -254,11 +254,11 @@ class ConditionalFormattingFeature {
         // Normalize value to scale domain
         let normalizedValue;
         
-        if (scale.type === 'sequential') {
+        if (scale.type === "sequential") {
             const min = Math.min(...data.map(d => d.value || d.stacks?.[0]?.value || 0));
             const max = Math.max(...data.map(d => d.value || d.stacks?.[0]?.value || 0));
             normalizedValue = (value - min) / (max - min);
-        } else if (scale.type === 'diverging') {
+        } else if (scale.type === "diverging") {
             const values = data.map(d => d.value || d.stacks?.[0]?.value || 0);
             const max = Math.max(...values.map(Math.abs));
             normalizedValue = value / max;
@@ -293,8 +293,8 @@ class ConditionalFormattingFeature {
      * Blend two colors
      */
     blendColors(color1, color2, t) {
-        const hex1 = color1.replace('#', '');
-        const hex2 = color2.replace('#', '');
+        const hex1 = color1.replace("#", "");
+        const hex2 = color2.replace("#", "");
         
         const r1 = parseInt(hex1.substr(0, 2), 16);
         const g1 = parseInt(hex1.substr(2, 2), 16);
@@ -308,7 +308,7 @@ class ConditionalFormattingFeature {
         const g = Math.round(g1 + (g2 - g1) * t);
         const b = Math.round(b1 + (b2 - b1) * t);
         
-        return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
     }
     
     /**
@@ -352,22 +352,22 @@ class ConditionalFormattingFeature {
      * Evaluate a condition
      */
     evaluateCondition(condition, value, item, index, data) {
-        if (typeof condition === 'function') {
+        if (typeof condition === "function") {
             return condition(value, item, index, data);
         }
         
-        if (typeof condition === 'object') {
+        if (typeof condition === "object") {
             const { operator, value: conditionValue } = condition;
             
             switch (operator) {
-                case '>': return value > conditionValue;
-                case '>=': return value >= conditionValue;
-                case '<': return value < conditionValue;
-                case '<=': return value <= conditionValue;
-                case '==': return value == conditionValue;
-                case '===': return value === conditionValue;
-                case '!=': return value != conditionValue;
-                case '!==': return value !== conditionValue;
+                case ">": return value > conditionValue;
+                case ">=": return value >= conditionValue;
+                case "<": return value < conditionValue;
+                case "<=": return value <= conditionValue;
+                case "==": return value == conditionValue;
+                case "===": return value === conditionValue;
+                case "!=": return value != conditionValue;
+                case "!==": return value !== conditionValue;
                 default: return false;
             }
         }
@@ -382,12 +382,12 @@ class ConditionalFormattingFeature {
         const { operator, value: thresholdValue } = threshold;
         
         switch (operator) {
-            case '>': return value > thresholdValue;
-            case '>=': return value >= thresholdValue;
-            case '<': return value < thresholdValue;
-            case '<=': return value <= thresholdValue;
-            case '==': return value == thresholdValue;
-            case '===': return value === thresholdValue;
+            case ">": return value > thresholdValue;
+            case ">=": return value >= thresholdValue;
+            case "<": return value < thresholdValue;
+            case "<=": return value <= thresholdValue;
+            case "==": return value == thresholdValue;
+            case "===": return value === thresholdValue;
             default: return value >= thresholdValue;
         }
     }
@@ -458,9 +458,9 @@ class ConditionalFormattingFeature {
 }
 
 // Export for both CommonJS and ES modules
-if (typeof module !== 'undefined' && module.exports) {
+if (typeof module !== "undefined" && module.exports) {
     module.exports = ConditionalFormattingFeature;
-} else if (typeof window !== 'undefined') {
+} else if (typeof window !== "undefined") {
     window.ConditionalFormattingFeature = ConditionalFormattingFeature;
 }
 

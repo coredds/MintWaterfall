@@ -34,11 +34,11 @@ export function processBreakdownData(data, config = {}) {
         const breakdownData = item.breakdown.data.slice();
         
         // Sort breakdown data according to strategy
-        if (settings.sortStrategy === 'value-desc') {
+        if (settings.sortStrategy === "value-desc") {
             breakdownData.sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
-        } else if (settings.sortStrategy === 'value-asc') {
+        } else if (settings.sortStrategy === "value-asc") {
             breakdownData.sort((a, b) => Math.abs(a.value) - Math.abs(b.value));
-        } else if (settings.sortStrategy === 'alphabetical') {
+        } else if (settings.sortStrategy === "alphabetical") {
             breakdownData.sort((a, b) => a.name.localeCompare(b.name));
         }
 
@@ -94,7 +94,7 @@ export function validateBreakdownData(data) {
             Array.isArray(item.breakdown.data) &&
             item.breakdown.data.every(subItem => 
                 subItem.name && 
-                typeof subItem.value === 'number' && 
+                typeof subItem.value === "number" && 
                 subItem.color
             )
         );

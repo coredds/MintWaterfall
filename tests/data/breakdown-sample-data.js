@@ -133,8 +133,8 @@ export const breakdownConfigs = {
         enabled: true,
         maxBreakdowns: 5,
         showOthers: true,
-        otherLabel: 'Others',
-        otherColor: '#95a5a6'
+        otherLabel: "Others",
+        otherColor: "#95a5a6"
     },
     
     detailed: {
@@ -149,7 +149,7 @@ export const breakdownConfigs = {
         visual: {
             indentSize: 15,
             connectorLine: true,
-            connectorColor: '#bdc3c7'
+            connectorColor: "#bdc3c7"
         }
     },
     
@@ -157,7 +157,7 @@ export const breakdownConfigs = {
         enabled: true,
         maxBreakdowns: 3,
         showOthers: true,
-        otherLabel: 'Other Items',
+        otherLabel: "Other Items",
         animation: {
             enabled: false
         },
@@ -171,16 +171,16 @@ export const breakdownConfigs = {
         enabled: true,
         maxBreakdowns: 15,
         showOthers: true,
-        otherLabel: 'Other Categories',
-        otherColor: '#95a5a6',
+        otherLabel: "Other Categories",
+        otherColor: "#95a5a6",
         animation: {
             enabled: true,
             duration: 500,
             stagger: 50
         },
         grouping: {
-            strategy: 'value',
-            direction: 'desc'
+            strategy: "value",
+            direction: "desc"
         },
         interaction: {
             clickToExpand: true,
@@ -190,7 +190,7 @@ export const breakdownConfigs = {
         visual: {
             indentSize: 25,
             connectorLine: true,
-            connectorColor: '#bdc3c7',
+            connectorColor: "#bdc3c7",
             highlightParent: true
         }
     }

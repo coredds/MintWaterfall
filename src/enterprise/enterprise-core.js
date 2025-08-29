@@ -64,7 +64,7 @@ export class EnterpriseFeatureManager {
         this.features.set(name, feature);
         
         // Initialize feature with default config
-        if (feature.initialize && typeof feature.initialize === 'function') {
+        if (feature.initialize && typeof feature.initialize === "function") {
             feature.initialize(this.config[name] || {});
         }
         
@@ -96,8 +96,8 @@ export class EnterpriseFeatureManager {
             name,
             enabled: this.isEnabled(name),
             config: this.config[name] || {},
-            hasRender: typeof feature.render === 'function',
-            hasProcess: typeof feature.processData === 'function'
+            hasRender: typeof feature.render === "function",
+            hasProcess: typeof feature.processData === "function"
         };
     }
     
@@ -112,7 +112,7 @@ export class EnterpriseFeatureManager {
         
         // Notify feature of config change if it has a configure method
         const feature = this.features.get(featureName);
-        if (feature && typeof feature.configure === 'function') {
+        if (feature && typeof feature.configure === "function") {
             feature.configure(config);
         }
         
@@ -132,7 +132,7 @@ export class EnterpriseFeatureManager {
         
         // Update feature instance if it has an updateConfig method
         const feature = this.features.get(featureName);
-        if (feature && feature.updateConfig && typeof feature.updateConfig === 'function') {
+        if (feature && feature.updateConfig && typeof feature.updateConfig === "function") {
             feature.updateConfig(this.config[featureName]);
         }
         
@@ -148,7 +148,7 @@ export class EnterpriseFeatureManager {
         
         // Process each enabled feature in sequence
         for (const [name, feature] of this.features) {
-            if (this.isEnabled(name) && feature.process && typeof feature.process === 'function') {
+            if (this.isEnabled(name) && feature.process && typeof feature.process === "function") {
                 try {
                     processedData = feature.process(processedData, this.config[name]);
                 } catch (error) {
@@ -167,7 +167,7 @@ export class EnterpriseFeatureManager {
         
         // Render each enabled feature
         for (const [name, feature] of this.features) {
-            if (this.isEnabled(name) && feature.render && typeof feature.render === 'function') {
+            if (this.isEnabled(name) && feature.render && typeof feature.render === "function") {
                 try {
                     feature.render(container, data, scales, margins, this.config[name]);
                 } catch (error) {
@@ -186,7 +186,7 @@ export class EnterpriseFeatureManager {
         
         // Allow features to handle events
         for (const [name, feature] of this.features) {
-            if (this.isEnabled(name) && feature.handleEvent && typeof feature.handleEvent === 'function') {
+            if (this.isEnabled(name) && feature.handleEvent && typeof feature.handleEvent === "function") {
                 try {
                     processedEvent = feature.handleEvent(eventType, processedEvent, scales, margins, this.config[name]);
                 } catch (error) {
@@ -209,7 +209,7 @@ export class EnterpriseFeatureManager {
     destroy() {
         // Cleanup features
         for (const [name, feature] of this.features) {
-            if (feature.destroy && typeof feature.destroy === 'function') {
+            if (feature.destroy && typeof feature.destroy === "function") {
                 try {
                     feature.destroy();
                 } catch (error) {

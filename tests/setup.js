@@ -76,7 +76,7 @@ global.d3.waterfallChart = undefined; // Will be set by our module
 const createMockCanvas = () => ({
   getContext: jest.fn(() => ({
     imageSmoothingEnabled: true,
-    imageSmoothingQuality: 'high',
+    imageSmoothingQuality: "high",
     drawImage: jest.fn(),
     fillRect: jest.fn(),
     fillText: jest.fn(),
@@ -86,7 +86,7 @@ const createMockCanvas = () => ({
     translate: jest.fn(),
     scale: jest.fn()
   })),
-  toDataURL: jest.fn(() => 'data:image/png;base64,mock-image-data'),
+  toDataURL: jest.fn(() => "data:image/png;base64,mock-image-data"),
   width: 800,
   height: 400
 });
@@ -94,15 +94,15 @@ const createMockCanvas = () => ({
 // Mock HTMLCanvasElement
 global.HTMLCanvasElement = jest.fn(() => createMockCanvas());
 global.HTMLCanvasElement.prototype.getContext = jest.fn(() => createMockCanvas().getContext());
-global.HTMLCanvasElement.prototype.toDataURL = jest.fn(() => 'data:image/png;base64,mock-image-data');
+global.HTMLCanvasElement.prototype.toDataURL = jest.fn(() => "data:image/png;base64,mock-image-data");
 
 // Mock document.createElement for canvas
 const originalCreateElement = global.document.createElement;
 global.document.createElement = jest.fn((tagName) => {
-  if (tagName === 'canvas') {
+  if (tagName === "canvas") {
     return createMockCanvas();
   }
-  if (tagName === 'svg') {
+  if (tagName === "svg") {
     return createMockSVG();
   }
   return originalCreateElement.call(global.document, tagName);
@@ -111,7 +111,7 @@ global.document.createElement = jest.fn((tagName) => {
 // Mock SVG element for export tests
 const createMockSVG = () => {
   const mockSVG = {
-    tagName: 'svg',
+    tagName: "svg",
     cloneNode: jest.fn(() => createMockSVG()),
     insertBefore: jest.fn(),
     appendChild: jest.fn(),
@@ -121,8 +121,8 @@ const createMockSVG = () => {
     getAttribute: jest.fn(() => null),
     setAttribute: jest.fn(),
     style: {},
-    outerHTML: '<svg></svg>',
-    innerHTML: '',
+    outerHTML: "<svg></svg>",
+    innerHTML: "",
     firstChild: null,
     children: [],
     childNodes: []
