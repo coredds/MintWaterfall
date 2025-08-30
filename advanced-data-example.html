@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MintWaterfall Advanced Data Processing</title>
+    <!-- Import D3.js -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        .chart-container {
+            margin-bottom: 40px;
+        }
+        .chart-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #34495e;
+        }
+        .controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f1f3f5;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .data-summary {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .data-summary h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .summary-item {
+            background-color: white;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+        .summary-item strong {
+            display: block;
+            color: #2c3e50;
+        }
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MintWaterfall Advanced Data Processing</h1>
+        
+        <div class="controls">
+            <button id="groupBtn">Group Data</button>
+            <button id="rollupBtn">Rollup Data</button>
+            <button id="summaryBtn">Create Summary</button>
+            <button id="crosstabBtn">Cross-tabulation</button>
+            <button id="timeSeriesBtn">Time Series</button>
+            <button id="waterfallBtn">Transform to Waterfall</button>
+        </div>
+        
+        <div id="results">
+            <div class="data-summary">
+                <h3>Sample Sales Data</h3>
+                <p>This example demonstrates advanced data processing capabilities using modern D3.js data structures like <code>d3.group</code> and <code>d3.rollup</code>.</p>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-title">Processed Data Visualization</div>
+            <svg id="dataChart" width="1360" height="400"></svg>
+        </div>
+    </div>
+
+    <script>
+        // Sample sales data
+        const salesData = [
+            { date: '2024-01-01', region: 'North', category: 'Electronics', product: 'Laptop', sales: 15000, quantity: 10 },
+            { date: '2024-01-01', region: 'North', category: 'Electronics', product: 'Phone', sales: 8000, quantity: 20 },
+            { date: '2024-01-01', region: 'South', category: 'Electronics', product: 'Tablet', sales: 6000, quantity: 15 },
+            { date: '2024-01-02', region: 'North', category: 'Clothing', product: 'Shirt', sales: 2000, quantity: 40 },
+            { date: '2024-01-02', region: 'South', category: 'Clothing', product: 'Pants', sales: 3000, quantity: 25 },
+            { date: '2024-01-02', region: 'East', category: 'Electronics', product: 'Laptop', sales: 12000, quantity: 8 },
+            { date: '2024-01-03', region: 'West', category: 'Electronics', product: 'Phone', sales: 9000, quantity: 18 },
+            { date: '2024-01-03', region: 'East', category: 'Clothing', product: 'Jacket', sales: 5000, quantity: 12 },
+            { date: '2024-01-03', region: 'West', category: 'Home', product: 'Chair', sales: 4000, quantity: 8 },
+            { date: '2024-01-04', region: 'South', category: 'Home', product: 'Table', sales: 7000, quantity: 5 },
+            { date: '2024-01-04', region: 'North', category: 'Electronics', product: 'Monitor', sales: 3500, quantity: 7 },
+            { date: '2024-01-05', region: 'East', category: 'Electronics', product: 'Keyboard', sales: 1500, quantity: 30 },
+            { date: '2024-01-05', region: 'West', category: 'Clothing', product: 'Shoes', sales: 4500, quantity: 15 },
+            { date: '2024-01-05', region: 'South', category: 'Home', product: 'Lamp', sales: 2500, quantity: 10 }
+        ];
+
+        // Advanced data processor implementation
+        const advancedDataProcessor = {
+            group: function(data, ...keys) {
+                return d3.group(data, ...keys);
+            },
+            
+            rollup: function(data, reducer, ...keys) {
+                return d3.rollup(data, reducer, ...keys);
+            },
+            
+            summary: function(data, options = {}) {
+                const {
+                    valueField = 'sales',
+                    groupField = 'region'
+                } = options;
+                
+                const grouped = d3.group(data, d => d[groupField]);
+                const summary = {
+                    groups: [],
+                    totals: {},
+                    metadata: {
+                        totalRecords: data.length,
+                        groupCount: grouped.size
+                    }
+                };
+                
+                let grandTotal = 0;
+                
+                for (const [key, values] of grouped) {
+                    const numericValues = values.map(d => +d[valueField]);
+                    const groupSum = d3.sum(numericValues);
+                    grandTotal += groupSum;
+                    
+                    summary.groups.push({
+                        key,
+                        count: values.length,
+                        sum: groupSum,
+                        mean: d3.mean(numericValues),
+                        min: d3.min(numericValues),
+                        max: d3.max(numericValues)
+                    });
+                }
+                
+                summary.totals = {
+                    sum: grandTotal,
+                    count: data.length,
+                    average: grandTotal / summary.groups.length
+                };
+                
+                return summary;
+            },
+            
+            crosstab: function(data, rowField, colField, valueField) {
+                const rowValues = [...new Set(data.map(d => d[rowField]))].sort();
+                const colValues = [...new Set(data.map(d => d[colField]))].sort();
+                
+                const crosstab = {
+                    rows: rowValues,
+                    columns: colValues,
+                    data: {}
+                };
+                
+                // Initialize
+                rowValues.forEach(row => {
+                    crosstab.data[row] = {};
+                    colValues.forEach(col => {
+                        crosstab.data[row][col] = 0;
+                    });
+                });
+                
+                // Fill data
+                const grouped = d3.rollup(
+                    data,
+                    values => d3.sum(values, d => +d[valueField]),
+                    d => d[rowField],
+                    d => d[colField]
+                );
+                
+                for (const [row, colMap] of grouped) {
+                    for (const [col, value] of colMap) {
+                        crosstab.data[row][col] = value;
+                    }
+                }
+                
+                return crosstab;
+            },
+            
+            toWaterfall: function(data, options = {}) {
+                const {
+                    groupField = 'region',
+                    valueField = 'sales'
+                } = options;
+                
+                const grouped = d3.rollup(
+                    data,
+                    values => d3.sum(values, d => +d[valueField]),
+                    d => d[groupField]
+                );
+                
+                const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+                
+                return Array.from(grouped, ([key, value]) => ({
+                    label: key,
+                    stacks: [{
+                        value: value,
+                        color: colorScale(key),
+                        label: value.toString()
+                    }]
+                }));
+            }
+        };
+
+        document.addEventListener("DOMContentLoaded", function() {
+            console.log("D3 version:", d3.version);
+            
+            // Display initial data
+            displayResults("Sample Data", salesData);
+            
+            // Event handlers
+            document.getElementById('groupBtn').addEventListener('click', function() {
+                const grouped = advancedDataProcessor.group(salesData, d => d.region, d => d.category);
+                const arrayResult = mapToArray(grouped, ['region', 'category'], 'items');
+                displayResults("Grouped by Region and Category", arrayResult);
+                visualizeGroupedData(arrayResult);
+            });
+            
+            document.getElementById('rollupBtn').addEventListener('click', function() {
+                const rolledUp = advancedDataProcessor.rollup(
+                    salesData, 
+                    values => d3.sum(values, d => d.sales),
+                    d => d.region
+                );
+                const arrayResult = Array.from(rolledUp, ([key, value]) => ({ region: key, totalSales: value }));
+                displayResults("Sales Rollup by Region", arrayResult);
+                visualizeRollupData(arrayResult);
+            });
+            
+            document.getElementById('summaryBtn').addEventListener('click', function() {
+                const summary = advancedDataProcessor.summary(salesData, {
+                    valueField: 'sales',
+                    groupField: 'region'
+                });
+                displayResults("Data Summary", summary);
+                visualizeSummaryData(summary);
+            });
+            
+            document.getElementById('crosstabBtn').addEventListener('click', function() {
+                const crosstab = advancedDataProcessor.crosstab(salesData, 'region', 'category', 'sales');
+                displayResults("Cross-tabulation: Region vs Category", crosstab);
+                visualizeCrosstab(crosstab);
+            });
+            
+            document.getElementById('timeSeriesBtn').addEventListener('click', function() {
+                const timeSeries = d3.rollup(
+                    salesData,
+                    values => d3.sum(values, d => d.sales),
+                    d => d.date
+                );
+                const arrayResult = Array.from(timeSeries, ([date, sales]) => ({ date, sales }))
+                    .sort((a, b) => new Date(a.date) - new Date(b.date));
+                displayResults("Time Series: Daily Sales", arrayResult);
+                visualizeTimeSeries(arrayResult);
+            });
+            
+            document.getElementById('waterfallBtn').addEventListener('click', function() {
+                const waterfallData = advancedDataProcessor.toWaterfall(salesData, {
+                    groupField: 'region',
+                    valueField: 'sales'
+                });
+                displayResults("Waterfall Data by Region", waterfallData);
+                visualizeWaterfall(waterfallData);
+            });
+        });
+        
+        function displayResults(title, data) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <div class="data-summary">
+                    <h3>${title}</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                </div>
+            `;
+        }
+        
+        function mapToArray(map, keyNames, valueName) {
+            const results = [];
+            
+            function flatten(currentMap, keys = []) {
+                if (!(currentMap instanceof Map)) {
+                    const obj = {};
+                    keyNames.forEach((name, index) => {
+                        obj[name] = keys[index];
+                    });
+                    obj[valueName] = Array.isArray(currentMap) ? currentMap.length : currentMap;
+                    obj.data = currentMap;
+                    results.push(obj);
+                } else {
+                    for (const [key, value] of currentMap) {
+                        flatten(value, [...keys, key]);
+                    }
+                }
+            }
+            
+            flatten(map);
+            return results;
+        }
+        
+        function visualizeGroupedData(data) {
+            clearChart();
+            
+            const svg = d3.select("#dataChart");
+            const width = 1360;
+            const height = 400;
+            const margin = { top: 40, right: 40, bottom: 60, left: 60 };
+            
+            const xScale = d3.scaleBand()
+                .domain(data.map(d => `${d.region}-${d.category}`))
+                .range([margin.left, width - margin.right])
+                .padding(0.2);
+                
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.items)])
+                .range([height - margin.bottom, margin.top]);
+                
+            const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+            
+            // Draw bars
+            svg.selectAll(".bar")
+                .data(data)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", d => xScale(`${d.region}-${d.category}`))
+                .attr("y", d => yScale(d.items))
+                .attr("width", xScale.bandwidth())
+                .attr("height", d => height - margin.bottom - yScale(d.items))
+                .attr("fill", d => colorScale(d.region));
+                
+            // Add axes
+            svg.append("g")
+                .attr("transform", `translate(0,${height - margin.bottom})`)
+                .call(d3.axisBottom(xScale))
+                .selectAll("text")
+                .style("text-anchor", "end")
+                .attr("dx", "-.8em")
+                .attr("dy", ".15em")
+                .attr("transform", "rotate(-45)");
+                
+            svg.append("g")
+                .attr("transform", `translate(${margin.left},0)`)
+                .call(d3.axisLeft(yScale));
+                
+            // Add title
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", 20)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "16px")
+                .attr("font-weight", "bold")
+                .text("Grouped Data: Items per Region-Category");
+        }
+        
+        function visualizeRollupData(data) {
+            clearChart();
+            
+            const svg = d3.select("#dataChart");
+            const width = 1360;
+            const height = 400;
+            const margin = { top: 40, right: 40, bottom: 60, left: 80 };
+            
+            const xScale = d3.scaleBand()
+                .domain(data.map(d => d.region))
+                .range([margin.left, width - margin.right])
+                .padding(0.2);
+                
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.totalSales)])
+                .range([height - margin.bottom, margin.top]);
+                
+            const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+            
+            // Draw bars
+            svg.selectAll(".bar")
+                .data(data)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", d => xScale(d.region))
+                .attr("y", d => yScale(d.totalSales))
+                .attr("width", xScale.bandwidth())
+                .attr("height", d => height - margin.bottom - yScale(d.totalSales))
+                .attr("fill", d => colorScale(d.region));
+                
+            // Add value labels
+            svg.selectAll(".label")
+                .data(data)
+                .enter()
+                .append("text")
+                .attr("class", "label")
+                .attr("x", d => xScale(d.region) + xScale.bandwidth() / 2)
+                .attr("y", d => yScale(d.totalSales) - 5)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "12px")
+                .text(d => `$${d.totalSales.toLocaleString()}`);
+                
+            // Add axes
+            svg.append("g")
+                .attr("transform", `translate(0,${height - margin.bottom})`)
+                .call(d3.axisBottom(xScale));
+                
+            svg.append("g")
+                .attr("transform", `translate(${margin.left},0)`)
+                .call(d3.axisLeft(yScale).tickFormat(d => `$${d.toLocaleString()}`));
+                
+            // Add title
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", 20)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "16px")
+                .attr("font-weight", "bold")
+                .text("Rollup Data: Total Sales by Region");
+        }
+        
+        function visualizeSummaryData(summary) {
+            clearChart();
+            
+            const svg = d3.select("#dataChart");
+            const width = 1360;
+            const height = 400;
+            const margin = { top: 40, right: 40, bottom: 60, left: 80 };
+            
+            const xScale = d3.scaleBand()
+                .domain(summary.groups.map(d => d.key))
+                .range([margin.left, width - margin.right])
+                .padding(0.2);
+                
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(summary.groups, d => d.sum)])
+                .range([height - margin.bottom, margin.top]);
+                
+            const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+            
+            // Draw bars
+            svg.selectAll(".bar")
+                .data(summary.groups)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", d => xScale(d.key))
+                .attr("y", d => yScale(d.sum))
+                .attr("width", xScale.bandwidth())
+                .attr("height", d => height - margin.bottom - yScale(d.sum))
+                .attr("fill", d => colorScale(d.key));
+                
+            // Add axes and title
+            svg.append("g")
+                .attr("transform", `translate(0,${height - margin.bottom})`)
+                .call(d3.axisBottom(xScale));
+                
+            svg.append("g")
+                .attr("transform", `translate(${margin.left},0)`)
+                .call(d3.axisLeft(yScale));
+                
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", 20)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "16px")
+                .attr("font-weight", "bold")
+                .text("Summary Data: Sales by Region");
+        }
+        
+        function visualizeCrosstab(crosstab) {
+            clearChart();
+            
+            const svg = d3.select("#dataChart");
+            const width = 1360;
+            const height = 400;
+            const margin = { top: 60, right: 40, bottom: 60, left: 100 };
+            
+            // Create heatmap
+            const cellWidth = (width - margin.left - margin.right) / crosstab.columns.length;
+            const cellHeight = (height - margin.top - margin.bottom) / crosstab.rows.length;
+            
+            const maxValue = d3.max(crosstab.rows, row => 
+                d3.max(crosstab.columns, col => crosstab.data[row][col])
+            );
+            
+            const colorScale = d3.scaleSequential(d3.interpolateBlues)
+                .domain([0, maxValue]);
+            
+            // Draw cells
+            crosstab.rows.forEach((row, i) => {
+                crosstab.columns.forEach((col, j) => {
+                    const value = crosstab.data[row][col];
+                    
+                    svg.append("rect")
+                        .attr("x", margin.left + j * cellWidth)
+                        .attr("y", margin.top + i * cellHeight)
+                        .attr("width", cellWidth)
+                        .attr("height", cellHeight)
+                        .attr("fill", colorScale(value))
+                        .attr("stroke", "#fff");
+                        
+                    svg.append("text")
+                        .attr("x", margin.left + j * cellWidth + cellWidth / 2)
+                        .attr("y", margin.top + i * cellHeight + cellHeight / 2)
+                        .attr("text-anchor", "middle")
+                        .attr("dominant-baseline", "middle")
+                        .attr("font-size", "12px")
+                        .attr("fill", value > maxValue / 2 ? "white" : "black")
+                        .text(value);
+                });
+            });
+            
+            // Add labels
+            svg.selectAll(".row-label")
+                .data(crosstab.rows)
+                .enter()
+                .append("text")
+                .attr("class", "row-label")
+                .attr("x", margin.left - 10)
+                .attr("y", (d, i) => margin.top + i * cellHeight + cellHeight / 2)
+                .attr("text-anchor", "end")
+                .attr("dominant-baseline", "middle")
+                .text(d => d);
+                
+            svg.selectAll(".col-label")
+                .data(crosstab.columns)
+                .enter()
+                .append("text")
+                .attr("class", "col-label")
+                .attr("x", (d, i) => margin.left + i * cellWidth + cellWidth / 2)
+                .attr("y", margin.top - 10)
+                .attr("text-anchor", "middle")
+                .text(d => d);
+                
+            // Add title
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", 20)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "16px")
+                .attr("font-weight", "bold")
+                .text("Cross-tabulation: Region vs Category");
+        }
+        
+        function visualizeTimeSeries(data) {
+            clearChart();
+            
+            const svg = d3.select("#dataChart");
+            const width = 1360;
+            const height = 400;
+            const margin = { top: 40, right: 40, bottom: 60, left: 80 };
+            
+            const parseDate = d3.timeParse("%Y-%m-%d");
+            data.forEach(d => d.parsedDate = parseDate(d.date));
+            
+            const xScale = d3.scaleTime()
+                .domain(d3.extent(data, d => d.parsedDate))
+                .range([margin.left, width - margin.right]);
+                
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.sales)])
+                .range([height - margin.bottom, margin.top]);
+                
+            const line = d3.line()
+                .x(d => xScale(d.parsedDate))
+                .y(d => yScale(d.sales));
+                
+            // Draw line
+            svg.append("path")
+                .datum(data)
+                .attr("fill", "none")
+                .attr("stroke", "#3498db")
+                .attr("stroke-width", 2)
+                .attr("d", line);
+                
+            // Draw points
+            svg.selectAll(".point")
+                .data(data)
+                .enter()
+                .append("circle")
+                .attr("class", "point")
+                .attr("cx", d => xScale(d.parsedDate))
+                .attr("cy", d => yScale(d.sales))
+                .attr("r", 4)
+                .attr("fill", "#3498db");
+                
+            // Add axes
+            svg.append("g")
+                .attr("transform", `translate(0,${height - margin.bottom})`)
+                .call(d3.axisBottom(xScale));
+                
+            svg.append("g")
+                .attr("transform", `translate(${margin.left},0)`)
+                .call(d3.axisLeft(yScale));
+                
+            // Add title
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", 20)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "16px")
+                .attr("font-weight", "bold")
+                .text("Time Series: Daily Sales");
+        }
+        
+        function visualizeWaterfall(data) {
+            clearChart();
+            
+            const svg = d3.select("#dataChart");
+            const width = 1360;
+            const height = 400;
+            const margin = { top: 40, right: 40, bottom: 60, left: 80 };
+            
+            // Calculate cumulative values
+            let cumulative = 0;
+            const processedData = data.map(d => {
+                const barTotal = d.stacks[0].value;
+                const prevCumulative = cumulative;
+                cumulative += barTotal;
+                
+                return {
+                    ...d,
+                    barTotal,
+                    cumulativeTotal: cumulative,
+                    prevCumulativeTotal: prevCumulative
+                };
+            });
+            
+            const xScale = d3.scaleBand()
+                .domain(processedData.map(d => d.label))
+                .range([margin.left, width - margin.right])
+                .padding(0.2);
+                
+            const yExtent = d3.extent(processedData.map(d => d.cumulativeTotal));
+            const yScale = d3.scaleLinear()
+                .domain([0, yExtent[1] * 1.1])
+                .range([height - margin.bottom, margin.top]);
+                
+            // Draw bars
+            processedData.forEach(d => {
+                const barHeight = Math.abs(yScale(d.prevCumulativeTotal) - yScale(d.cumulativeTotal));
+                const barY = Math.min(yScale(d.prevCumulativeTotal), yScale(d.cumulativeTotal));
+                
+                svg.append("rect")
+                    .attr("x", xScale(d.label))
+                    .attr("y", barY)
+                    .attr("width", xScale.bandwidth())
+                    .attr("height", barHeight)
+                    .attr("fill", d.stacks[0].color);
+                    
+                // Add labels
+                svg.append("text")
+                    .attr("x", xScale(d.label) + xScale.bandwidth() / 2)
+                    .attr("y", barY - 5)
+                    .attr("text-anchor", "middle")
+                    .attr("font-size", "12px")
+                    .text(d.cumulativeTotal);
+            });
+            
+            // Add axes
+            svg.append("g")
+                .attr("transform", `translate(0,${height - margin.bottom})`)
+                .call(d3.axisBottom(xScale));
+                
+            svg.append("g")
+                .attr("transform", `translate(${margin.left},0)`)
+                .call(d3.axisLeft(yScale));
+                
+            // Add title
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", 20)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "16px")
+                .attr("font-weight", "bold")
+                .text("Waterfall Chart: Sales by Region");
+        }
+        
+        function clearChart() {
+            d3.select("#dataChart").selectAll("*").remove();
+        }
+    </script>
+</body>
+</html>

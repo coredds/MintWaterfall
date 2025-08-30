@@ -7,6 +7,7 @@ import { createAccessibilitySystem } from "./mintwaterfall-accessibility.js";
 import { createTooltipSystem } from "./mintwaterfall-tooltip.js";
 import { createExportSystem } from "./mintwaterfall-export.js";
 import { createZoomSystem } from "./mintwaterfall-zoom.js";
+import { createPerformanceManager } from "./mintwaterfall-performance.js";
 
 // Utility function to get bar width from any scale type
 function getBarWidth(scale, barCount, totalWidth) {
@@ -74,6 +75,10 @@ export function waterfallChart() {
     let breakdownConfig = null;
     let formattingRules = new Map();
     
+    // Performance features
+    let lastDataHash = null;
+    let cachedProcessedData = null;
+    
     // Initialize systems
     const scaleSystem = createScaleSystem();
     const brushSystem = createBrushSystem();
@@ -81,6 +86,12 @@ export function waterfallChart() {
     const tooltipSystem = createTooltipSystem();
     const exportSystem = createExportSystem();
     const zoomSystem = createZoomSystem();
+    const performanceManager = createPerformanceManager();
+    
+    // Performance configuration
+    let enablePerformanceOptimization = false;
+    let performanceDashboard = false;
+    let virtualizationThreshold = 10000;
     
     // Event listeners - enhanced with brush events
     const listeners = d3.dispatch("barClick", "barMouseover", "barMouseout", "chartUpdate", "brushSelection");
@@ -135,8 +146,36 @@ export function waterfallChart() {
             }
 
             try {
-                // Prepare data with cumulative calculations
-                const processedData = prepareData(data);
+                // Enable performance optimization for large datasets
+                if (data.length >= virtualizationThreshold && enablePerformanceOptimization) {
+                    performanceManager.enableVirtualization({
+                        chunkSize: Math.min(1000, Math.floor(data.length / 10)),
+                        renderThreshold: virtualizationThreshold
+                    });
+                }
+                
+                // Check if we can use cached data (include showTotal in cache key)
+                const dataHash = JSON.stringify(data).slice(0, 100) + `_showTotal:${showTotal}`; // Quick hash with showTotal
+                let processedData;
+                
+                if (dataHash === lastDataHash && cachedProcessedData) {
+                    processedData = cachedProcessedData;
+                    console.log("MintWaterfall: Using cached processed data");
+                } else {
+                    // Prepare data with cumulative calculations
+                    if (data.length > 50000) {
+                        // For very large datasets, fall back to synchronous processing for now
+                        // TODO: Implement proper async handling in future version
+                        console.warn("MintWaterfall: Large dataset detected, using synchronous processing");
+                        processedData = prepareData(data);
+                    } else {
+                        processedData = prepareData(data);
+                    }
+                    
+                    // Cache the processed data
+                    lastDataHash = dataHash;
+                    cachedProcessedData = processedData;
+                }
                 console.log("🔧 processedData in chart:", processedData.map(d => ({
                     label: d.label,
                     barTotal: d.barTotal,
@@ -384,6 +423,31 @@ export function waterfallChart() {
         }
 
         return processedData;
+    }
+    
+    // eslint-disable-next-line no-unused-vars
+    function prepareDataChunk(chunk, startIndex = 0) {
+        // Process a chunk of data with cumulative calculations
+        // This assumes cumulative totals are calculated across chunks
+        return chunk.map((bar, i) => {
+            const barTotal = bar.stacks.reduce((sum, stack) => sum + stack.value, 0);
+            
+            // Apply conditional formatting if enabled
+            let processedStacks = bar.stacks;
+            if (formattingRules.size > 0) {
+                processedStacks = applyConditionalFormatting(bar.stacks, bar, formattingRules);
+            }
+            
+            return {
+                ...bar,
+                stacks: processedStacks,
+                barTotal,
+                index: startIndex + i,
+                // Note: Cumulative totals need to be calculated after all chunks are processed
+                cumulativeTotal: 0,
+                prevCumulativeTotal: 0
+            };
+        });
     }
 
     // Enterprise feature implementation functions
@@ -1402,6 +1466,38 @@ export function waterfallChart() {
 
     chart.getFormattingRules = function() {
         return new Map(formattingRules);
+    };
+    
+    // Performance Configuration
+    chart.enablePerformanceOptimization = function(_) {
+        return arguments.length ? (enablePerformanceOptimization = _, chart) : enablePerformanceOptimization;
+    };
+    
+    chart.performanceDashboard = function(_) {
+        if (arguments.length) {
+            performanceDashboard = _;
+            if (performanceDashboard) {
+                // Create performance dashboard
+                setTimeout(() => {
+                    performanceManager.createPerformanceDashboard(d3.select("body"));
+                }, 100);
+            }
+            return chart;
+        }
+        return performanceDashboard;
+    };
+    
+    chart.virtualizationThreshold = function(_) {
+        return arguments.length ? (virtualizationThreshold = _, chart) : virtualizationThreshold;
+    };
+    
+    chart.getPerformanceMetrics = function() {
+        return performanceManager.getMetrics();
+    };
+    
+    chart.resetPerformanceMetrics = function() {
+        performanceManager.resetMetrics();
+        return chart;
     };
 
     // Enterprise Features - Helper Methods

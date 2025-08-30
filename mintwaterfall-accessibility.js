@@ -43,14 +43,35 @@ export function createAccessibilitySystem() {
             .style("height", "1px")
             .style("overflow", "hidden");
             
-        // Calculate summary statistics
-        const totalValue = data.reduce((sum, item) => {
-            return sum + item.stacks.reduce((stackSum, stack) => stackSum + stack.value, 0);
-        }, 0);
+        // Calculate summary statistics based on data structure
+        let totalValue = 0;
+        let positiveCount = 0;
         
-        const positiveCount = data.filter(item => 
-            item.stacks.some(stack => stack.value > 0)
-        ).length;
+        if (Array.isArray(data)) {
+            // Waterfall chart data structure
+            totalValue = data.reduce((sum, item) => {
+                if (item.stacks && Array.isArray(item.stacks)) {
+                    return sum + item.stacks.reduce((stackSum, stack) => stackSum + (stack.value || 0), 0);
+                }
+                return sum;
+            }, 0);
+            
+            positiveCount = data.filter(item => 
+                item.stacks && item.stacks.some(stack => (stack.value || 0) > 0)
+            ).length;
+        } else if (data && typeof data === "object" && data.children) {
+            // Hierarchical chart data structure
+            function calculateHierarchicalStats(node) {
+                if (node.children && Array.isArray(node.children)) {
+                    return node.children.reduce((sum, child) => sum + calculateHierarchicalStats(child), 0);
+                } else {
+                    return node.value || 0;
+                }
+            }
+            
+            totalValue = calculateHierarchicalStats(data);
+            positiveCount = 1; // For hierarchical data, we consider it as one positive entity
+        }
         
         const negativeCount = data.filter(item => 
             item.stacks.some(stack => stack.value < 0)

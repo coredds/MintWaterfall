@@ -188,8 +188,14 @@ export function createDataProcessor() {
                     valueB = b.label.toLowerCase();
                     break;
                 case "total":
-                    valueA = a.stacks.reduce((sum, stack) => sum + stack.value, 0);
-                    valueB = b.stacks.reduce((sum, stack) => sum + stack.value, 0);
+                    // Calculate total for each item
+                    const totalA = a.stacks.reduce((sum, stack) => sum + stack.value, 0);
+                    const totalB = b.stacks.reduce((sum, stack) => sum + stack.value, 0);
+                    
+                    // Smart sorting: use absolute value for comparison to handle decremental waterfalls
+                    // This ensures that larger impacts (whether positive or negative) are sorted appropriately
+                    valueA = Math.abs(totalA);
+                    valueB = Math.abs(totalB);
                     break;
                 case "maxStack":
                     valueA = Math.max(...a.stacks.map(s => s.value));
