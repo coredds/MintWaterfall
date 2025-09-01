@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MintWaterfall v0.8.1 - Pure Waterfall Chart Showcase</title>
+    <title>MintWaterfall v0.8.1 - Chart Showcase</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
@@ -759,6 +759,71 @@
             <h4 style="color: #3498db; margin: 0 0 10px 0;">💡 Trend Line Information</h4>
             <div id="trend-info" style="color: #666; font-size: 14px; line-height: 1.5;">
                 <strong>Current:</strong> No trend line selected. Choose a trend type above to see overlays on your data.
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Hierarchical Layout Demo Section -->
+    <div class="chart-container">
+        <h2>🌳 Hierarchical Layouts - D3.js Integration Showcase</h2>
+        <p style="text-align: center; color: #666; font-style: italic; margin-bottom: 20px;">
+            Complete D3.js layout algorithm implementation: Treemap, Partition, Pack, Cluster, and Tree visualizations
+        </p>
+        
+        <!-- Layout Controls -->
+        <div class="feature-controls" style="margin: 15px 0; padding: 20px; background: linear-gradient(135deg, #f8f9fa, #e8f5e8); border-radius: 12px; border-left: 5px solid #147B58;">
+            <h4 style="margin: 0 0 15px 0; color: #147B58; font-size: 18px;">🎯 D3.js Layout Algorithms</h4>
+            
+            <div class="control-group" style="margin-bottom: 15px;">
+                <h4>Layout Type Selection</h4>
+                <div class="feature-buttons">
+                    <button onclick="setHierarchicalLayout('treemap')" id="treemap-btn" style="background: linear-gradient(45deg, #e74c3c, #c0392b);">📊 Treemap</button>
+                    <button onclick="setHierarchicalLayout('partition')" id="partition-btn" style="background: linear-gradient(45deg, #3498db, #2980b9);">📈 Partition</button>
+                    <button onclick="setHierarchicalLayout('pack')" id="pack-btn" style="background: linear-gradient(45deg, #f39c12, #e67e22);">⭕ Pack</button>
+                    <button onclick="setHierarchicalLayout('cluster')" id="cluster-btn" style="background: linear-gradient(45deg, #9b59b6, #8e44ad);">🌿 Cluster</button>
+                    <button onclick="setHierarchicalLayout('tree')" id="tree-btn" style="background: linear-gradient(45deg, #2ecc71, #27ae60);">🌳 Tree</button>
+                </div>
+            </div>
+            
+            <div class="control-group" style="margin-bottom: 15px;">
+                <h4>Layout Configuration</h4>
+                <div class="feature-buttons">
+                    <label style="margin-right: 15px;">
+                        Size: <select onchange="changeLayoutSize(this.value)" id="size-select" style="padding: 5px; border-radius: 4px;">
+                            <option value="800,400">800x400</option>
+                            <option value="1000,500" selected>1000x500</option>
+                            <option value="1000,600">1000x600 (Tree)</option>
+                            <option value="1200,700">1200x700 (Large)</option>
+                        </select>
+                    </label>
+                    <label style="margin-right: 15px;">
+                        Padding: <select onchange="changeLayoutPadding(this.value)" id="padding-select" style="padding: 5px; border-radius: 4px;">
+                            <option value="1">1px</option>
+                            <option value="3" selected>3px</option>
+                            <option value="5">5px</option>
+                            <option value="10">10px</option>
+                        </select>
+                    </label>
+                    <button onclick="randomizeHierarchyData()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d);">🎲 New Data</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hierarchical Layout Visualization -->
+        <div id="hierarchical-layout-container" style="background: white; border-radius: 8px; padding: 15px; margin: 20px 0; min-height: 550px; border: 2px solid #ddd;">
+            <!-- The D3.js hierarchical layout will be rendered here -->
+        </div>
+        
+        <div class="controls">
+            <button onclick="exportHierarchicalLayout('svg')">Export SVG</button>
+            <button onclick="exportHierarchicalLayout('png')">Export PNG</button>
+            <button onclick="exportHierarchicalLayout('json')">Export Data</button>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #2ecc71;">
+            <h4 style="color: #2ecc71; margin: 0 0 10px 0;">🌟 D3.js Layout Features</h4>
+            <div id="layout-info" style="color: #666; font-size: 14px; line-height: 1.5;">
+                <strong>Ready:</strong> Select a layout type above to see D3.js hierarchical visualizations. All major D3.js layout algorithms are implemented and ready for Power BI integration.
             </div>
         </div>
     </div>
@@ -3275,6 +3340,888 @@
                 }
             }
         };
+
+        // Hierarchical Layout Functions - D3.js Integration
+        let currentHierarchicalLayout = null;
+        let layoutModule = null;
+        let currentLayoutType = 'treemap';
+        let layoutConfig = {
+            size: [1000, 500],
+            padding: 3
+        };
+        
+        // Sample hierarchical data for demonstration
+        const sampleHierarchicalData = {
+            name: "Enterprise Revenue",
+            value: 2500000,
+            children: [
+                {
+                    name: "Sales Division",
+                    value: 1500000,
+                    children: [
+                        { name: "Online Sales", value: 800000 },
+                        { name: "Retail Sales", value: 500000 },
+                        { name: "B2B Sales", value: 200000 }
+                    ]
+                },
+                {
+                    name: "Services Division",
+                    value: 700000,
+                    children: [
+                        { name: "Consulting", value: 350000 },
+                        { name: "Support", value: 250000 },
+                        { name: "Training", value: 100000 }
+                    ]
+                },
+                {
+                    name: "Products Division",
+                    value: 300000,
+                    children: [
+                        { name: "Software", value: 180000 },
+                        { name: "Hardware", value: 120000 }
+                    ]
+                }
+            ]
+        };
+        
+        window.setHierarchicalLayout = async function(layoutType) {
+            try {
+                // Import layout module if not already loaded
+                if (!layoutModule) {
+                    layoutModule = await import('./mintwaterfall-layouts.js');
+                    console.log('✅ Hierarchical layouts module loaded');
+                }
+                
+                currentLayoutType = layoutType;
+                
+                // Update button states
+                ['treemap', 'partition', 'pack', 'cluster', 'tree'].forEach(type => {
+                    const btn = document.getElementById(`${type}-btn`);
+                    if (btn) {
+                        if (type === layoutType) {
+                            btn.style.background = 'linear-gradient(45deg, #27ae60, #2ecc71)';
+                            btn.style.color = 'white';
+                        } else {
+                            btn.style.background = btn.getAttribute('data-original-bg') || 'linear-gradient(45deg, #95a5a6, #7f8c8d)';
+                            btn.style.color = 'white';
+                        }
+                    }
+                });
+                
+                // Create and render the layout
+                await renderHierarchicalLayout();
+                
+                // Update info panel
+                updateLayoutInfo(layoutType);
+                
+            } catch (error) {
+                console.error('Error setting hierarchical layout:', error);
+                document.getElementById('layout-info').innerHTML = 
+                    `<strong style="color: #e74c3c;">Error:</strong> Failed to load layout: ${error.message}`;
+            }
+        };
+        
+        async function renderHierarchicalLayout() {
+            if (!layoutModule) return;
+            
+            try {
+                // Adjust size for tree-based layouts that need more vertical space
+                let currentSize = [...layoutConfig.size];
+                if (currentLayoutType === 'cluster' || currentLayoutType === 'tree') {
+                    currentSize[1] = Math.max(800, layoutConfig.size[1]); // Minimum 800px height for trees
+                    currentSize[0] = Math.max(1200, layoutConfig.size[0]); // Minimum 1200px width for trees
+                }
+                
+                // Create hierarchical layout system
+                const layout = layoutModule.createHierarchicalLayout()
+                    .type(currentLayoutType)
+                    .size(currentSize)
+                    .padding(layoutConfig.padding);
+                
+                // Create hierarchy from data
+                const hierarchy = layoutModule.createHierarchy(sampleHierarchicalData);
+                
+                // Apply layout
+                const layoutData = layout(hierarchy);
+                
+                // Clear container
+                const container = document.getElementById('hierarchical-layout-container');
+                container.innerHTML = '';
+                
+                // Adjust container height for tree layouts with proper margins
+                if (currentLayoutType === 'cluster' || currentLayoutType === 'tree') {
+                    container.style.minHeight = '900px';
+                    container.style.padding = '40px';
+                    container.style.overflow = 'visible';
+                } else {
+                    container.style.minHeight = '600px';
+                    container.style.padding = '20px';
+                    container.style.overflow = 'visible';
+                }
+                
+                // Create SVG for visualization with proper viewBox
+                const svg = d3.select(container)
+                    .append('svg')
+                    .attr('width', '100%')
+                    .attr('height', currentSize[1] + 100) // Add extra space for labels and padding
+                    .attr('viewBox', `0 0 ${currentSize[0]} ${currentSize[1] + 100}`)
+                    .attr('preserveAspectRatio', 'xMidYMid meet')
+                    .style('background', '#f8f9fa')
+                    .style('border-radius', '8px')
+                    .style('max-width', '100%')
+                    .style('height', 'auto')
+                    .style('overflow', 'visible');
+                
+                // Render based on layout type
+                if (currentLayoutType === 'treemap') {
+                    renderTreemapLayout(svg, layoutData);
+                } else if (currentLayoutType === 'partition') {
+                    renderPartitionLayout(svg, layoutData);
+                } else if (currentLayoutType === 'pack') {
+                    renderCircularLayout(svg, layoutData);
+                } else if (currentLayoutType === 'cluster') {
+                    renderClusterLayout(svg, layoutData);
+                } else if (currentLayoutType === 'tree') {
+                    renderTreeLayout(svg, layoutData);
+                }
+                
+                // Store current layout for export
+                currentHierarchicalLayout = { layoutData, svg };
+                
+            } catch (error) {
+                console.error('Error rendering hierarchical layout:', error);
+                document.getElementById('hierarchical-layout-container').innerHTML = 
+                    `<div style="padding: 20px; text-align: center; color: #e74c3c;">
+                        <strong>Error:</strong> ${error.message}
+                    </div>`;
+            }
+        }
+        
+        function renderRectangularLayout(svg, layoutData) {
+            const nodes = layoutData.descendants().filter(d => d.depth > 0);
+            
+            const colorScale = d3.scaleOrdinal()
+                .domain([0, 1, 2])
+                .range(['#e74c3c', '#3498db', '#2ecc71']);
+            
+            // Create rectangles
+            const rects = svg.selectAll('.layout-rect')
+                .data(nodes)
+                .enter()
+                .append('rect')
+                .attr('class', 'layout-rect')
+                .attr('x', d => d.x0)
+                .attr('y', d => d.y0)
+                .attr('width', d => d.x1 - d.x0)
+                .attr('height', d => d.y1 - d.y0)
+                .attr('fill', d => colorScale(d.depth))
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 2)
+                .style('opacity', 0.8)
+                .style('cursor', 'pointer');
+            
+            // Add labels for larger rectangles
+            svg.selectAll('.layout-label')
+                .data(nodes.filter(d => (d.x1 - d.x0) > 60 && (d.y1 - d.y0) > 30))
+                .enter()
+                .append('text')
+                .attr('class', 'layout-label')
+                .attr('x', d => d.x0 + (d.x1 - d.x0) / 2)
+                .attr('y', d => d.y0 + (d.y1 - d.y0) / 2)
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'middle')
+                .style('font-size', '12px')
+                .style('font-weight', 'bold')
+                .style('fill', '#fff')
+                .style('pointer-events', 'none')
+                .text(d => d.data.name);
+            
+            // Add value labels
+            svg.selectAll('.layout-value')
+                .data(nodes.filter(d => (d.x1 - d.x0) > 80 && (d.y1 - d.y0) > 50))
+                .enter()
+                .append('text')
+                .attr('class', 'layout-value')
+                .attr('x', d => d.x0 + (d.x1 - d.x0) / 2)
+                .attr('y', d => d.y0 + (d.y1 - d.y0) / 2 + 16)
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'middle')
+                .style('font-size', '10px')
+                .style('fill', '#fff')
+                .style('pointer-events', 'none')
+                .text(d => d3.format('$,.0f')(d.value));
+            
+            // Add hover effects
+            rects.on('mouseover', function(event, d) {
+                d3.select(this).style('opacity', 1);
+                showTooltip(event, d);
+            })
+            .on('mouseout', function(event, d) {
+                d3.select(this).style('opacity', 0.8);
+                hideTooltip();
+            });
+        }
+        
+        function renderCircularLayout(svg, layoutData) {
+            const nodes = layoutData.descendants().filter(d => d.depth > 0);
+            
+            const colorScale = d3.scaleOrdinal()
+                .domain([0, 1, 2])
+                .range(['#e74c3c', '#3498db', '#2ecc71']);
+            
+            // Create circles
+            const circles = svg.selectAll('.layout-circle')
+                .data(nodes)
+                .enter()
+                .append('circle')
+                .attr('class', 'layout-circle')
+                .attr('cx', d => d.x)
+                .attr('cy', d => d.y)
+                .attr('r', d => d.r)
+                .attr('fill', d => colorScale(d.depth))
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 2)
+                .style('opacity', 0.8)
+                .style('cursor', 'pointer');
+            
+            // Add labels for larger circles
+            svg.selectAll('.layout-label')
+                .data(nodes.filter(d => d.r > 25))
+                .enter()
+                .append('text')
+                .attr('class', 'layout-label')
+                .attr('x', d => d.x)
+                .attr('y', d => d.y)
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'middle')
+                .style('font-size', '12px')
+                .style('font-weight', 'bold')
+                .style('fill', '#fff')
+                .style('pointer-events', 'none')
+                .text(d => d.data.name);
+            
+            // Add hover effects
+            circles.on('mouseover', function(event, d) {
+                d3.select(this).style('opacity', 1);
+                showTooltip(event, d);
+            })
+            .on('mouseout', function(event, d) {
+                d3.select(this).style('opacity', 0.8);
+                hideTooltip();
+            });
+        }
+        
+        function renderTreemapLayout(svg, layoutData) {
+            const nodes = layoutData.descendants().filter(d => d.depth > 0);
+            
+            // Create a categorical color scale based on parent groups
+            const parentGroups = [...new Set(nodes.filter(d => d.depth === 1).map(d => d.data.name))];
+            const groupColorScale = d3.scaleOrdinal()
+                .domain(parentGroups)
+                .range(['#3498db', '#e67e22', '#27ae60', '#9b59b6', '#e74c3c', '#f39c12']);
+            
+            // Function to get color based on the top-level parent
+            function getNodeColor(d) {
+                if (d.depth === 1) {
+                    return groupColorScale(d.data.name);
+                } else if (d.depth === 2) {
+                    // For leaf nodes, use a lighter shade of the parent's color
+                    const parentColor = groupColorScale(d.parent.data.name);
+                    return d3.color(parentColor).brighter(0.3);
+                }
+                return '#95a5a6';
+            }
+            
+            // Create rectangles
+            const rects = svg.selectAll('.layout-rect')
+                .data(nodes)
+                .enter()
+                .append('rect')
+                .attr('class', 'layout-rect')
+                .attr('x', d => d.x0)
+                .attr('y', d => d.y0)
+                .attr('width', d => d.x1 - d.x0)
+                .attr('height', d => d.y1 - d.y0)
+                .attr('fill', d => getNodeColor(d))
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 2)
+                .style('opacity', 0.85)
+                .style('cursor', 'pointer');
+            
+            // Add labels for larger rectangles
+            svg.selectAll('.layout-label')
+                .data(nodes.filter(d => (d.x1 - d.x0) > 80 && (d.y1 - d.y0) > 40))
+                .enter()
+                .append('text')
+                .attr('class', 'layout-label')
+                .attr('x', d => d.x0 + (d.x1 - d.x0) / 2)
+                .attr('y', d => d.y0 + (d.y1 - d.y0) / 2 - 8)
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'middle')
+                .style('font-size', d => {
+                    const width = d.x1 - d.x0;
+                    const height = d.y1 - d.y0;
+                    if (width > 200 && height > 80) return '16px';
+                    if (width > 120 && height > 50) return '14px';
+                    if (width > 80 && height > 40) return '12px';
+                    return '10px';
+                })
+                .style('font-weight', 'bold')
+                .style('fill', '#fff')
+                .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.7)')
+                .style('pointer-events', 'none')
+                .text(d => {
+                    const width = d.x1 - d.x0;
+                    let maxLength;
+                    if (width > 200) maxLength = 20;
+                    else if (width > 120) maxLength = 14;
+                    else if (width > 80) maxLength = 10;
+                    else maxLength = 8;
+                    
+                    const name = d.data.name;
+                    return name.length > maxLength ? name.substring(0, maxLength - 3) + '...' : name;
+                });
+            
+            // Add value labels
+            svg.selectAll('.layout-value')
+                .data(nodes.filter(d => (d.x1 - d.x0) > 80 && (d.y1 - d.y0) > 60))
+                .enter()
+                .append('text')
+                .attr('class', 'layout-value')
+                .attr('x', d => d.x0 + (d.x1 - d.x0) / 2)
+                .attr('y', d => d.y0 + (d.y1 - d.y0) / 2 + 12)
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'middle')
+                .style('font-size', d => {
+                    const width = d.x1 - d.x0;
+                    const height = d.y1 - d.y0;
+                    if (width > 200 && height > 80) return '14px';
+                    if (width > 120 && height > 50) return '12px';
+                    return '10px';
+                })
+                .style('fill', 'rgba(255, 255, 255, 0.95)')
+                .style('font-weight', 'bold')
+                .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.7)')
+                .style('pointer-events', 'none')
+                .text(d => d3.format('$,.0f')(d.value));
+            
+            // Add subtle borders to group major divisions
+            svg.selectAll('.layout-border')
+                .data(nodes.filter(d => d.depth === 1))
+                .enter()
+                .append('rect')
+                .attr('class', 'layout-border')
+                .attr('x', d => d.x0)
+                .attr('y', d => d.y0)
+                .attr('width', d => d.x1 - d.x0)
+                .attr('height', d => d.y1 - d.y0)
+                .attr('fill', 'none')
+                .attr('stroke', '#2c3e50')
+                .attr('stroke-width', 3)
+                .style('pointer-events', 'none');
+            
+            // Add hover effects
+            rects.on('mouseover', function(event, d) {
+                d3.select(this)
+                  .style('opacity', 1)
+                  .style('stroke-width', 3);
+                
+                // Highlight all rectangles in the same group
+                if (d.depth === 2) {
+                    const parentName = d.parent.data.name;
+                    svg.selectAll('.layout-rect')
+                       .filter(rect => rect.depth === 1 && rect.data.name === parentName)
+                       .style('stroke', '#f39c12')
+                       .style('stroke-width', 4);
+                }
+                
+                showTooltip(event, d);
+            })
+            .on('mouseout', function(event, d) {
+                d3.select(this)
+                  .style('opacity', 0.85)
+                  .style('stroke-width', 2);
+                
+                // Reset group highlighting
+                svg.selectAll('.layout-rect')
+                   .style('stroke', '#fff')
+                   .style('stroke-width', 2);
+                
+                hideTooltip();
+            });
+        }
+        
+        function renderPartitionLayout(svg, layoutData) {
+            const nodes = layoutData.descendants();
+            
+            const colorScale = d3.scaleOrdinal()
+                .domain([0, 1, 2, 3])
+                .range(['#3498db', '#e67e22', '#27ae60', '#9b59b6']);
+            
+            // Create rectangles for partition layout
+            const rects = svg.selectAll('.layout-rect')
+                .data(nodes)
+                .enter()
+                .append('rect')
+                .attr('class', 'layout-rect')
+                .attr('x', d => d.x0)
+                .attr('y', d => d.y0)
+                .attr('width', d => d.x1 - d.x0)
+                .attr('height', d => d.y1 - d.y0)
+                .attr('fill', d => d.depth === 0 ? 'transparent' : colorScale(d.depth))
+                .attr('stroke', d => d.depth === 0 ? 'transparent' : '#fff')
+                .attr('stroke-width', 2)
+                .style('opacity', d => d.depth === 0 ? 0 : 0.8)
+                .style('cursor', d => d.depth === 0 ? 'default' : 'pointer');
+            
+            // Add labels for visible rectangles
+            svg.selectAll('.layout-label')
+                .data(nodes.filter(d => d.depth > 0 && (d.x1 - d.x0) > 80 && (d.y1 - d.y0) > 35))
+                .enter()
+                .append('text')
+                .attr('class', 'layout-label')
+                .attr('x', d => d.x0 + (d.x1 - d.x0) / 2)
+                .attr('y', d => d.y0 + (d.y1 - d.y0) / 2 - 8)
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'middle')
+                .style('font-size', d => {
+                    const width = d.x1 - d.x0;
+                    const height = d.y1 - d.y0;
+                    if (width > 200 && height > 60) return '14px';
+                    if (width > 120 && height > 40) return '12px';
+                    return '10px';
+                })
+                .style('font-weight', 'bold')
+                .style('fill', '#fff')
+                .style('pointer-events', 'none')
+                .text(d => {
+                    const width = d.x1 - d.x0;
+                    const maxLength = width > 200 ? 18 : (width > 120 ? 12 : 8);
+                    const name = d.data.name;
+                    return name.length > maxLength ? name.substring(0, maxLength - 3) + '...' : name;
+                });
+            
+            // Add value labels
+            svg.selectAll('.layout-value')
+                .data(nodes.filter(d => d.depth > 0 && (d.x1 - d.x0) > 80 && (d.y1 - d.y0) > 50))
+                .enter()
+                .append('text')
+                .attr('class', 'layout-value')
+                .attr('x', d => d.x0 + (d.x1 - d.x0) / 2)
+                .attr('y', d => d.y0 + (d.y1 - d.y0) / 2 + 12)
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'middle')
+                .style('font-size', d => {
+                    const width = d.x1 - d.x0;
+                    const height = d.y1 - d.y0;
+                    if (width > 200 && height > 60) return '12px';
+                    if (width > 120 && height > 40) return '10px';
+                    return '9px';
+                })
+                .style('fill', 'rgba(255, 255, 255, 0.9)')
+                .style('font-weight', 'normal')
+                .style('pointer-events', 'none')
+                .text(d => d3.format('$,.0f')(d.value));
+            
+            // Add hover effects
+            rects.filter(d => d.depth > 0).on('mouseover', function(event, d) {
+                d3.select(this)
+                  .style('opacity', 1)
+                  .style('stroke-width', 3);
+                showTooltip(event, d);
+            })
+            .on('mouseout', function(event, d) {
+                d3.select(this)
+                  .style('opacity', 0.8)
+                  .style('stroke-width', 2);
+                hideTooltip();
+            });
+        }
+        
+        function renderClusterLayout(svg, layoutData) {
+            const nodes = layoutData.descendants();
+            const links = layoutData.links();
+            
+            const colorScale = d3.scaleOrdinal()
+                .domain([0, 1, 2])
+                .range(['#2c3e50', '#e74c3c', '#3498db']);
+            
+            // Create links with straight lines (cluster style)
+            svg.selectAll('.layout-link')
+                .data(links)
+                .enter()
+                .append('line')
+                .attr('class', 'layout-link')
+                .attr('x1', d => d.source.x)
+                .attr('y1', d => d.source.y)
+                .attr('x2', d => d.target.x)
+                .attr('y2', d => d.target.y)
+                .attr('stroke', '#7f8c8d')
+                .attr('stroke-width', 3)
+                .style('opacity', 0.6);
+            
+            // Create larger nodes for cluster
+            const nodeElements = svg.selectAll('.layout-node')
+                .data(nodes)
+                .enter()
+                .append('circle')
+                .attr('class', 'layout-node')
+                .attr('cx', d => d.x)
+                .attr('cy', d => d.y)
+                .attr('r', d => d.depth === 0 ? 25 : (d.children ? 20 : 15))
+                .attr('fill', d => colorScale(d.depth))
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 3)
+                .style('cursor', 'pointer')
+                .style('filter', 'drop-shadow(2px 2px 4px rgba(0,0,0,0.3))');
+            
+            // Add labels with better positioning and text wrapping
+            svg.selectAll('.layout-label')
+                .data(nodes)
+                .enter()
+                .append('text')
+                .attr('class', 'layout-label')
+                .attr('x', d => d.x)
+                .attr('y', d => d.y - (d.depth === 0 ? 35 : (d.children ? 30 : 25)))
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'middle')
+                .style('font-size', d => d.depth === 0 ? '14px' : '12px')
+                .style('font-weight', 'bold')
+                .style('fill', '#2c3e50')
+                .style('pointer-events', 'none')
+                .style('background', 'rgba(255,255,255,0.9)')
+                .style('padding', '2px 4px')
+                .style('border-radius', '3px')
+                .text(d => {
+                    // Intelligent text truncation
+                    const name = d.data.name;
+                    if (name.length <= 12) return name;
+                    if (name.includes(' ')) {
+                        const words = name.split(' ');
+                        if (words.length === 2 && words[0].length <= 8 && words[1].length <= 8) {
+                            return name;
+                        }
+                        return words[0].substring(0, 8) + '...';
+                    }
+                    return name.substring(0, 10) + '...';
+                });
+            
+            // Add background rectangles for labels to improve readability
+            svg.selectAll('.layout-label-bg')
+                .data(nodes)
+                .enter()
+                .insert('rect', '.layout-label')
+                .attr('class', 'layout-label-bg')
+                .attr('x', d => d.x - 35)
+                .attr('y', d => d.y - (d.depth === 0 ? 45 : (d.children ? 40 : 35)))
+                .attr('width', 70)
+                .attr('height', 20)
+                .attr('rx', 10)
+                .attr('ry', 10)
+                .attr('fill', 'rgba(255, 255, 255, 0.9)')
+                .attr('stroke', '#ddd')
+                .attr('stroke-width', 1)
+                .style('pointer-events', 'none');
+            
+            // Add value labels below nodes with better formatting
+            svg.selectAll('.layout-value')
+                .data(nodes.filter(d => d.depth > 0))
+                .enter()
+                .append('text')
+                .attr('class', 'layout-value')
+                .attr('x', d => d.x)
+                .attr('y', d => d.y + (d.children ? 35 : 30))
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'middle')
+                .style('font-size', '10px')
+                .style('fill', '#7f8c8d')
+                .style('font-weight', 'bold')
+                .style('pointer-events', 'none')
+                .text(d => d3.format('$,.0f')(d.value));
+            
+            // Add hover effects specific to cluster
+            nodeElements.on('mouseover', function(event, d) {
+                d3.select(this)
+                  .transition()
+                  .duration(200)
+                  .attr('r', d => (d.depth === 0 ? 30 : (d.children ? 25 : 20)))
+                  .style('filter', 'drop-shadow(4px 4px 8px rgba(0,0,0,0.5))');
+                
+                // Highlight connected links
+                svg.selectAll('.layout-link')
+                   .filter(link => link.source === d || link.target === d)
+                   .transition()
+                   .duration(200)
+                   .attr('stroke-width', 5)
+                   .style('opacity', 1);
+                
+                showTooltip(event, d);
+            })
+            .on('mouseout', function(event, d) {
+                d3.select(this)
+                  .transition()
+                  .duration(200)
+                  .attr('r', d => (d.depth === 0 ? 25 : (d.children ? 20 : 15)))
+                  .style('filter', 'drop-shadow(2px 2px 4px rgba(0,0,0,0.3))');
+                
+                // Reset links
+                svg.selectAll('.layout-link')
+                   .transition()
+                   .duration(200)
+                   .attr('stroke-width', 3)
+                   .style('opacity', 0.6);
+                
+                hideTooltip();
+            });
+        }
+        
+        function renderTreeLayout(svg, layoutData) {
+            const nodes = layoutData.descendants();
+            const links = layoutData.links();
+            
+            const colorScale = d3.scaleOrdinal()
+                .domain([0, 1, 2])
+                .range(['#8e44ad', '#e67e22', '#27ae60']);
+            
+            // Create curved links (tree style)
+            svg.selectAll('.layout-link')
+                .data(links)
+                .enter()
+                .append('path')
+                .attr('class', 'layout-link')
+                .attr('d', d => {
+                    return `M${d.source.x},${d.source.y}
+                            C${d.source.x},${(d.source.y + d.target.y) / 2}
+                             ${d.target.x},${(d.source.y + d.target.y) / 2}
+                             ${d.target.x},${d.target.y}`;
+                })
+                .attr('fill', 'none')
+                .attr('stroke', '#95a5a6')
+                .attr('stroke-width', 2)
+                .style('opacity', 0.7);
+            
+            // Create rectangular nodes for tree (different from cluster circles)
+            const nodeElements = svg.selectAll('.layout-node')
+                .data(nodes)
+                .enter()
+                .append('rect')
+                .attr('class', 'layout-node')
+                .attr('x', d => d.x - (d.depth === 0 ? 60 : (d.children ? 50 : 40)))
+                .attr('y', d => d.y - (d.depth === 0 ? 20 : (d.children ? 18 : 15)))
+                .attr('width', d => d.depth === 0 ? 120 : (d.children ? 100 : 80))
+                .attr('height', d => d.depth === 0 ? 40 : (d.children ? 36 : 30))
+                .attr('rx', 8)
+                .attr('ry', 8)
+                .attr('fill', d => colorScale(d.depth))
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 2)
+                .style('cursor', 'pointer')
+                .style('filter', 'drop-shadow(1px 1px 3px rgba(0,0,0,0.3))');
+            
+            // Add labels inside rectangular nodes
+            svg.selectAll('.layout-label')
+                .data(nodes)
+                .enter()
+                .append('text')
+                .attr('class', 'layout-label')
+                .attr('x', d => d.x)
+                .attr('y', d => d.y - 6)
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'middle')
+                .style('font-size', d => d.depth === 0 ? '14px' : (d.children ? '12px' : '11px'))
+                .style('font-weight', 'bold')
+                .style('fill', '#fff')
+                .style('pointer-events', 'none')
+                .text(d => {
+                    const name = d.data.name;
+                    const maxLength = d.depth === 0 ? 14 : (d.children ? 12 : 10);
+                    return name.length > maxLength ? name.substring(0, maxLength - 3) + '...' : name;
+                });
+            
+            // Add value labels inside rectangular nodes (second line)
+            svg.selectAll('.layout-value-internal')
+                .data(nodes.filter(d => d.depth > 0))
+                .enter()
+                .append('text')
+                .attr('class', 'layout-value-internal')
+                .attr('x', d => d.x)
+                .attr('y', d => d.y + 8)
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'middle')
+                .style('font-size', d => d.depth === 0 ? '11px' : (d.children ? '10px' : '9px'))
+                .style('fill', 'rgba(255, 255, 255, 0.9)')
+                .style('font-weight', 'normal')
+                .style('pointer-events', 'none')
+                .text(d => d3.format('$,.0f')(d.value));
+            
+            // Add hover effects specific to tree
+            nodeElements.on('mouseover', function(event, d) {
+                d3.select(this)
+                  .transition()
+                  .duration(200)
+                  .style('filter', 'drop-shadow(3px 3px 6px rgba(0,0,0,0.5))')
+                  .attr('stroke-width', 3);
+                
+                // Highlight path to root
+                const pathToRoot = [];
+                let current = d;
+                while (current) {
+                    pathToRoot.push(current);
+                    current = current.parent;
+                }
+                
+                svg.selectAll('.layout-link')
+                   .filter(link => pathToRoot.includes(link.source) && pathToRoot.includes(link.target))
+                   .transition()
+                   .duration(200)
+                   .attr('stroke-width', 4)
+                   .attr('stroke', '#e74c3c')
+                   .style('opacity', 1);
+                
+                showTooltip(event, d);
+            })
+            .on('mouseout', function(event, d) {
+                d3.select(this)
+                  .transition()
+                  .duration(200)
+                  .style('filter', 'drop-shadow(1px 1px 3px rgba(0,0,0,0.3))')
+                  .attr('stroke-width', 2);
+                
+                // Reset links
+                svg.selectAll('.layout-link')
+                   .transition()
+                   .duration(200)
+                   .attr('stroke-width', 2)
+                   .attr('stroke', '#95a5a6')
+                   .style('opacity', 0.7);
+                
+                hideTooltip();
+            });
+        }
+        
+        function showTooltip(event, d) {
+            const tooltip = d3.select('body').selectAll('.hierarchy-tooltip')
+                .data([d])
+                .join('div')
+                .attr('class', 'hierarchy-tooltip')
+                .style('position', 'absolute')
+                .style('background', 'rgba(0, 0, 0, 0.9)')
+                .style('color', 'white')
+                .style('padding', '10px')
+                .style('border-radius', '5px')
+                .style('font-size', '12px')
+                .style('pointer-events', 'none')
+                .style('z-index', '1000');
+            
+            tooltip.html(`
+                <strong>${d.data.name}</strong><br>
+                Value: ${d3.format('$,.0f')(d.value)}<br>
+                Depth: ${d.depth}<br>
+                Children: ${d.children ? d.children.length : 0}
+            `);
+            
+            tooltip.style('left', (event.pageX + 10) + 'px')
+                   .style('top', (event.pageY - 10) + 'px');
+        }
+        
+        function hideTooltip() {
+            d3.select('.hierarchy-tooltip').remove();
+        }
+        
+        function updateLayoutInfo(layoutType) {
+            const descriptions = {
+                treemap: "Space-filling visualization using nested rectangles proportional to data values",
+                partition: "Hierarchical space-partitioning with nested rectangular segments",
+                pack: "Circle packing layout with nested circles representing hierarchy",
+                cluster: "Dendrogram cluster layout with straight lines connecting circular nodes equally spaced",
+                tree: "Tree structure with curved connections and rectangular nodes showing parent-child relationships"
+            };
+            
+            document.getElementById('layout-info').innerHTML = 
+                `<strong>Active:</strong> ${layoutType.charAt(0).toUpperCase() + layoutType.slice(1)} Layout<br>
+                 <em>${descriptions[layoutType]}</em><br>
+                 <strong>Size:</strong> ${layoutConfig.size[0]}x${layoutConfig.size[1]} | 
+                 <strong>Padding:</strong> ${layoutConfig.padding}px`;
+        }
+        
+        window.changeLayoutSize = function(sizeStr) {
+            const [width, height] = sizeStr.split(',').map(Number);
+            layoutConfig.size = [width, height];
+            if (currentHierarchicalLayout) {
+                renderHierarchicalLayout();
+            }
+        };
+        
+        window.changeLayoutPadding = function(padding) {
+            layoutConfig.padding = parseInt(padding);
+            if (currentHierarchicalLayout) {
+                renderHierarchicalLayout();
+            }
+        };
+        
+        window.randomizeHierarchyData = function() {
+            // Generate new random hierarchical data
+            const categories = ['Sales', 'Marketing', 'Operations', 'Finance', 'Technology'];
+            const subcategories = ['Q1', 'Q2', 'Q3', 'Q4'];
+            
+            sampleHierarchicalData.children = categories.slice(0, 3 + Math.floor(Math.random() * 2)).map(cat => ({
+                name: cat,
+                value: 0,
+                children: subcategories.map(sub => {
+                    const value = 50000 + Math.random() * 200000;
+                    return { name: sub, value: value };
+                })
+            }));
+            
+            // Calculate parent values
+            sampleHierarchicalData.children.forEach(cat => {
+                cat.value = cat.children.reduce((sum, child) => sum + child.value, 0);
+            });
+            sampleHierarchicalData.value = sampleHierarchicalData.children.reduce((sum, cat) => sum + cat.value, 0);
+            
+            if (currentHierarchicalLayout) {
+                renderHierarchicalLayout();
+            }
+        };
+        
+        window.exportHierarchicalLayout = function(format) {
+            if (!currentHierarchicalLayout) {
+                alert('Please create a layout first');
+                return;
+            }
+            
+            if (format === 'svg') {
+                const svgElement = currentHierarchicalLayout.svg.node();
+                const serializer = new XMLSerializer();
+                const svgString = serializer.serializeToString(svgElement);
+                const blob = new Blob([svgString], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `hierarchical-${currentLayoutType}-layout.svg`;
+                link.click();
+                URL.revokeObjectURL(url);
+            } else if (format === 'png') {
+                // PNG export would require canvas conversion
+                alert('PNG export requires canvas conversion - SVG export is available');
+            } else if (format === 'json') {
+                const dataStr = JSON.stringify(sampleHierarchicalData, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `hierarchical-data.json`;
+                link.click();
+                URL.revokeObjectURL(url);
+            }
+        };
+        
+        // Initialize default layout on page load
+        setTimeout(() => {
+            if (document.getElementById('hierarchical-layout-container')) {
+                setHierarchicalLayout('treemap');
+            }
+        }, 1000);
 
         // Log successful initialization - PURE WATERFALL FOCUS
         console.log('🌊 MintWaterfall v0.8.1 - PURE WATERFALL CHART SHOWCASE!');
