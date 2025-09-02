@@ -1,5 +1,6 @@
 import resolve from "@rollup/plugin-node-resolve";
 import terser from "@rollup/plugin-terser";
+import typescript from "@rollup/plugin-typescript";
 import filesize from "rollup-plugin-filesize";
 import cleanup from "rollup-plugin-cleanup";
 
@@ -15,6 +16,10 @@ const globals = { d3: "d3" };
 
 const plugins = [
   resolve(),
+  typescript({
+    tsconfig: "./tsconfig.json",
+    exclude: ["**/*.test.ts", "**/*.test.js", "tests/**/*"]
+  }),
   cleanup(),
   filesize()
 ];
