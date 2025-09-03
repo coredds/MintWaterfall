@@ -2,8 +2,10 @@
 // Usage: d3.waterfallChart().width(800).height(400).showTotal(true)(selection)
 
 import * as d3 from 'd3';
-// Import JavaScript modules for now during gradual migration
-import { createScaleSystem } from "../mintwaterfall-scales.js";
+// Import TypeScript modules where available
+import { DataItem, StackItem, ProcessedDataItem, dataProcessor, createDataProcessor } from './mintwaterfall-data.js';
+import { createScaleSystem, createTimeScale, createOrdinalScale } from './mintwaterfall-scales.js';
+// Import JavaScript modules for remaining components during gradual migration
 import { createBrushSystem } from "../mintwaterfall-brush.js";
 import { createAccessibilitySystem } from "../mintwaterfall-accessibility.js";
 import { createTooltipSystem } from "../mintwaterfall-tooltip.js";

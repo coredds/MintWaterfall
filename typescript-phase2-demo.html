@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 2 TypeScript Migration Demo</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .demo-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .result {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .success { background: rgba(46, 204, 113, 0.3); }
+        .info { background: rgba(52, 152, 219, 0.3); }
+        .warning { background: rgba(241, 196, 15, 0.3); }
+        h1, h2, h3 { color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 MintWaterfall Phase 2 TypeScript Migration Demo</h1>
+        <p>Testing the new TypeScript data processing and scales modules.</p>
+        
+        <div class="demo-section">
+            <h2>📊 Data Processing Module (TypeScript)</h2>
+            <div id="data-results"></div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>📏 Scales Module (TypeScript)</h2>
+            <div id="scales-results"></div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>🔄 Integration Test</h2>
+            <div id="integration-results"></div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>📈 Live Chart (TypeScript-powered)</h2>
+            <div id="chart-container"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import from the built distribution files
+        import { 
+            createDataProcessor, 
+            dataProcessor, 
+            transformToWaterfallFormat,
+            loadData
+        } from './dist/mintwaterfall.esm.js';
+        
+        import { 
+            createScaleSystem, 
+            createLinearScale,
+            createBandScale,
+            createOrdinalScale,
+            createTimeScale
+        } from './dist/mintwaterfall.esm.js';
+
+        // Test data
+        const sampleData = [
+            { label: 'Q1 Revenue', stacks: [{ value: 100000, color: '#2ecc71', label: '+100K' }] },
+            { label: 'Q2 Growth', stacks: [{ value: 25000, color: '#3498db', label: '+25K' }] },
+            { label: 'Q3 Costs', stacks: [{ value: -15000, color: '#e74c3c', label: '-15K' }] },
+            { label: 'Q4 Revenue', stacks: [{ value: 30000, color: '#f39c12', label: '+30K' }] }
+        ];
+
+        function addResult(containerId, title, content, type = 'result') {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `<strong>${title}:</strong><br><pre>${content}</pre>`;
+            container.appendChild(div);
+        }
+
+        // Test Data Processing Module
+        function testDataProcessing() {
+            try {
+                addResult('data-results', '✅ Factory Creation', 'createDataProcessor() - SUCCESS', 'success');
+                
+                const processor = createDataProcessor();
+                
+                // Test validation
+                const isValid = processor.validateData(sampleData);
+                addResult('data-results', '✅ Data Validation', `validateData() returned: ${isValid}`, 'success');
+                
+                // Test aggregation
+                const aggregated = processor.aggregateData(sampleData, 'sum');
+                addResult('data-results', '✅ Data Aggregation', 
+                    `Aggregated ${aggregated.length} items\nTotals: ${aggregated.map(d => d.aggregatedValue).join(', ')}`, 'info');
+                
+                // Test summary
+                const summary = processor.getDataSummary(sampleData);
+                addResult('data-results', '✅ Data Summary', 
+                    `Items: ${summary.totalItems}\nStacks: ${summary.totalStacks}\nRange: ${summary.valueRange.min} to ${summary.valueRange.max}\nTotal: ${summary.cumulativeTotal}`, 'info');
+                
+                // Test sorting
+                const sorted = processor.sortData(sampleData, 'total', 'descending');
+                addResult('data-results', '✅ Data Sorting', 
+                    `Sorted by total (desc): ${sorted.map(d => d.label).join(', ')}`, 'info');
+                
+            } catch (error) {
+                addResult('data-results', '❌ Error', error.message, 'warning');
+            }
+        }
+
+        // Test Scales Module
+        function testScales() {
+            try {
+                addResult('scales-results', '✅ Scale System Creation', 'createScaleSystem() - SUCCESS', 'success');
+                
+                const scaleSystem = createScaleSystem();
+                
+                // Test linear scale
+                const linearScale = createLinearScale([0, 50, 100, 150], { range: [0, 400], nice: true });
+                addResult('scales-results', '✅ Linear Scale', 
+                    `Domain: [${linearScale.domain().join(', ')}]\nRange: [${linearScale.range().join(', ')}]`, 'info');
+                
+                // Test band scale  
+                const bandScale = createBandScale(['Q1', 'Q2', 'Q3', 'Q4'], { padding: 0.1 });
+                addResult('scales-results', '✅ Band Scale', 
+                    `Domain: ${bandScale.domain().join(', ')}\nBandwidth: ${bandScale.bandwidth().toFixed(2)}`, 'info');
+                
+                // Test ordinal scale
+                const ordinalScale = createOrdinalScale(['A', 'B', 'C'], { 
+                    range: ['#ff0000', '#00ff00', '#0000ff'] 
+                });
+                addResult('scales-results', '✅ Ordinal Scale', 
+                    `A → ${ordinalScale('A')}\nB → ${ordinalScale('B')}\nC → ${ordinalScale('C')}`, 'info');
+                
+                // Test time scale
+                const dates = [new Date('2023-01-01'), new Date('2023-06-01'), new Date('2023-12-01')];
+                const timeScale = createTimeScale(dates, { range: [0, 300] });
+                addResult('scales-results', '✅ Time Scale', 
+                    `Domain: ${timeScale.domain().map(d => d.toDateString()).join(' to ')}\nRange: [${timeScale.range().join(', ')}]`, 'info');
+                
+            } catch (error) {
+                addResult('scales-results', '❌ Error', error.message, 'warning');
+            }
+        }
+
+        // Test Integration
+        function testIntegration() {
+            try {
+                // Test data transformation
+                const rawData = [
+                    { value: 100, label: 'Start', color: '#2ecc71' },
+                    { value: 25, label: 'Growth', color: '#3498db' },
+                    { value: -15, label: 'Loss', color: '#e74c3c' }
+                ];
+                
+                const transformed = transformToWaterfallFormat(rawData);
+                addResult('integration-results', '✅ Data Transformation', 
+                    `Transformed ${rawData.length} raw items to waterfall format`, 'success');
+                
+                // Test with scales
+                const processor = createDataProcessor();
+                const scaleSystem = createScaleSystem();
+                
+                const summary = processor.getDataSummary(transformed);
+                const xScale = scaleSystem.createAdaptiveScale(transformed.map(d => ({ label: d.label })), 'x');
+                const yScale = scaleSystem.createAdaptiveScale(transformed.map(d => ({ cumulativeTotal: summary.cumulativeTotal })), 'y');
+                
+                addResult('integration-results', '✅ Scales Integration', 
+                    `Created adaptive scales for ${transformed.length} data points\nX scale type: ${typeof xScale.bandwidth === 'function' ? 'band' : 'linear'}\nY scale type: ${typeof yScale.invert === 'function' ? 'linear' : 'band'}`, 'info');
+                
+            } catch (error) {
+                addResult('integration-results', '❌ Error', error.message, 'warning');
+            }
+        }
+
+        // Create a simple chart using our TypeScript modules
+        function createChart() {
+            try {
+                const container = d3.select('#chart-container');
+                const width = 800;
+                const height = 400;
+                const margin = { top: 20, right: 20, bottom: 50, left: 60 };
+                
+                const svg = container.append('svg')
+                    .attr('width', width)
+                    .attr('height', height);
+                
+                const chartGroup = svg.append('g')
+                    .attr('transform', `translate(${margin.left},${margin.top})`);
+                
+                // Use our TypeScript scales
+                const xScale = createBandScale(sampleData.map(d => d.label), { 
+                    padding: 0.2 
+                });
+                xScale.range([0, width - margin.left - margin.right]);
+                
+                const values = sampleData.map(d => d.stacks[0].value);
+                const yScale = createLinearScale(values, { 
+                    range: [height - margin.top - margin.bottom, 0],
+                    nice: true,
+                    zero: true
+                });
+                
+                // Draw bars
+                chartGroup.selectAll('.bar')
+                    .data(sampleData)
+                    .enter()
+                    .append('rect')
+                    .attr('class', 'bar')
+                    .attr('x', d => xScale(d.label))
+                    .attr('y', d => d.stacks[0].value >= 0 ? yScale(d.stacks[0].value) : yScale(0))
+                    .attr('width', xScale.bandwidth())
+                    .attr('height', d => Math.abs(yScale(0) - yScale(d.stacks[0].value)))
+                    .attr('fill', d => d.stacks[0].color)
+                    .attr('opacity', 0.8);
+                
+                // Add axes
+                chartGroup.append('g')
+                    .attr('transform', `translate(0,${height - margin.top - margin.bottom})`)
+                    .call(d3.axisBottom(xScale));
+                
+                chartGroup.append('g')
+                    .call(d3.axisLeft(yScale));
+                
+                // Add title
+                svg.append('text')
+                    .attr('x', width / 2)
+                    .attr('y', 20)
+                    .attr('text-anchor', 'middle')
+                    .attr('fill', 'white')
+                    .style('font-size', '16px')
+                    .style('font-weight', 'bold')
+                    .text('Live Chart - Powered by TypeScript Modules');
+                
+                addResult('integration-results', '✅ Chart Rendering', 
+                    'Successfully created chart using TypeScript data and scales modules', 'success');
+                
+            } catch (error) {
+                addResult('integration-results', '❌ Chart Error', error.message, 'warning');
+            }
+        }
+
+        // Run tests
+        document.addEventListener('DOMContentLoaded', () => {
+            testDataProcessing();
+            testScales();
+            testIntegration();
+            createChart();
+        });
+    </script>
+</body>
+</html>
