@@ -1,0 +1,4576 @@
+/*!
+ * MintWaterfall v0.8.5
+ * D3.js-compatible waterfall chart component
+ * (c) 2024 David Duarte
+ * Released under the MIT License
+ */
+(function (global, factory) {
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('d3')) :
+    typeof define === 'function' && define.amd ? define(['exports', 'd3'], factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.MintWaterfall = {}, global.d3));
+})(this, (function (exports, d3) { 'use strict';
+
+    function _interopNamespaceDefault(e) {
+        var n = Object.create(null);
+        if (e) {
+            Object.keys(e).forEach(function (k) {
+                if (k !== 'default') {
+                    var d = Object.getOwnPropertyDescriptor(e, k);
+                    Object.defineProperty(n, k, d.get ? d : {
+                        enumerable: true,
+                        get: function () { return e[k]; }
+                    });
+                }
+            });
+        }
+        n.default = e;
+        return Object.freeze(n);
+    }
+
+    var d3__namespace = /*#__PURE__*/_interopNamespaceDefault(d3);
+
+    // MintWaterfall Enhanced Scales System - TypeScript Version
+    // Provides advanced D3.js scale support including time and ordinal scales with full type safety
+    function createScaleSystem() {
+        let defaultRange = [0, 800];
+        // Enhanced scale factory with auto-detection
+        function createAdaptiveScale(data, dimension = "x") {
+            const values = data.map(d => dimension === "x" ? d.label : d.cumulativeTotal);
+            // Detect data type and return appropriate scale
+            if (values.every(v => v instanceof Date)) {
+                return createTimeScale(values);
+            }
+            else if (values.every(v => typeof v === "string" || isNaN(v))) {
+                // For categorical/string data, use band scale for positioning
+                return createBandScale(values);
+            }
+            else if (values.every(v => typeof v === "number")) {
+                return createLinearScale(values);
+            }
+            else {
+                // Mixed types - fallback to band scale
+                return d3__namespace.scaleBand().domain(values.map(String)).range(defaultRange);
+            }
+        }
+        // Time scale with intelligent formatting
+        function createTimeScale(values, options = {}) {
+            const { range = defaultRange, nice = true, tickFormat = "auto" } = options;
+            const extent = d3__namespace.extent(values);
+            const scale = d3__namespace.scaleTime()
+                .domain(extent)
+                .range(range);
+            if (nice) {
+                scale.nice();
+            }
+            // Auto-detect appropriate time format
+            if (tickFormat === "auto" && extent[0] && extent[1] && extent[0] instanceof Date && extent[1] instanceof Date) {
+                const timeSpan = extent[1].getTime() - extent[0].getTime();
+                const days = timeSpan / (1000 * 60 * 60 * 24);
+                if (days < 1) {
+                    scale.tickFormat = d3__namespace.timeFormat("%H:%M");
+                }
+                else if (days < 30) {
+                    scale.tickFormat = d3__namespace.timeFormat("%m/%d");
+                }
+                else if (days < 365) {
+                    scale.tickFormat = d3__namespace.timeFormat("%b %Y");
+                }
+                else {
+                    scale.tickFormat = d3__namespace.timeFormat("%Y");
+                }
+            }
+            else if (typeof tickFormat === "string") {
+                scale.tickFormat = d3__namespace.timeFormat(tickFormat);
+            }
+            return scale;
+        }
+        // Enhanced ordinal scale with color mapping
+        function createOrdinalScale(values, options = {}) {
+            const { range = d3__namespace.schemeCategory10, unknown = "#ccc" } = options;
+            const uniqueValues = [...new Set(values)];
+            return d3__namespace.scaleOrdinal()
+                .domain(uniqueValues)
+                .range(range)
+                .unknown(unknown);
+        }
+        // Band scale for categorical data positioning
+        function createBandScale(values, options = {}) {
+            const { padding = 0.1, paddingInner = null, paddingOuter = null, align = 0.5, range = defaultRange } = options;
+            const uniqueValues = [...new Set(values.map(String))];
+            const scale = d3__namespace.scaleBand()
+                .domain(uniqueValues)
+                .range(range)
+                .align(align);
+            if (paddingInner !== null) {
+                scale.paddingInner(paddingInner);
+            }
+            if (paddingOuter !== null) {
+                scale.paddingOuter(paddingOuter);
+            }
+            if (paddingInner === null && paddingOuter === null) {
+                scale.padding(padding);
+            }
+            return scale;
+        }
+        // Linear scale with enhanced options
+        function createLinearScale(values, options = {}) {
+            const { range = defaultRange, nice = true, zero = false, clamp = false } = options;
+            let domain = d3__namespace.extent(values);
+            // Include zero in domain if requested
+            if (zero) {
+                domain = [Math.min(0, domain[0]), Math.max(0, domain[1])];
+            }
+            const scale = d3__namespace.scaleLinear()
+                .domain(domain)
+                .range(range);
+            if (nice) {
+                scale.nice();
+            }
+            if (clamp) {
+                scale.clamp(true);
+            }
+            return scale;
+        }
+        function setDefaultRange(range) {
+            defaultRange = range;
+        }
+        function getScaleInfo(scale) {
+            const info = {
+                type: 'unknown',
+                domain: [],
+                range: []
+            };
+            try {
+                info.domain = scale.domain();
+                info.range = scale.range();
+                // Detect scale type
+                if (typeof scale.bandwidth === 'function') {
+                    info.type = 'band';
+                    info.bandwidth = scale.bandwidth();
+                    if (typeof scale.step === 'function') {
+                        info.step = scale.step();
+                    }
+                }
+                else if (typeof scale.nice === 'function') {
+                    // Check if it's a time scale by testing if domain contains dates
+                    if (info.domain.length > 0 && info.domain[0] instanceof Date) {
+                        info.type = 'time';
+                    }
+                    else {
+                        info.type = 'linear';
+                    }
+                }
+                else if (typeof scale.unknown === 'function') {
+                    info.type = 'ordinal';
+                }
+            }
+            catch (e) {
+                // Fallback for scales that don't support these methods
+                console.warn('Could not extract complete scale info:', e);
+            }
+            return info;
+        }
+        // Log scale with fallback to linear for non-positive values
+        function createLogScale(values, options = {}) {
+            // Check if all values are positive for log scale
+            const hasNonPositive = values.some(v => v <= 0);
+            if (hasNonPositive) {
+                // Fallback to linear scale
+                return createLinearScale(values, options);
+            }
+            const { range = defaultRange, nice = true, clamp = false } = options;
+            const domain = d3__namespace.extent(values);
+            const scale = d3__namespace.scaleLog()
+                .domain(domain)
+                .range(range);
+            if (nice) {
+                scale.nice();
+            }
+            if (clamp) {
+                scale.clamp(true);
+            }
+            return scale;
+        }
+        return {
+            createAdaptiveScale,
+            createTimeScale,
+            createOrdinalScale,
+            createBandScale,
+            createLinearScale,
+            createLogScale,
+            setDefaultRange,
+            getScaleInfo,
+            scaleUtils: createScaleUtilities()
+        };
+    }
+    function createScaleUtilities() {
+        function formatTickValue(scale, value) {
+            if (typeof scale.tickFormat === 'function') {
+                // Time scales
+                return scale.tickFormat()(value);
+            }
+            else if (scale.tickFormat) {
+                // Scales with custom formatters
+                return scale.tickFormat(value);
+            }
+            else if (typeof value === 'number') {
+                // Default number formatting
+                if (Math.abs(value) >= 1000000) {
+                    return `${(value / 1000000).toFixed(1)}M`;
+                }
+                else if (Math.abs(value) >= 1000) {
+                    return `${(value / 1000).toFixed(1)}K`;
+                }
+                else {
+                    return value.toFixed(0);
+                }
+            }
+            else {
+                return String(value);
+            }
+        }
+        function getTickCount(scale, targetSize) {
+            const range = scale.range();
+            const rangeSize = Math.abs(range[1] - range[0]);
+            // Aim for ticks every 50-100 pixels
+            const idealTickCount = Math.max(2, Math.floor(rangeSize / 75));
+            // Cap at reasonable limits
+            return Math.min(10, Math.max(2, idealTickCount));
+        }
+        function createColorScale(domain, scheme = d3__namespace.schemeCategory10) {
+            return d3__namespace.scaleOrdinal()
+                .domain(domain)
+                .range([...scheme]);
+        }
+        function invertScale(scale, pixel) {
+            if (typeof scale.invert === 'function') {
+                // Linear and time scales
+                return scale.invert(pixel);
+            }
+            else if (typeof scale.bandwidth === 'function') {
+                // Band scales - find the band that contains the pixel
+                const domain = scale.domain();
+                const bandwidth = scale.bandwidth();
+                scale.step();
+                for (let i = 0; i < domain.length; i++) {
+                    const bandStart = scale(domain[i]);
+                    if (pixel >= bandStart && pixel <= bandStart + bandwidth) {
+                        return domain[i];
+                    }
+                }
+                // If not in any band, return closest
+                const distances = domain.map((d) => Math.abs(scale(d) + bandwidth / 2 - pixel));
+                const minIndex = distances.indexOf(Math.min(...distances));
+                return domain[minIndex];
+            }
+            else {
+                // Ordinal scales - return undefined for pixel-based inversion
+                return undefined;
+            }
+        }
+        function detectScaleType(values) {
+            if (values.every(v => v instanceof Date)) {
+                return 'time';
+            }
+            else if (values.every(v => typeof v === "string" || isNaN(v))) {
+                return 'band';
+            }
+            else if (values.every(v => typeof v === "number")) {
+                return 'linear';
+            }
+            else {
+                return 'adaptive';
+            }
+        }
+        function createAxis(scale, orientation = 'bottom') {
+            let axis;
+            switch (orientation) {
+                case 'top':
+                    axis = d3__namespace.axisTop(scale);
+                    break;
+                case 'bottom':
+                    axis = d3__namespace.axisBottom(scale);
+                    break;
+                case 'left':
+                    axis = d3__namespace.axisLeft(scale);
+                    break;
+                case 'right':
+                    axis = d3__namespace.axisRight(scale);
+                    break;
+                default:
+                    axis = d3__namespace.axisBottom(scale);
+            }
+            return axis;
+        }
+        return {
+            formatTickValue,
+            getTickCount,
+            createColorScale,
+            invertScale,
+            detectScaleType,
+            createAxis
+        };
+    }
+
+    // MintWaterfall Brush Selection System - TypeScript Version
+    // Provides interactive data selection with visual feedback and full type safety
+    function createBrushSystem() {
+        // Brush configuration
+        const config = {
+            enabled: true,
+            extent: [[0, 0], [800, 400]],
+            handleSize: 6,
+            filter: null, // Use D3 default filter
+            touchable: true,
+            keyModifiers: true,
+            selection: {
+                fill: '#007acc',
+                fillOpacity: 0.3,
+                stroke: '#007acc',
+                strokeWidth: 1,
+                strokeDasharray: null
+            },
+            handles: {
+                fill: '#fff',
+                stroke: '#007acc',
+                strokeWidth: 1,
+                size: 6
+            }
+        };
+        let brushBehavior = null;
+        let currentSelection = null;
+        let brushContainer = null;
+        let dataPoints = [];
+        // Event listeners
+        const listeners = d3__namespace.dispatch("brushstart", "brush", "brushend", "clear");
+        function createBrushBehavior() {
+            if (brushBehavior)
+                return brushBehavior;
+            brushBehavior = d3__namespace.brush()
+                .extent(config.extent)
+                .handleSize(config.handleSize)
+                .touchable(config.touchable)
+                .keyModifiers(config.keyModifiers)
+                .on("start", handleBrushStart)
+                .on("brush", handleBrush)
+                .on("end", handleBrushEnd);
+            // Set filter if provided
+            if (config.filter) {
+                brushBehavior.filter(config.filter);
+            }
+            return brushBehavior;
+        }
+        function handleBrushStart(event) {
+            const selection = convertD3Selection(event.selection);
+            currentSelection = selection;
+            const eventData = {
+                selection,
+                sourceEvent: event.sourceEvent,
+                type: 'start'
+            };
+            listeners.call("brushstart", undefined, eventData);
+        }
+        function handleBrush(event) {
+            const selection = convertD3Selection(event.selection);
+            currentSelection = selection;
+            const eventData = {
+                selection,
+                sourceEvent: event.sourceEvent,
+                type: 'brush'
+            };
+            listeners.call("brush", undefined, eventData);
+        }
+        function handleBrushEnd(event) {
+            const selection = convertD3Selection(event.selection);
+            currentSelection = selection;
+            const eventData = {
+                selection,
+                sourceEvent: event.sourceEvent,
+                type: 'end'
+            };
+            listeners.call("brushend", undefined, eventData);
+        }
+        function convertD3Selection(d3Selection) {
+            if (!d3Selection)
+                return null;
+            const [[x0, y0], [x1, y1]] = d3Selection;
+            return {
+                x: [Math.min(x0, x1), Math.max(x0, x1)],
+                y: [Math.min(y0, y1), Math.max(y0, y1)]
+            };
+        }
+        function convertToBrushSelection(selection) {
+            return [
+                [selection.x[0], selection.y[0]],
+                [selection.x[1], selection.y[1]]
+            ];
+        }
+        function applyBrushStyles() {
+            if (!brushContainer)
+                return;
+            // Style the selection area
+            brushContainer.selectAll(".selection")
+                .style("fill", config.selection.fill)
+                .style("fill-opacity", config.selection.fillOpacity)
+                .style("stroke", config.selection.stroke)
+                .style("stroke-width", config.selection.strokeWidth);
+            // Apply stroke dash array only if it's not null
+            if (config.selection.strokeDasharray) {
+                brushContainer.selectAll(".selection")
+                    .style("stroke-dasharray", config.selection.strokeDasharray);
+            }
+            // Style the handles
+            brushContainer.selectAll(".handle")
+                .style("fill", config.handles.fill)
+                .style("stroke", config.handles.stroke)
+                .style("stroke-width", config.handles.strokeWidth);
+        }
+        function filterDataBySelection(selection) {
+            if (!selection || dataPoints.length === 0)
+                return [];
+            const [x0, x1] = selection.x;
+            const [y0, y1] = selection.y;
+            return dataPoints.filter(point => {
+                return point.x >= x0 && point.x <= x1 &&
+                    point.y >= y0 && point.y <= y1;
+            });
+        }
+        // Enable brush
+        function enable() {
+            config.enabled = true;
+            if (brushBehavior && brushContainer) {
+                brushContainer.call(brushBehavior);
+                applyBrushStyles();
+            }
+            return brushSystem;
+        }
+        // Disable brush
+        function disable() {
+            config.enabled = false;
+            if (brushContainer) {
+                brushContainer.on(".brush", null);
+            }
+            return brushSystem;
+        }
+        // Attach brush to container
+        function attach(container) {
+            brushContainer = container;
+            if (config.enabled) {
+                const behavior = createBrushBehavior();
+                container.call(behavior);
+                applyBrushStyles();
+            }
+            return brushSystem;
+        }
+        // Detach brush from container
+        function detach() {
+            if (brushContainer) {
+                brushContainer.on(".brush", null);
+                brushContainer.selectAll(".brush").remove();
+                brushContainer = null;
+            }
+            return brushSystem;
+        }
+        // Clear current selection
+        function clear() {
+            if (brushContainer && brushBehavior) {
+                brushContainer.call(brushBehavior.clear);
+                currentSelection = null;
+                listeners.call("clear", undefined, {
+                    selection: null,
+                    sourceEvent: null,
+                    type: 'end'
+                });
+            }
+            return brushSystem;
+        }
+        // Get current selection
+        function getSelection() {
+            return currentSelection;
+        }
+        // Set selection programmatically
+        function setSelection(selection) {
+            if (brushContainer && brushBehavior) {
+                if (selection) {
+                    const d3Selection = convertToBrushSelection(selection);
+                    brushContainer.call(brushBehavior.move, d3Selection);
+                }
+                else {
+                    brushContainer.call(brushBehavior.clear);
+                }
+                currentSelection = selection;
+            }
+            return brushSystem;
+        }
+        // Get data points within current selection
+        function getSelectedData() {
+            if (!currentSelection)
+                return [];
+            return filterDataBySelection(currentSelection);
+        }
+        // Set data points for selection filtering
+        function setData(data) {
+            dataPoints = [...data]; // Create a copy to avoid external mutations
+            return brushSystem;
+        }
+        // Configure brush system
+        function configure(newConfig) {
+            const oldExtent = config.extent;
+            Object.assign(config, newConfig);
+            // Update brush behavior if it exists
+            if (brushBehavior) {
+                if (newConfig.extent && newConfig.extent !== oldExtent) {
+                    brushBehavior.extent(newConfig.extent);
+                }
+                if (newConfig.handleSize !== undefined) {
+                    brushBehavior.handleSize(newConfig.handleSize);
+                }
+                if (newConfig.touchable !== undefined) {
+                    brushBehavior.touchable(newConfig.touchable);
+                }
+                if (newConfig.keyModifiers !== undefined) {
+                    brushBehavior.keyModifiers(newConfig.keyModifiers);
+                }
+                if (newConfig.filter !== undefined) {
+                    if (newConfig.filter) {
+                        brushBehavior.filter(newConfig.filter);
+                    }
+                }
+            }
+            // Apply visual style updates
+            if (brushContainer) {
+                applyBrushStyles();
+            }
+            return brushSystem;
+        }
+        // Set brush extent
+        function setExtent(extent) {
+            config.extent = extent;
+            if (brushBehavior) {
+                brushBehavior.extent(extent);
+            }
+            return brushSystem;
+        }
+        // Check if brush is enabled
+        function isEnabled() {
+            return config.enabled;
+        }
+        // Add event listener
+        function on(type, callback) {
+            listeners.on(type, callback);
+            return brushSystem;
+        }
+        // Remove event listener
+        function off(type, callback) {
+            listeners.on(type, null);
+            return brushSystem;
+        }
+        const brushSystem = {
+            enable,
+            disable,
+            attach,
+            detach,
+            clear,
+            getSelection,
+            setSelection,
+            getSelectedData,
+            setData,
+            configure,
+            setExtent,
+            isEnabled,
+            on,
+            off
+        };
+        return brushSystem;
+    }
+    // Factory function that returns the expected test API
+    function createBrushSystemFactory() {
+        function createBrush(options = {}) {
+            const { type = 'xy' } = options;
+            switch (type) {
+                case 'x':
+                    return d3__namespace.brushX();
+                case 'y':
+                    return d3__namespace.brushY();
+                case 'xy':
+                default:
+                    return d3__namespace.brush();
+            }
+        }
+        function filterDataByBrush(data, selection, scale) {
+            if (!selection || !scale)
+                return data;
+            const [start, end] = selection;
+            return data.filter(d => {
+                const value = scale(d.x || d.label || d.value);
+                return value >= start && value <= end;
+            });
+        }
+        function getSelectedIndices(data, selection, scale) {
+            if (!selection || !scale)
+                return [];
+            const [start, end] = selection;
+            const indices = [];
+            data.forEach((d, i) => {
+                const value = scale(d.x || d.label || d.value);
+                if (value >= start && value <= end) {
+                    indices.push(i);
+                }
+            });
+            return indices;
+        }
+        const selectionUtils = {
+            createSelectionSummary(selectedData) {
+                if (!selectedData || selectedData.length === 0) {
+                    return {
+                        count: 0,
+                        sum: 0,
+                        average: 0,
+                        min: 0,
+                        max: 0
+                    };
+                }
+                const values = selectedData.map(d => d.cumulativeTotal || d.value || d.y || 0);
+                const sum = values.reduce((a, b) => a + b, 0);
+                const min = Math.min(...values);
+                const max = Math.max(...values);
+                return {
+                    count: selectedData.length,
+                    sum,
+                    average: sum / selectedData.length,
+                    min,
+                    max,
+                    extent: [min, max]
+                };
+            }
+        };
+        const brushFactory = {
+            createBrush,
+            filterDataByBrush,
+            getSelectedIndices,
+            selectionUtils,
+            onStart(handler) {
+                return brushFactory;
+            },
+            onMove(handler) {
+                return brushFactory;
+            },
+            onEnd(handler) {
+                return brushFactory;
+            }
+        };
+        return brushFactory;
+    }
+
+    // MintWaterfall Accessibility System - TypeScript Version
+    // Provides WCAG 2.1 AA compliance features for screen readers and keyboard navigation with full type safety
+    function createAccessibilitySystem() {
+        let currentFocusIndex = -1;
+        let focusableElements = [];
+        let announceFunction = null;
+        let descriptionId = null;
+        // ARIA live region for dynamic announcements
+        function createLiveRegion(container) {
+            const liveRegion = container.append("div")
+                .attr("id", "waterfall-live-region")
+                .attr("aria-live", "polite")
+                .attr("aria-atomic", "true")
+                .style("position", "absolute")
+                .style("left", "-10000px")
+                .style("width", "1px")
+                .style("height", "1px")
+                .style("overflow", "hidden");
+            return liveRegion;
+        }
+        // Create chart description for screen readers
+        function createChartDescription(container, data, config = {}) {
+            const { title = "Waterfall Chart", summary = "Interactive waterfall chart showing data progression", totalItems = Array.isArray(data) ? data.length : 1, showTotal: hasTotal = false } = config;
+            const descId = "waterfall-description-" + Math.random().toString(36).substr(2, 9);
+            const description = container.append("div")
+                .attr("id", descId)
+                .attr("class", "sr-only")
+                .style("position", "absolute")
+                .style("left", "-10000px")
+                .style("width", "1px")
+                .style("height", "1px")
+                .style("overflow", "hidden");
+            // Calculate summary statistics based on data structure
+            let totalValue = 0;
+            let positiveCount = 0;
+            let negativeCount = 0;
+            if (Array.isArray(data)) {
+                // Waterfall chart data structure
+                totalValue = data.reduce((sum, item) => {
+                    if (item.stacks && Array.isArray(item.stacks)) {
+                        return sum + item.stacks.reduce((stackSum, stack) => stackSum + (stack.value || 0), 0);
+                    }
+                    return sum;
+                }, 0);
+                positiveCount = data.filter(item => item.stacks && item.stacks.some(stack => (stack.value || 0) > 0)).length;
+                negativeCount = data.filter(item => item.stacks && item.stacks.some(stack => stack.value < 0)).length;
+            }
+            else if (data && typeof data === "object" && data.children) {
+                // Hierarchical chart data structure
+                function calculateHierarchicalStats(node) {
+                    if (node.children && Array.isArray(node.children)) {
+                        return node.children.reduce((sum, child) => sum + calculateHierarchicalStats(child), 0);
+                    }
+                    else {
+                        return node.value || 0;
+                    }
+                }
+                totalValue = calculateHierarchicalStats(data);
+                positiveCount = 1; // For hierarchical data, we consider it as one positive entity
+                negativeCount = 0;
+            }
+            description.html(`
+            <h3>${title}</h3>
+            <p>${summary}</p>
+            <p>This chart contains ${totalItems} data categories${hasTotal ? " plus a total bar" : ""}.</p>
+            <p>Total value: ${config.formatNumber ? config.formatNumber(totalValue) : totalValue}</p>
+            <p>${positiveCount} categories have positive values, ${negativeCount} have negative values.</p>
+            <p>Use Tab to navigate between bars, Enter to hear details, and Arrow keys to move between bars.</p>
+            <p>Press Escape to return focus to the chart container.</p>
+        `);
+            descriptionId = descId;
+            return descId;
+        }
+        // Make chart elements keyboard accessible
+        function makeAccessible(chartContainer, data, config = {}) {
+            const svg = chartContainer.select("svg");
+            // Add main chart ARIA attributes
+            svg.attr("role", "img")
+                .attr("aria-labelledby", descriptionId)
+                .attr("tabindex", "0")
+                .attr("aria-describedby", descriptionId);
+            // Add keyboard event handlers to main SVG
+            svg.on("keydown", function (event) {
+                handleChartKeydown(event, data, config);
+            });
+            // Make individual bars focusable and accessible
+            const bars = svg.selectAll(".bar-group");
+            bars.each(function (d, i) {
+                const bar = d3__namespace.select(this);
+                const data = d;
+                bar.attr("role", "button")
+                    .attr("tabindex", "-1")
+                    .attr("aria-label", createBarAriaLabel(data, i, config))
+                    .attr("aria-describedby", `bar-description-${i}`)
+                    .on("keydown", function (event) {
+                    handleBarKeydown(event, data, i, [data], config);
+                })
+                    .on("focus", function () {
+                    currentFocusIndex = i;
+                    const element = this;
+                    if (element) {
+                        highlightFocusedElement(element);
+                    }
+                })
+                    .on("blur", function () {
+                    const element = this;
+                    if (element) {
+                        removeFocusHighlight(element);
+                    }
+                });
+            });
+            // Store focusable elements
+            focusableElements = bars.nodes().filter(node => node !== null);
+            return {
+                bars,
+                focusableElements: focusableElements.length
+            };
+        }
+        // Create ARIA label for individual bars
+        function createBarAriaLabel(data, index, config = {}) {
+            const totalValue = data.stacks.reduce((sum, stack) => sum + stack.value, 0);
+            const stackCount = data.stacks.length;
+            const formatNumber = config.formatNumber || ((n) => n.toString());
+            let label = `${data.label}: ${formatNumber(totalValue)}`;
+            if (stackCount > 1) {
+                label += `, ${stackCount} segments`;
+            }
+            if (data.cumulative !== undefined) {
+                label += `, cumulative total: ${formatNumber(data.cumulative)}`;
+            }
+            label += ". Press Enter for details.";
+            return label;
+        }
+        // Handle keyboard navigation on chart level
+        function handleChartKeydown(event, data, config) {
+            switch (event.key) {
+                case "Tab":
+                    // Let default tab behavior work
+                    break;
+                case "ArrowRight":
+                case "ArrowDown":
+                    event.preventDefault();
+                    moveFocus(1, data, config);
+                    break;
+                case "ArrowLeft":
+                case "ArrowUp":
+                    event.preventDefault();
+                    moveFocus(-1, data, config);
+                    break;
+                case "Home":
+                    event.preventDefault();
+                    focusElement(0, data, config);
+                    break;
+                case "End":
+                    event.preventDefault();
+                    focusElement(focusableElements.length - 1, data, config);
+                    break;
+                case "Enter":
+                case " ":
+                    event.preventDefault();
+                    if (currentFocusIndex >= 0) {
+                        announceBarDetails(data[currentFocusIndex], currentFocusIndex, config);
+                    }
+                    else {
+                        announceChartSummary(data, config);
+                    }
+                    break;
+                case "Escape":
+                    event.preventDefault();
+                    returnFocusToChart();
+                    break;
+            }
+        }
+        // Handle keyboard events on individual bars
+        function handleBarKeydown(event, barData, index, allData, config) {
+            switch (event.key) {
+                case "Enter":
+                case " ":
+                    event.preventDefault();
+                    announceBarDetails(barData, index, config);
+                    // Trigger click event for compatibility
+                    d3__namespace.select(event.target).dispatch("click");
+                    break;
+                case "ArrowRight":
+                case "ArrowDown":
+                    event.preventDefault();
+                    moveFocus(1, allData, config);
+                    break;
+                case "ArrowLeft":
+                case "ArrowUp":
+                    event.preventDefault();
+                    moveFocus(-1, allData, config);
+                    break;
+            }
+        }
+        // Move focus between chart elements
+        function moveFocus(direction, data, config) {
+            if (focusableElements.length === 0)
+                return;
+            let newIndex = currentFocusIndex + direction;
+            // Wrap around
+            if (newIndex >= focusableElements.length) {
+                newIndex = 0;
+            }
+            else if (newIndex < 0) {
+                newIndex = focusableElements.length - 1;
+            }
+            focusElement(newIndex, data, config);
+        }
+        // Focus specific element by index
+        function focusElement(index, data, config) {
+            if (index < 0 || index >= focusableElements.length)
+                return;
+            currentFocusIndex = index;
+            const element = focusableElements[index];
+            if (element && element.focus) {
+                element.focus();
+            }
+            // Announce the focused element
+            const barData = data[index];
+            announceBarFocus(barData, index, config);
+        }
+        // Return focus to main chart container
+        function returnFocusToChart() {
+            const svg = d3__namespace.select("svg[role='img']");
+            if (!svg.empty()) {
+                const svgNode = svg.node();
+                if (svgNode) {
+                    svgNode.focus();
+                }
+                currentFocusIndex = -1;
+            }
+        }
+        // Visual focus indicators
+        function highlightFocusedElement(element) {
+            d3__namespace.select(element)
+                .style("outline", "3px solid #4A90E2")
+                .style("outline-offset", "2px");
+        }
+        function removeFocusHighlight(element) {
+            d3__namespace.select(element)
+                .style("outline", null)
+                .style("outline-offset", null);
+        }
+        // Screen reader announcements
+        function announceBarFocus(data, index, config) {
+            const formatNumber = config.formatNumber || ((n) => n.toString());
+            const totalValue = data.stacks.reduce((sum, stack) => sum + stack.value, 0);
+            const message = `Focused on ${data.label}, value ${formatNumber(totalValue)}`;
+            announce(message);
+        }
+        function announceBarDetails(data, index, config) {
+            const formatNumber = config.formatNumber || ((n) => n.toString());
+            const totalValue = data.stacks.reduce((sum, stack) => sum + stack.value, 0);
+            let message = `${data.label}: Total value ${formatNumber(totalValue)}`;
+            if (data.stacks.length > 1) {
+                message += `. Contains ${data.stacks.length} segments: `;
+                const segments = data.stacks.map(stack => `${stack.label || formatNumber(stack.value)}`).join(", ");
+                message += segments;
+            }
+            if (data.cumulative !== undefined) {
+                message += `. Cumulative total: ${formatNumber(data.cumulative)}`;
+            }
+            announce(message);
+        }
+        function announceChartSummary(data, config) {
+            const formatNumber = config.formatNumber || ((n) => n.toString());
+            const totalValue = data.reduce((sum, item) => {
+                return sum + item.stacks.reduce((stackSum, stack) => stackSum + stack.value, 0);
+            }, 0);
+            const message = `Waterfall chart with ${data.length} categories. Total value: ${formatNumber(totalValue)}. Use arrow keys to navigate between bars.`;
+            announce(message);
+        }
+        // Announce message to screen readers
+        function announce(message) {
+            const liveRegion = d3__namespace.select("#waterfall-live-region");
+            if (!liveRegion.empty()) {
+                liveRegion.text(message);
+            }
+            // Also call custom announce function if provided
+            if (announceFunction) {
+                announceFunction(message);
+            }
+        }
+        // High contrast mode detection and support (Updated: 2025-08-28)
+        function detectHighContrast() {
+            // Check for modern forced colors mode and high contrast preferences
+            if (window.matchMedia) {
+                // First check for modern forced-colors mode (preferred)
+                if (window.matchMedia("(forced-colors: active)").matches) {
+                    return true;
+                }
+                // Then check for prefers-contrast
+                if (window.matchMedia("(prefers-contrast: high)").matches) {
+                    return true;
+                }
+                // Additional modern checks for high contrast scenarios
+                if (window.matchMedia("(prefers-contrast: more)").matches) {
+                    return true;
+                }
+                // Check for inverted colors which often indicates high contrast mode
+                if (window.matchMedia("(inverted-colors: inverted)").matches) {
+                    return true;
+                }
+                // Fallback: detect if system colors are being used (indicates forced colors)
+                try {
+                    const testElement = document.createElement("div");
+                    testElement.style.color = "rgb(1, 2, 3)";
+                    testElement.style.position = "absolute";
+                    testElement.style.visibility = "hidden";
+                    document.body.appendChild(testElement);
+                    const computedColor = window.getComputedStyle(testElement).color;
+                    document.body.removeChild(testElement);
+                    // If the computed color doesn't match what we set, forced colors is likely active
+                    return computedColor !== "rgb(1, 2, 3)";
+                }
+                catch (e) {
+                    // If detection fails, assume no high contrast for safety
+                    return false;
+                }
+            }
+            return false;
+        }
+        function applyHighContrastStyles(chartContainer) {
+            if (!detectHighContrast())
+                return;
+            const svg = chartContainer.select("svg");
+            // Apply modern forced colors mode compatible styles using CSS system colors
+            svg.selectAll(".bar-group rect")
+                .style("stroke", "CanvasText")
+                .style("stroke-width", "2px")
+                .style("fill", "ButtonFace");
+            svg.selectAll(".x-axis, .y-axis")
+                .style("stroke", "CanvasText")
+                .style("stroke-width", "2px");
+            svg.selectAll("text")
+                .style("fill", "CanvasText")
+                .style("font-weight", "bold");
+            // Apply high contrast styles to trend lines if present
+            svg.selectAll(".trend-line")
+                .style("stroke", "Highlight")
+                .style("stroke-width", "3px");
+            // Ensure tooltips work in forced colors mode
+            svg.selectAll(".tooltip")
+                .style("background", "Canvas")
+                .style("border", "2px solid CanvasText")
+                .style("color", "CanvasText");
+        }
+        // Inject CSS for forced colors mode support
+        function injectForcedColorsCSS() {
+            // Check if we're in a browser environment
+            if (typeof document === "undefined")
+                return; // Node.js environment
+            const cssId = "mintwaterfall-forced-colors-css";
+            if (document.getElementById(cssId))
+                return; // Already injected
+            const css = `
+            @media (forced-colors: active) {
+                .mintwaterfall-chart svg {
+                    forced-color-adjust: none;
+                }
+                
+                .mintwaterfall-chart .bar-group rect {
+                    stroke: CanvasText !important;
+                    stroke-width: 2px !important;
+                }
+                
+                .mintwaterfall-chart .x-axis,
+                .mintwaterfall-chart .y-axis {
+                    stroke: CanvasText !important;
+                    stroke-width: 2px !important;
+                }
+                
+                .mintwaterfall-chart text {
+                    fill: CanvasText !important;
+                    font-weight: bold !important;
+                }
+                
+                .mintwaterfall-chart .trend-line {
+                    stroke: Highlight !important;
+                    stroke-width: 3px !important;
+                }
+                
+                .mintwaterfall-tooltip {
+                    background: Canvas !important;
+                    border: 2px solid CanvasText !important;
+                    color: CanvasText !important;
+                    forced-color-adjust: none;
+                }
+            }
+            
+            @media (prefers-contrast: high) {
+                .mintwaterfall-chart .bar-group rect {
+                    stroke-width: 2px !important;
+                }
+                
+                .mintwaterfall-chart text {
+                    font-weight: bold !important;
+                }
+            }
+        `;
+            const style = document.createElement("style");
+            style.id = cssId;
+            style.textContent = css;
+            document.head.appendChild(style);
+        }
+        // Reduced motion support
+        function respectsReducedMotion() {
+            if (window.matchMedia) {
+                return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            }
+            return false;
+        }
+        function getAccessibleAnimationDuration(defaultDuration) {
+            return respectsReducedMotion() ? 0 : defaultDuration;
+        }
+        // Color contrast validation
+        function validateColorContrast(foreground, background) {
+            // Simplified contrast ratio calculation
+            // In production, use a proper color contrast library
+            const getLuminance = (color) => {
+                // This is a simplified version - use a proper color library
+                const rgb = d3__namespace.rgb(color);
+                return (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+            };
+            const l1 = getLuminance(foreground);
+            const l2 = getLuminance(background);
+            const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+            return {
+                ratio,
+                passesAA: ratio >= 4.5,
+                passesAAA: ratio >= 7
+            };
+        }
+        // Public API
+        const accessibilitySystem = {
+            createLiveRegion,
+            createChartDescription,
+            makeAccessible,
+            handleChartKeydown,
+            handleBarKeydown,
+            moveFocus,
+            focusElement,
+            announce,
+            detectHighContrast,
+            applyHighContrastStyles,
+            injectForcedColorsCSS,
+            respectsReducedMotion,
+            getAccessibleAnimationDuration,
+            validateColorContrast,
+            // Configuration
+            setAnnounceFunction(fn) {
+                announceFunction = fn;
+                return this;
+            },
+            getCurrentFocus() {
+                return currentFocusIndex;
+            },
+            getFocusableCount() {
+                return focusableElements.length;
+            }
+        };
+        return accessibilitySystem;
+    }
+    // Global accessibility system instance
+    const accessibilitySystem = createAccessibilitySystem();
+    // Inject CSS support immediately for global instance (only in browser)
+    if (typeof document !== "undefined") {
+        accessibilitySystem.injectForcedColorsCSS();
+    }
+
+    // MintWaterfall Professional Tooltip System - TypeScript Version
+    // Provides intelligent positioning, rich content, and customizable styling with full type safety
+    function createTooltipSystem() {
+        let tooltipContainer = null;
+        let currentTooltip = null;
+        let config = {
+            className: "mintwaterfall-tooltip",
+            theme: "default",
+            position: "smart",
+            offset: { x: 10, y: -10 },
+            animation: {
+                duration: 200,
+                easing: "ease-out"
+            },
+            collision: {
+                boundary: "viewport",
+                flip: true,
+                shift: true
+            },
+            content: {
+                maxWidth: 300,
+                padding: 12
+            }
+        };
+        // Initialize tooltip container
+        function initializeTooltip() {
+            if (tooltipContainer)
+                return tooltipContainer;
+            tooltipContainer = d3__namespace.select("body")
+                .append("div")
+                .attr("class", config.className)
+                .style("position", "absolute")
+                .style("visibility", "hidden")
+                .style("pointer-events", "none")
+                .style("z-index", "9999")
+                .style("opacity", "0")
+                .style("transition", `opacity ${config.animation.duration}ms ${config.animation.easing}`);
+            applyTheme(config.theme);
+            return tooltipContainer;
+        }
+        // Apply tooltip theme
+        function applyTheme(themeName) {
+            if (!tooltipContainer)
+                return;
+            const themes = {
+                default: {
+                    background: "rgba(0, 0, 0, 0.9)",
+                    color: "#ffffff",
+                    border: "none",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    fontFamily: "system-ui, -apple-system, sans-serif",
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+                    maxWidth: `${config.content.maxWidth}px`,
+                    padding: `${config.content.padding}px`
+                },
+                light: {
+                    background: "rgba(255, 255, 255, 0.95)",
+                    color: "#333333",
+                    border: "1px solid rgba(0, 0, 0, 0.1)",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    fontFamily: "system-ui, -apple-system, sans-serif",
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+                    maxWidth: `${config.content.maxWidth}px`,
+                    padding: `${config.content.padding}px`
+                },
+                minimal: {
+                    background: "#333333",
+                    color: "#ffffff",
+                    border: "none",
+                    borderRadius: "3px",
+                    fontSize: "12px",
+                    fontFamily: "monospace",
+                    boxShadow: "none",
+                    maxWidth: `${config.content.maxWidth}px`,
+                    padding: "8px 10px"
+                },
+                corporate: {
+                    background: "#2c3e50",
+                    color: "#ecf0f1",
+                    border: "1px solid #34495e",
+                    borderRadius: "4px",
+                    fontSize: "13px",
+                    fontFamily: "system-ui, -apple-system, sans-serif",
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
+                    maxWidth: `${config.content.maxWidth}px`,
+                    padding: `${config.content.padding}px`
+                }
+            };
+            const theme = themes[themeName] || themes.default;
+            Object.keys(theme).forEach((property) => {
+                const cssProperty = property.replace(/([A-Z])/g, "-$1").toLowerCase();
+                const value = theme[property];
+                tooltipContainer.style(cssProperty, value);
+            });
+        }
+        // Show tooltip with content
+        function show(content, event, data = null) {
+            if (!tooltipContainer)
+                initializeTooltip();
+            // Generate content
+            const htmlContent = generateContent(content, data);
+            tooltipContainer
+                .html(htmlContent)
+                .style("visibility", "visible");
+            // Position tooltip
+            positionTooltip(event);
+            // Animate in
+            tooltipContainer
+                .transition()
+                .duration(config.animation.duration)
+                .style("opacity", "1");
+            currentTooltip = { content, event, data };
+            return tooltipContainer;
+        }
+        // Hide tooltip
+        function hide() {
+            if (!tooltipContainer)
+                return;
+            tooltipContainer
+                .transition()
+                .duration(config.animation.duration)
+                .style("opacity", "0")
+                .on("end", function () {
+                d3__namespace.select(this).style("visibility", "hidden");
+            });
+            currentTooltip = null;
+            return tooltipContainer;
+        }
+        // Update tooltip position
+        function move(event) {
+            if (!tooltipContainer || !currentTooltip)
+                return;
+            positionTooltip(event);
+            return tooltipContainer;
+        }
+        // Generate tooltip content
+        function generateContent(content, data) {
+            if (typeof content === "function") {
+                return content(data);
+            }
+            if (typeof content === "string") {
+                return content;
+            }
+            if (typeof content === "object" && content && 'template' in content) {
+                return renderTemplate(content.template, data, content.formatters);
+            }
+            // Default content for waterfall chart data
+            if (data) {
+                return generateDefaultContent(data);
+            }
+            return "";
+        }
+        // Generate default content for chart data
+        function generateDefaultContent(data) {
+            const formatNumber = config.formatNumber || ((n) => n.toLocaleString());
+            let html = `<div class="tooltip-header"><strong>${data.label}</strong></div>`;
+            if (data.stacks && data.stacks.length > 0) {
+                const totalValue = data.stacks.reduce((sum, stack) => sum + stack.value, 0);
+                html += `<div class="tooltip-total">Total: ${formatNumber(totalValue)}</div>`;
+                if (data.stacks.length > 1) {
+                    html += "<div class=\"tooltip-stacks\">";
+                    data.stacks.forEach(stack => {
+                        const color = stack.color || "#666";
+                        const label = stack.label || formatNumber(stack.value);
+                        html += `
+                        <div class="tooltip-stack-item">
+                            <span class="tooltip-color-indicator" style="background-color: ${color}"></span>
+                            <span class="tooltip-stack-label">${label}</span>
+                            <span class="tooltip-stack-value">${formatNumber(stack.value)}</span>
+                        </div>
+                    `;
+                    });
+                    html += "</div>";
+                }
+            }
+            return html;
+        }
+        // Render template with data
+        function renderTemplate(template, data, formatters = {}) {
+            if (!data)
+                return template;
+            let rendered = template;
+            // Replace placeholders like {{key}} with data values
+            rendered = rendered.replace(/\{\{(\w+(?:\.\w+)*)\}\}/g, (match, key) => {
+                const value = getNestedValue(data, key);
+                const formatter = formatters[key];
+                if (formatter && typeof formatter === 'function') {
+                    return formatter(value);
+                }
+                return value != null ? String(value) : '';
+            });
+            return rendered;
+        }
+        // Get nested value from object using dot notation
+        function getNestedValue(obj, path) {
+            return path.split('.').reduce((current, key) => current?.[key], obj);
+        }
+        // Position tooltip intelligently
+        function positionTooltip(event) {
+            if (!tooltipContainer)
+                return;
+            const mouseEvent = event;
+            const tooltipNode = tooltipContainer.node();
+            if (!tooltipNode)
+                return;
+            const tooltipRect = tooltipNode.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            let x = mouseEvent.pageX + config.offset.x;
+            let y = mouseEvent.pageY + config.offset.y;
+            // Smart positioning to avoid viewport edges
+            if (config.position === "smart") {
+                const position = calculateSmartPosition({ x: mouseEvent.clientX, y: mouseEvent.clientY }, { width: tooltipRect.width, height: tooltipRect.height }, { width: viewportWidth, height: viewportHeight });
+                x = position.x + window.pageXOffset;
+                y = position.y + window.pageYOffset;
+            }
+            tooltipContainer
+                .style("left", `${x}px`)
+                .style("top", `${y}px`);
+        }
+        // Calculate smart position to avoid clipping
+        function calculateSmartPosition(mouse, tooltip, viewport) {
+            const padding = 10;
+            let x = mouse.x + config.offset.x;
+            let y = mouse.y + config.offset.y;
+            let quadrant = 1;
+            // Check right edge
+            if (x + tooltip.width + padding > viewport.width) {
+                x = mouse.x - tooltip.width - Math.abs(config.offset.x);
+                quadrant = 2;
+            }
+            // Check bottom edge
+            if (y + tooltip.height + padding > viewport.height) {
+                y = mouse.y - tooltip.height - Math.abs(config.offset.y);
+                quadrant = quadrant === 2 ? 3 : 4;
+            }
+            // Check left edge
+            if (x < padding) {
+                x = padding;
+            }
+            // Check top edge
+            if (y < padding) {
+                y = padding;
+            }
+            return { x, y, quadrant };
+        }
+        // Configure tooltip
+        function configure(newConfig) {
+            config = { ...config, ...newConfig };
+            if (tooltipContainer && newConfig.theme) {
+                applyTheme(newConfig.theme);
+            }
+            return tooltipSystem;
+        }
+        // Set theme
+        function theme(themeName) {
+            config.theme = themeName;
+            if (tooltipContainer) {
+                applyTheme(themeName);
+            }
+            return tooltipSystem;
+        }
+        // Destroy tooltip
+        function destroy() {
+            if (tooltipContainer) {
+                tooltipContainer.remove();
+                tooltipContainer = null;
+            }
+            currentTooltip = null;
+        }
+        // Check if tooltip is visible
+        function isVisible() {
+            return tooltipContainer !== null && tooltipContainer.style("visibility") === "visible";
+        }
+        // Get current tooltip data
+        function getCurrentData() {
+            return currentTooltip?.data || null;
+        }
+        const tooltipSystem = {
+            show,
+            hide,
+            move,
+            theme,
+            configure,
+            destroy,
+            isVisible,
+            getCurrentData
+        };
+        return tooltipSystem;
+    }
+
+    // MintWaterfall Export System - TypeScript Version
+    // Provides SVG, PNG, PDF, and data export capabilities with full type safety
+    function createExportSystem() {
+        let config = {
+            filename: "waterfall-chart",
+            quality: 1.0,
+            scale: 1,
+            background: "#ffffff",
+            padding: 20,
+            includeStyles: true,
+            includeData: true
+        };
+        // Export chart as SVG
+        function exportSVG(chartContainer, options = {}) {
+            const opts = { ...config, ...options };
+            try {
+                const svg = chartContainer.select("svg");
+                if (svg.empty()) {
+                    throw new Error("No SVG element found in chart container");
+                }
+                const svgNode = svg.node();
+                const serializer = new XMLSerializer();
+                // Clone SVG to avoid modifying original
+                const clonedSvg = svgNode.cloneNode(true);
+                // Add styles if requested
+                if (opts.includeStyles) {
+                    addInlineStyles(clonedSvg);
+                }
+                // Add background if specified
+                if (opts.background && opts.background !== "transparent") {
+                    addBackground(clonedSvg, opts.background);
+                }
+                // Serialize to string
+                const svgString = serializer.serializeToString(clonedSvg);
+                // Create downloadable blob
+                const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+                return {
+                    blob,
+                    url: URL.createObjectURL(blob),
+                    data: svgString,
+                    download: () => downloadBlob(blob, `${opts.filename}.svg`)
+                };
+            }
+            catch (error) {
+                console.error("SVG export failed:", error);
+                throw error;
+            }
+        }
+        // Export chart as PNG with enhanced features
+        function exportPNG(chartContainer, options = {}) {
+            const opts = {
+                ...config,
+                scale: 2, // Default to 2x for high-DPI
+                quality: 0.95,
+                ...options
+            };
+            return new Promise((resolve, reject) => {
+                try {
+                    const svg = chartContainer.select("svg");
+                    if (svg.empty()) {
+                        reject(new Error("No SVG element found in chart container"));
+                        return;
+                    }
+                    const svgNode = svg.node();
+                    const bbox = svgNode.getBBox();
+                    const width = (bbox.width + opts.padding * 2) * opts.scale;
+                    const height = (bbox.height + opts.padding * 2) * opts.scale;
+                    // Create high-DPI canvas
+                    const canvas = document.createElement("canvas");
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext("2d");
+                    if (!ctx) {
+                        reject(new Error("Failed to get canvas context"));
+                        return;
+                    }
+                    // Enable high-quality rendering
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = "high";
+                    // Set background
+                    if (opts.background && opts.background !== "transparent") {
+                        ctx.fillStyle = opts.background;
+                        ctx.fillRect(0, 0, width, height);
+                    }
+                    // Convert SVG to image with enhanced error handling
+                    const svgExport = exportSVG(chartContainer, {
+                        ...opts,
+                        includeStyles: true,
+                        background: "transparent" // Let canvas handle background
+                    });
+                    const img = new Image();
+                    img.onload = () => {
+                        try {
+                            // Draw image with proper scaling and positioning
+                            ctx.drawImage(img, opts.padding * opts.scale, opts.padding * opts.scale);
+                            // Convert to blob
+                            canvas.toBlob((blob) => {
+                                if (!blob) {
+                                    reject(new Error("Failed to create PNG blob"));
+                                    return;
+                                }
+                                // Clean up
+                                URL.revokeObjectURL(svgExport.url);
+                                resolve({
+                                    blob,
+                                    url: URL.createObjectURL(blob),
+                                    data: svgExport.data,
+                                    download: () => downloadBlob(blob, `${opts.filename}.png`)
+                                });
+                            }, "image/png", opts.quality);
+                        }
+                        catch (drawError) {
+                            reject(new Error(`PNG rendering failed: ${drawError}`));
+                        }
+                    };
+                    img.onerror = () => {
+                        reject(new Error("Failed to load SVG image for PNG conversion"));
+                    };
+                    // Load SVG as data URL
+                    img.src = `data:image/svg+xml;base64,${btoa(svgExport.data)}`;
+                }
+                catch (error) {
+                    reject(new Error(`PNG export failed: ${error}`));
+                }
+            });
+        }
+        // Export chart as PDF (requires external library like jsPDF)
+        function exportPDF(chartContainer, options = {}) {
+            const opts = {
+                ...config,
+                orientation: 'landscape',
+                pageFormat: 'a4',
+                ...options
+            };
+            return new Promise((resolve, reject) => {
+                // Check if jsPDF is available
+                if (typeof window === 'undefined' || !window.jsPDF) {
+                    reject(new Error('jsPDF library is required for PDF export. Please include it: <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>'));
+                    return;
+                }
+                try {
+                    // Get PNG data first
+                    exportPNG(chartContainer, {
+                        ...opts,
+                        scale: 2,
+                        quality: 0.95
+                    }).then((pngResult) => {
+                        const jsPDF = window.jsPDF;
+                        const pdf = new jsPDF({
+                            orientation: opts.orientation,
+                            unit: 'mm',
+                            format: opts.pageFormat
+                        });
+                        // Calculate dimensions
+                        const pdfWidth = pdf.internal.pageSize.getWidth();
+                        const pdfHeight = pdf.internal.pageSize.getHeight();
+                        // Add image to PDF
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            try {
+                                const imgData = reader.result;
+                                // Calculate aspect ratio and size
+                                const img = new Image();
+                                img.onload = () => {
+                                    const aspectRatio = img.width / img.height;
+                                    let width = pdfWidth - 20; // 10mm margin on each side
+                                    let height = width / aspectRatio;
+                                    // Adjust if height is too large
+                                    if (height > pdfHeight - 20) {
+                                        height = pdfHeight - 20;
+                                        width = height * aspectRatio;
+                                    }
+                                    const x = (pdfWidth - width) / 2;
+                                    const y = (pdfHeight - height) / 2;
+                                    pdf.addImage(imgData, 'PNG', x, y, width, height);
+                                    // Generate PDF blob
+                                    const pdfBlob = pdf.output('blob');
+                                    // Clean up
+                                    URL.revokeObjectURL(pngResult.url);
+                                    resolve({
+                                        blob: pdfBlob,
+                                        url: URL.createObjectURL(pdfBlob),
+                                        data: pdfBlob,
+                                        download: () => downloadBlob(pdfBlob, `${opts.filename}.pdf`)
+                                    });
+                                };
+                                img.src = imgData;
+                            }
+                            catch (pdfError) {
+                                reject(new Error(`PDF generation failed: ${pdfError}`));
+                            }
+                        };
+                        reader.onerror = () => {
+                            reject(new Error("Failed to read PNG data for PDF conversion"));
+                        };
+                        reader.readAsDataURL(pngResult.blob);
+                    }).catch(reject);
+                }
+                catch (error) {
+                    reject(new Error(`PDF export failed: ${error}`));
+                }
+            });
+        }
+        // Export data in various formats
+        function exportData(data, options = {}) {
+            const opts = {
+                ...config,
+                dataFormat: 'json',
+                includeMetadata: true,
+                delimiter: ',',
+                ...options
+            };
+            try {
+                let content;
+                let mimeType;
+                let extension;
+                switch (opts.dataFormat) {
+                    case 'json':
+                        const jsonData = opts.includeMetadata
+                            ? {
+                                data,
+                                metadata: {
+                                    exportDate: new Date().toISOString(),
+                                    count: data.length
+                                }
+                            }
+                            : data;
+                        content = JSON.stringify(jsonData, null, 2);
+                        mimeType = 'application/json';
+                        extension = 'json';
+                        break;
+                    case 'csv':
+                        content = convertToCSV(data, opts.delimiter || ',');
+                        mimeType = 'text/csv';
+                        extension = 'csv';
+                        break;
+                    case 'tsv':
+                        content = convertToCSV(data, '\t');
+                        mimeType = 'text/tab-separated-values';
+                        extension = 'tsv';
+                        break;
+                    default:
+                        throw new Error(`Unsupported data export format: ${opts.dataFormat}`);
+                }
+                const blob = new Blob([content], { type: `${mimeType};charset=utf-8` });
+                return {
+                    blob,
+                    url: URL.createObjectURL(blob),
+                    data: content,
+                    download: () => downloadBlob(blob, `${opts.filename}.${extension}`)
+                };
+            }
+            catch (error) {
+                console.error("Data export failed:", error);
+                throw error;
+            }
+        }
+        // Helper function to add inline styles to SVG
+        function addInlineStyles(svgElement) {
+            try {
+                const styleSheets = Array.from(document.styleSheets);
+                let styles = '';
+                styleSheets.forEach(sheet => {
+                    try {
+                        const rules = Array.from(sheet.cssRules || sheet.rules);
+                        rules.forEach(rule => {
+                            if (rule.type === CSSRule.STYLE_RULE) {
+                                const styleRule = rule;
+                                if (styleRule.selectorText &&
+                                    (styleRule.selectorText.includes('.mintwaterfall') ||
+                                        styleRule.selectorText.includes('svg') ||
+                                        styleRule.selectorText.includes('chart'))) {
+                                    styles += styleRule.cssText;
+                                }
+                            }
+                        });
+                    }
+                    catch (e) {
+                        // Skip inaccessible stylesheets (CORS)
+                        console.warn('Could not access stylesheet:', e);
+                    }
+                });
+                if (styles) {
+                    const styleElement = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+                    styleElement.textContent = styles;
+                    svgElement.insertBefore(styleElement, svgElement.firstChild);
+                }
+            }
+            catch (error) {
+                console.warn('Failed to add inline styles:', error);
+            }
+        }
+        // Helper function to add background to SVG
+        function addBackground(svgElement, backgroundColor) {
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('width', '100%');
+            rect.setAttribute('height', '100%');
+            rect.setAttribute('fill', backgroundColor);
+            svgElement.insertBefore(rect, svgElement.firstChild);
+        }
+        // Helper function to convert data to CSV
+        function convertToCSV(data, delimiter = ',') {
+            if (!data || data.length === 0)
+                return '';
+            // Get headers from first object
+            const headers = Object.keys(data[0]);
+            // Create CSV content
+            const csvContent = [
+                headers.join(delimiter),
+                ...data.map(row => headers.map(header => {
+                    const value = row[header];
+                    // Escape quotes and wrap in quotes if contains delimiter
+                    const stringValue = value != null ? String(value) : '';
+                    if (stringValue.includes(delimiter) || stringValue.includes('"') || stringValue.includes('\n')) {
+                        return `"${stringValue.replace(/"/g, '""')}"`;
+                    }
+                    return stringValue;
+                }).join(delimiter))
+            ].join('\n');
+            return csvContent;
+        }
+        // Helper function to download blob
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+        // Configure export system
+        function configure(newConfig) {
+            config = { ...config, ...newConfig };
+            return exportSystem;
+        }
+        // Download file utility
+        function downloadFile(content, filename, mimeType = 'text/plain') {
+            const blob = content instanceof Blob ? content : new Blob([content], { type: mimeType });
+            downloadBlob(blob, filename);
+        }
+        const exportSystem = {
+            exportSVG,
+            exportPNG,
+            exportPDF,
+            exportData,
+            configure,
+            downloadFile
+        };
+        return exportSystem;
+    }
+
+    // MintWaterfall Zoom & Pan System - TypeScript Version
+    // Provides interactive zoom and pan functionality with smooth performance and full type safety
+    function createZoomSystem() {
+        // Zoom configuration
+        const config = {
+            enabled: true,
+            scaleExtent: [0.1, 10],
+            translateExtent: null, // Auto-calculated based on chart dimensions
+            wheelDelta: null, // Use D3 default for proper zoom in/out
+            touchable: true,
+            filter: null, // Custom filter function
+            constrain: {
+                x: true,
+                y: true
+            },
+            duration: 250,
+            ease: d3__namespace.easeQuadOut
+        };
+        let zoomBehavior = null;
+        let currentTransform = d3__namespace.zoomIdentity;
+        let chartContainer = null;
+        let chartDimensions = {
+            width: 800,
+            height: 400,
+            margin: { top: 60, right: 80, bottom: 60, left: 80 }
+        };
+        // Event listeners
+        const listeners = d3__namespace.dispatch("zoomstart", "zoom", "zoomend", "reset");
+        function createZoomBehavior() {
+            if (zoomBehavior)
+                return zoomBehavior;
+            zoomBehavior = d3__namespace.zoom()
+                .scaleExtent(config.scaleExtent)
+                .touchable(config.touchable)
+                .filter(config.filter || defaultFilter)
+                .on("start", handleZoomStart)
+                .on("zoom", handleZoom)
+                .on("end", handleZoomEnd);
+            // Only set wheelDelta if explicitly configured (null means use D3 default)
+            if (config.wheelDelta !== null) {
+                zoomBehavior.wheelDelta(config.wheelDelta);
+            }
+            updateTranslateExtent();
+            return zoomBehavior;
+        }
+        function defaultFilter(event) {
+            // Allow zoom on wheel, but prevent on right-click
+            return (!event.ctrlKey || event.type === "wheel") && !event.button;
+        }
+        function updateTranslateExtent() {
+            if (!zoomBehavior || !chartDimensions)
+                return;
+            const { width, height, margin } = chartDimensions;
+            const chartWidth = width - margin.left - margin.right;
+            const chartHeight = height - margin.top - margin.bottom;
+            // Calculate translate extent based on zoom constraints
+            const extent = config.translateExtent || [
+                [-chartWidth * 2, -chartHeight * 2],
+                [chartWidth * 3, chartHeight * 3]
+            ];
+            zoomBehavior.translateExtent(extent);
+        }
+        function handleZoomStart(event) {
+            const eventData = {
+                transform: event.transform,
+                sourceEvent: event.sourceEvent
+            };
+            listeners.call("zoomstart", undefined, eventData);
+        }
+        function handleZoom(event) {
+            currentTransform = event.transform;
+            // Apply constraints if specified
+            if (!config.constrain.x) {
+                currentTransform = currentTransform.translate(-currentTransform.x, 0);
+            }
+            if (!config.constrain.y) {
+                currentTransform = currentTransform.translate(0, -currentTransform.y);
+            }
+            // Apply transform to chart elements
+            if (chartContainer) {
+                applyTransform(chartContainer, currentTransform);
+            }
+            const eventData = {
+                transform: currentTransform,
+                sourceEvent: event.sourceEvent
+            };
+            listeners.call("zoom", undefined, eventData);
+        }
+        function handleZoomEnd(event) {
+            const eventData = {
+                transform: event.transform,
+                sourceEvent: event.sourceEvent
+            };
+            listeners.call("zoomend", undefined, eventData);
+        }
+        function applyTransform(container, transform) {
+            // Apply transform to the main chart group
+            const chartGroup = container.select(".chart-group");
+            if (!chartGroup.empty()) {
+                chartGroup.attr("transform", transform.toString());
+            }
+            // Update axes if they exist
+            updateAxes(container, transform);
+        }
+        function updateAxes(container, transform) {
+            // Update X axis if constrained
+            if (config.constrain.x) {
+                const xAxisGroup = container.select(".x-axis");
+                if (!xAxisGroup.empty()) {
+                    const xScale = getScaleFromAxis(xAxisGroup);
+                    if (xScale) {
+                        const newXScale = transform.rescaleX(xScale);
+                        xAxisGroup.call(d3__namespace.axisBottom(newXScale));
+                    }
+                }
+            }
+            // Update Y axis if constrained
+            if (config.constrain.y) {
+                const yAxisGroup = container.select(".y-axis");
+                if (!yAxisGroup.empty()) {
+                    const yScale = getScaleFromAxis(yAxisGroup);
+                    if (yScale) {
+                        const newYScale = transform.rescaleY(yScale);
+                        yAxisGroup.call(d3__namespace.axisLeft(newYScale));
+                    }
+                }
+            }
+        }
+        function getScaleFromAxis(axisGroup) {
+            // This is a simplified implementation - in practice, you'd store references to scales
+            // or implement a more sophisticated scale retrieval mechanism
+            try {
+                const axisNode = axisGroup.node();
+                if (axisNode && axisNode.__scale__) {
+                    return axisNode.__scale__;
+                }
+            }
+            catch (e) {
+                // Scale retrieval failed - this is expected in some cases
+            }
+            return null;
+        }
+        // Enable zoom
+        function enable() {
+            config.enabled = true;
+            if (zoomBehavior && chartContainer) {
+                chartContainer.call(zoomBehavior);
+            }
+            return zoomSystem;
+        }
+        // Disable zoom
+        function disable() {
+            config.enabled = false;
+            if (chartContainer) {
+                chartContainer.on(".zoom", null);
+            }
+            return zoomSystem;
+        }
+        // Attach zoom to container
+        function attach(container) {
+            chartContainer = container;
+            if (config.enabled) {
+                const behavior = createZoomBehavior();
+                container.call(behavior);
+            }
+            return zoomSystem;
+        }
+        // Detach zoom from container
+        function detach() {
+            if (chartContainer) {
+                chartContainer.on(".zoom", null);
+                chartContainer = null;
+            }
+            return zoomSystem;
+        }
+        // Transform to specific state
+        function transform(selection, newTransform, duration = 0) {
+            if (!zoomBehavior)
+                createZoomBehavior();
+            if (duration > 0) {
+                selection
+                    .transition()
+                    .duration(duration)
+                    .ease(config.ease)
+                    .call(zoomBehavior.transform, newTransform);
+            }
+            else {
+                selection.call(zoomBehavior.transform, newTransform);
+            }
+            return zoomSystem;
+        }
+        // Reset zoom to identity
+        function reset(duration = config.duration) {
+            if (chartContainer) {
+                transform(chartContainer, d3__namespace.zoomIdentity, duration);
+                listeners.call("reset", undefined, { transform: d3__namespace.zoomIdentity, sourceEvent: null });
+            }
+            return zoomSystem;
+        }
+        // Zoom to specific bounds
+        function zoomTo(bounds, duration = config.duration) {
+            if (!chartContainer || !chartDimensions)
+                return zoomSystem;
+            const { width, height, margin } = chartDimensions;
+            const chartWidth = width - margin.left - margin.right;
+            const chartHeight = height - margin.top - margin.bottom;
+            // Calculate transform to fit bounds
+            const [x0, x1] = bounds.x;
+            const [y0, y1] = bounds.y;
+            const scale = Math.min(chartWidth / (x1 - x0), chartHeight / (y1 - y0));
+            const translateX = chartWidth / 2 - scale * (x0 + x1) / 2;
+            const translateY = chartHeight / 2 - scale * (y0 + y1) / 2;
+            const newTransform = d3__namespace.zoomIdentity
+                .translate(translateX, translateY)
+                .scale(scale);
+            transform(chartContainer, newTransform, duration);
+            return zoomSystem;
+        }
+        // Set chart dimensions
+        function setDimensions(dimensions) {
+            chartDimensions = dimensions;
+            updateTranslateExtent();
+            return zoomSystem;
+        }
+        // Configure zoom system
+        function configure(newConfig) {
+            Object.assign(config, newConfig);
+            // Update zoom behavior if it exists
+            if (zoomBehavior) {
+                if (newConfig.scaleExtent) {
+                    zoomBehavior.scaleExtent(newConfig.scaleExtent);
+                }
+                if (newConfig.touchable !== undefined) {
+                    zoomBehavior.touchable(newConfig.touchable);
+                }
+                if (newConfig.filter !== undefined) {
+                    zoomBehavior.filter(newConfig.filter || defaultFilter);
+                }
+                if (newConfig.wheelDelta !== undefined) {
+                    if (newConfig.wheelDelta) {
+                        zoomBehavior.wheelDelta(newConfig.wheelDelta);
+                    }
+                }
+            }
+            updateTranslateExtent();
+            return zoomSystem;
+        }
+        // Get current transform
+        function getCurrentTransform() {
+            return currentTransform;
+        }
+        // Check if zoom is enabled
+        function isEnabled() {
+            return config.enabled;
+        }
+        // Add event listener
+        function on(type, callback) {
+            listeners.on(type, callback);
+            return zoomSystem;
+        }
+        // Remove event listener
+        function off(type, callback) {
+            if (callback) {
+                listeners.on(type, null);
+            }
+            else {
+                listeners.on(type, null);
+            }
+            return zoomSystem;
+        }
+        const zoomSystem = {
+            enable,
+            disable,
+            attach,
+            detach,
+            transform,
+            reset,
+            zoomTo,
+            setDimensions,
+            configure,
+            getCurrentTransform,
+            isEnabled,
+            on,
+            off
+        };
+        return zoomSystem;
+    }
+    // The function is already exported above, no need for duplicate export
+
+    // MintWaterfall Performance System - TypeScript Version
+    // Implements virtualization, incremental updates, and memory optimization with full type safety
+    function createPerformanceManager() {
+        // Performance metrics tracking
+        let performanceMetrics = {
+            renderTime: 0,
+            dataProcessingTime: 0,
+            memoryUsage: 0,
+            visibleElements: 0,
+            totalElements: 0,
+            fps: 0,
+            lastFrameTime: 0,
+            averageFrameTime: 0,
+            peakMemoryUsage: 0,
+            renderCalls: 0
+        };
+        // Virtualization configuration
+        let virtualizationConfig = {
+            enabled: false,
+            chunkSize: 1000,
+            renderThreshold: 10000,
+            bufferSize: 200,
+            preloadCount: 3,
+            recycleNodes: true
+        };
+        // Performance optimization settings
+        let optimizationConfig = {
+            memoryPooling: true};
+        // Memory pool for reusing DOM elements
+        let memoryPool = {
+            elements: new Map(),
+            maxSize: 1000,
+            currentSize: 0,
+            hitCount: 0,
+            missCount: 0
+        };
+        // Performance profiling
+        let profilers = new Map();
+        let dashboardElement = null;
+        // Frame rate tracking
+        let frameCount = 0;
+        let lastFpsTime = performance.now();
+        function enableVirtualization(options = {}) {
+            Object.assign(virtualizationConfig, options);
+            virtualizationConfig.enabled = true;
+            console.log('MintWaterfall: Virtualization enabled with config:', virtualizationConfig);
+            return performanceManager;
+        }
+        function disableVirtualization() {
+            virtualizationConfig.enabled = false;
+            console.log('MintWaterfall: Virtualization disabled');
+            return performanceManager;
+        }
+        function calculateVisibleRange(scrollTop, containerHeight, itemHeight) {
+            const start = Math.floor(scrollTop / itemHeight);
+            const visibleCount = Math.ceil(containerHeight / itemHeight);
+            const end = start + visibleCount;
+            // Add buffer for smooth scrolling
+            const bufferStart = Math.max(0, start - virtualizationConfig.bufferSize);
+            const bufferEnd = end + virtualizationConfig.bufferSize;
+            return [bufferStart, bufferEnd];
+        }
+        function optimizeRendering(container, data) {
+            const startTime = performance.now();
+            performanceMetrics.totalElements = data.length;
+            if (virtualizationConfig.enabled && data.length > virtualizationConfig.renderThreshold) {
+                renderVirtualized(container, data);
+            }
+            else {
+                renderDirect(container, data);
+            }
+            const endTime = performance.now();
+            performanceMetrics.renderTime = endTime - startTime;
+            performanceMetrics.renderCalls++;
+            updateFPS();
+            return performanceManager;
+        }
+        function renderVirtualized(container, data) {
+            // Implement virtualization logic
+            const containerNode = container.node();
+            if (!containerNode)
+                return;
+            const containerHeight = containerNode.clientHeight;
+            const scrollTop = containerNode.scrollTop || 0;
+            const itemHeight = 30; // Estimate or calculate from data
+            const [visibleStart, visibleEnd] = calculateVisibleRange(scrollTop, containerHeight, itemHeight);
+            const visibleData = data.slice(visibleStart, Math.min(visibleEnd, data.length));
+            visibleData.map((_, i) => i + visibleStart);
+            performanceMetrics.visibleElements = visibleData.length;
+            // Render only visible elements with proper typing
+            const elements = container.selectAll('.virtual-item')
+                .data(visibleData, (d, i) => `item-${i + visibleStart}`);
+            elements.exit().remove();
+            const enter = elements.enter().append('g')
+                .attr('class', 'virtual-item');
+            const merged = elements.merge(enter);
+            merged.attr('transform', (d, i) => `translate(0, ${(i + visibleStart) * itemHeight})`);
+        }
+        function renderDirect(container, data) {
+            // Standard rendering for smaller datasets
+            performanceMetrics.visibleElements = data.length;
+            const elements = container.selectAll('.chart-element')
+                .data(data);
+            elements.exit().remove();
+            const enter = elements.enter().append('g')
+                .attr('class', 'chart-element');
+            elements.merge(enter);
+            // Apply transformations and styles here - merged variable prevents compilation errors
+        }
+        function profileOperation(name, operation) {
+            const startTime = performance.now();
+            const result = operation();
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+            if (!profilers.has(name)) {
+                profilers.set(name, {
+                    startTime: 0,
+                    endTime: 0,
+                    samples: [],
+                    averageTime: 0,
+                    minTime: Infinity,
+                    maxTime: 0
+                });
+            }
+            const profiler = profilers.get(name);
+            profiler.samples.push(duration);
+            profiler.minTime = Math.min(profiler.minTime, duration);
+            profiler.maxTime = Math.max(profiler.maxTime, duration);
+            profiler.averageTime = profiler.samples.reduce((a, b) => a + b, 0) / profiler.samples.length;
+            // Keep only recent samples for rolling average
+            if (profiler.samples.length > 100) {
+                profiler.samples.shift();
+            }
+            return result;
+        }
+        function getMetrics() {
+            // Update memory usage if available
+            if ('memory' in performance) {
+                const memInfo = performance.memory;
+                performanceMetrics.memoryUsage = memInfo.usedJSHeapSize;
+                performanceMetrics.peakMemoryUsage = Math.max(performanceMetrics.peakMemoryUsage, memInfo.usedJSHeapSize);
+            }
+            return { ...performanceMetrics };
+        }
+        function resetMetrics() {
+            performanceMetrics = {
+                renderTime: 0,
+                dataProcessingTime: 0,
+                memoryUsage: 0,
+                visibleElements: 0,
+                totalElements: 0,
+                fps: 0,
+                lastFrameTime: 0,
+                averageFrameTime: 0,
+                peakMemoryUsage: 0,
+                renderCalls: 0
+            };
+            profilers.clear();
+            frameCount = 0;
+            lastFpsTime = performance.now();
+            return performanceManager;
+        }
+        function enableMemoryPooling(options = {}) {
+            Object.assign(memoryPool, options);
+            optimizationConfig.memoryPooling = true;
+            console.log('MintWaterfall: Memory pooling enabled');
+            return performanceManager;
+        }
+        function createRenderBatch() {
+            return {
+                operations: [],
+                priority: 1,
+                timestamp: performance.now(),
+                elementCount: 0
+            };
+        }
+        function flushRenderBatch(batch) {
+            const startTime = performance.now();
+            // Sort operations by priority and type for optimal rendering
+            batch.operations.sort((a, b) => {
+                const typeOrder = ['remove', 'create', 'update', 'style', 'attribute'];
+                return typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type);
+            });
+            // Execute operations in batch
+            batch.operations.forEach(operation => {
+                executeRenderOperation(operation);
+            });
+            const endTime = performance.now();
+            performanceMetrics.renderTime += endTime - startTime;
+            return performanceManager;
+        }
+        function executeRenderOperation(operation) {
+            const { type, element, properties } = operation;
+            switch (type) {
+                case 'create':
+                    // Create new element logic
+                    break;
+                case 'update':
+                    // Update element data logic
+                    break;
+                case 'remove':
+                    // Remove element logic
+                    if (element && element.remove) {
+                        element.remove();
+                    }
+                    break;
+                case 'style':
+                    // Apply styles
+                    if (element && properties) {
+                        Object.keys(properties).forEach(prop => {
+                            element.style(prop, properties[prop]);
+                        });
+                    }
+                    break;
+                case 'attribute':
+                    // Apply attributes
+                    if (element && properties) {
+                        Object.keys(properties).forEach(prop => {
+                            element.attr(prop, properties[prop]);
+                        });
+                    }
+                    break;
+            }
+        }
+        function setUpdateStrategy(strategy) {
+            console.log(`MintWaterfall: Update strategy set to ${strategy}`);
+            return performanceManager;
+        }
+        function updateFPS() {
+            frameCount++;
+            const currentTime = performance.now();
+            if (currentTime - lastFpsTime >= 1000) {
+                performanceMetrics.fps = Math.round((frameCount * 1000) / (currentTime - lastFpsTime));
+                performanceMetrics.averageFrameTime = (currentTime - lastFpsTime) / frameCount;
+                frameCount = 0;
+                lastFpsTime = currentTime;
+            }
+            performanceMetrics.lastFrameTime = currentTime;
+        }
+        function createDashboard() {
+            const dashboard = document.createElement('div');
+            dashboard.className = 'mintwaterfall-performance-dashboard';
+            dashboard.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 10000;
+            max-width: 300px;
+        `;
+            return dashboard;
+        }
+        function updateDashboard() {
+            if (!dashboardElement)
+                return;
+            const metrics = getMetrics();
+            const memoryMB = (metrics.memoryUsage / 1024 / 1024).toFixed(2);
+            const peakMemoryMB = (metrics.peakMemoryUsage / 1024 / 1024).toFixed(2);
+            dashboardElement.innerHTML = `
+            <div><strong>MintWaterfall Performance</strong></div>
+            <div>FPS: ${metrics.fps}</div>
+            <div>Render Time: ${metrics.renderTime.toFixed(2)}ms</div>
+            <div>Memory: ${memoryMB}MB (Peak: ${peakMemoryMB}MB)</div>
+            <div>Visible Elements: ${metrics.visibleElements}/${metrics.totalElements}</div>
+            <div>Render Calls: ${metrics.renderCalls}</div>
+            <div>Virtualization: ${virtualizationConfig.enabled ? 'ON' : 'OFF'}</div>
+            <div>Pool Hit Rate: ${memoryPool.hitCount + memoryPool.missCount > 0 ?
+            ((memoryPool.hitCount / (memoryPool.hitCount + memoryPool.missCount)) * 100).toFixed(1) : 0}%</div>
+        `;
+        }
+        function enableDashboard(container) {
+            if (!dashboardElement) {
+                dashboardElement = createDashboard();
+            }
+            const targetContainer = container || document.body;
+            if (targetContainer && !targetContainer.contains(dashboardElement)) {
+                targetContainer.appendChild(dashboardElement);
+            }
+            // Update dashboard periodically
+            setInterval(updateDashboard, 500);
+            return performanceManager;
+        }
+        function disableDashboard() {
+            if (dashboardElement && dashboardElement.parentNode) {
+                dashboardElement.parentNode.removeChild(dashboardElement);
+                dashboardElement = null;
+            }
+            return performanceManager;
+        }
+        function getDashboard() {
+            return dashboardElement;
+        }
+        function optimizeMemory() {
+            // Force garbage collection if available
+            if (window.gc) {
+                window.gc();
+            }
+            // Clear unused pools
+            memoryPool.elements.forEach((pool, type) => {
+                if (pool.length > 50) {
+                    pool.splice(25); // Keep only recent 25 elements
+                }
+            });
+            // Clear old profiler samples
+            profilers.forEach(profiler => {
+                if (profiler.samples.length > 50) {
+                    profiler.samples.splice(0, profiler.samples.length - 50);
+                }
+            });
+            console.log('MintWaterfall: Memory optimization completed');
+            return performanceManager;
+        }
+        function getRecommendations() {
+            const recommendations = [];
+            const metrics = getMetrics();
+            if (metrics.totalElements > 5000 && !virtualizationConfig.enabled) {
+                recommendations.push('Enable virtualization for improved performance with large datasets');
+            }
+            if (metrics.fps < 30) {
+                recommendations.push('Consider reducing visual complexity or enabling performance optimizations');
+            }
+            if (metrics.memoryUsage > 100 * 1024 * 1024) { // 100MB
+                recommendations.push('Memory usage is high - consider enabling memory pooling or reducing data size');
+            }
+            if (metrics.renderTime > 100) {
+                recommendations.push('Render time is slow - consider batching updates or optimizing render operations');
+            }
+            const poolEfficiency = memoryPool.hitCount / (memoryPool.hitCount + memoryPool.missCount || 1);
+            if (poolEfficiency < 0.5 && optimizationConfig.memoryPooling) {
+                recommendations.push('Memory pool efficiency is low - consider adjusting pool size or strategy');
+            }
+            return recommendations;
+        }
+        const performanceManager = {
+            enableVirtualization,
+            disableVirtualization,
+            optimizeRendering,
+            profileOperation,
+            getMetrics,
+            resetMetrics,
+            enableMemoryPooling,
+            createRenderBatch,
+            flushRenderBatch,
+            setUpdateStrategy,
+            getDashboard,
+            enableDashboard,
+            disableDashboard,
+            optimizeMemory,
+            getRecommendations
+        };
+        return performanceManager;
+    }
+
+    // MintWaterfall - D3.js compatible waterfall chart component (TypeScript)
+    // Usage: d3.waterfallChart().width(800).height(400).showTotal(true)(selection)
+    // Utility function to get bar width from any scale type
+    function getBarWidth(scale, barCount, totalWidth) {
+        if (scale.bandwidth) {
+            // Band scale has bandwidth method - use it directly
+            const bandwidth = scale.bandwidth();
+            console.log('Using band scale bandwidth:', bandwidth);
+            return bandwidth;
+        }
+        else {
+            // For continuous scales, calculate width based on bar count
+            const padding = 0.1;
+            const availableWidth = totalWidth * (1 - padding);
+            const calculatedWidth = availableWidth / barCount;
+            console.log('Calculated width for continuous scale:', calculatedWidth);
+            return calculatedWidth;
+        }
+    }
+    // Utility function to get bar position from any scale type
+    function getBarPosition(scale, value, barWidth) {
+        if (scale.bandwidth) {
+            // Band scale - use scale directly
+            return scale(value);
+        }
+        else {
+            // Continuous scale - center the bar around the scale value
+            return scale(value) - barWidth / 2;
+        }
+    }
+    function waterfallChart() {
+        let width = 800;
+        let height = 400;
+        let margin = { top: 60, right: 80, bottom: 60, left: 80 };
+        let showTotal = false;
+        let totalLabel = "Total";
+        let totalColor = "#95A5A6";
+        let stacked = true;
+        let barPadding = 0.05;
+        let duration = 750;
+        let ease = d3__namespace.easeQuadInOut;
+        let formatNumber = d3__namespace.format(".0f");
+        let theme = null;
+        // Advanced features
+        let enableBrush = false;
+        let brushOptions = {};
+        let staggeredAnimations = false;
+        let staggerDelay = 100;
+        let scaleType = "auto"; // 'auto', 'linear', 'time', 'ordinal'
+        // Trend line features
+        let showTrendLine = false;
+        let trendLineColor = "#e74c3c";
+        let trendLineWidth = 2;
+        let trendLineStyle = "solid"; // 'solid', 'dashed', 'dotted'
+        let trendLineOpacity = 0.8;
+        let trendLineType = "linear"; // 'linear', 'moving-average', 'polynomial'
+        let trendLineWindow = 3; // Moving average window size
+        let trendLineDegree = 2; // Polynomial degree
+        // Accessibility and UX features
+        let enableAccessibility = true;
+        let enableTooltips = false;
+        let tooltipConfig = {};
+        let enableExport = true;
+        let exportConfig = {};
+        let enableZoom = false;
+        let zoomConfig = {};
+        // Enterprise features
+        let breakdownConfig = null;
+        let formattingRules = new Map();
+        // Performance features
+        let lastDataHash = null;
+        let cachedProcessedData = null;
+        // Initialize systems
+        const scaleSystem = createScaleSystem();
+        createBrushSystem();
+        const tooltipSystem = createTooltipSystem();
+        createZoomSystem();
+        const performanceManager = createPerformanceManager();
+        // Performance configuration
+        let enablePerformanceOptimization = false;
+        let performanceDashboard = false;
+        let virtualizationThreshold = 10000;
+        // Event listeners - enhanced with brush events
+        const listeners = d3__namespace.dispatch("barClick", "barMouseover", "barMouseout", "chartUpdate", "brushSelection");
+        function chart(selection) {
+            selection.each(function (data) {
+                // Data validation
+                if (!data || !Array.isArray(data)) {
+                    console.warn("MintWaterfall: Invalid data provided. Expected an array.");
+                    return;
+                }
+                if (data.length === 0) {
+                    console.warn("MintWaterfall: Empty data array provided.");
+                    return;
+                }
+                // Validate data structure
+                const isValidData = data.every(item => item &&
+                    typeof item.label === "string" &&
+                    Array.isArray(item.stacks) &&
+                    item.stacks.every(stack => typeof stack.value === "number" &&
+                        typeof stack.color === "string"));
+                if (!isValidData) {
+                    console.error("MintWaterfall: Invalid data structure. Each item must have a 'label' string and 'stacks' array with 'value' numbers and 'color' strings.");
+                    return;
+                }
+                const svg = d3__namespace.select(this);
+                // Get actual SVG dimensions
+                const svgNode = svg.node();
+                if (svgNode) {
+                    const svgWidth = svgNode.getAttribute('width');
+                    const svgHeight = svgNode.getAttribute('height');
+                    if (svgWidth)
+                        width = parseInt(svgWidth, 10);
+                    if (svgHeight)
+                        height = parseInt(svgHeight, 10);
+                }
+                console.log('Chart dimensions:', { width, height });
+                const container = svg.selectAll(".waterfall-container").data([data]);
+                // Store reference for zoom system
+                const svgContainer = svg;
+                // Create main container group
+                const containerEnter = container.enter()
+                    .append("g")
+                    .attr("class", "waterfall-container");
+                const containerUpdate = containerEnter.merge(container);
+                // Create chart group for zoom transforms
+                let chartGroup = containerUpdate.select(".chart-group");
+                if (chartGroup.empty()) {
+                    chartGroup = containerUpdate.append("g")
+                        .attr("class", "chart-group");
+                }
+                // Add clipping path to prevent overflow - this will be set after margins are calculated
+                const clipPathId = `chart-clip-${Date.now()}`;
+                svg.select(`#${clipPathId}`).remove(); // Remove existing if any
+                const clipPath = svg.append("defs")
+                    .append("clipPath")
+                    .attr("id", clipPathId)
+                    .append("rect");
+                chartGroup.attr("clip-path", `url(#${clipPathId})`);
+                try {
+                    // Enable performance optimization for large datasets
+                    if (data.length >= virtualizationThreshold && enablePerformanceOptimization) {
+                        performanceManager.enableVirtualization({
+                            chunkSize: Math.min(1000, Math.floor(data.length / 10)),
+                            renderThreshold: virtualizationThreshold
+                        });
+                    }
+                    // Check if we can use cached data (include showTotal in cache key)
+                    const dataHash = JSON.stringify(data).slice(0, 100) + `_showTotal:${showTotal}`; // Quick hash with showTotal
+                    let processedData;
+                    if (dataHash === lastDataHash && cachedProcessedData) {
+                        processedData = cachedProcessedData;
+                        console.log("MintWaterfall: Using cached processed data");
+                    }
+                    else {
+                        // Prepare data with cumulative calculations
+                        if (data.length > 50000) {
+                            // For very large datasets, fall back to synchronous processing for now
+                            // TODO: Implement proper async handling in future version
+                            console.warn("MintWaterfall: Large dataset detected, using synchronous processing");
+                            processedData = prepareData(data);
+                        }
+                        else {
+                            processedData = prepareData(data);
+                        }
+                        // Cache the processed data
+                        lastDataHash = dataHash;
+                        cachedProcessedData = processedData;
+                    }
+                    console.log("🔧 processedData in chart:", processedData.map(d => ({
+                        label: d.label,
+                        barTotal: d.barTotal,
+                        cumulativeTotal: d.cumulativeTotal,
+                        stackCount: d.stacks?.length
+                    })));
+                    // Calculate intelligent margins based on data
+                    const intelligentMargins = calculateIntelligentMargins(processedData, margin);
+                    // Set up scales using enhanced scale system
+                    let xScale;
+                    if (scaleType === "auto") {
+                        xScale = scaleSystem.createAdaptiveScale(processedData, "x");
+                        // If it's a band scale, apply padding
+                        if (xScale.padding) {
+                            xScale.padding(barPadding);
+                        }
+                    }
+                    else if (scaleType === "time") {
+                        const timeValues = processedData.map(d => new Date(d.label));
+                        xScale = scaleSystem.createTimeScale(timeValues);
+                    }
+                    else if (scaleType === "ordinal") {
+                        xScale = scaleSystem.createOrdinalScale(processedData.map(d => d.label));
+                    }
+                    else {
+                        // Default to band scale for categorical data
+                        xScale = d3__namespace.scaleBand()
+                            .domain(processedData.map(d => d.label))
+                            .padding(barPadding);
+                    }
+                    // CRITICAL: Set range for x scale using intelligent margins - this must happen after scale creation
+                    xScale.range([intelligentMargins.left, width - intelligentMargins.right]);
+                    // Ensure the scale system uses the correct default range for future scales
+                    scaleSystem.setDefaultRange([intelligentMargins.left, width - intelligentMargins.right]);
+                    // Update clipping path with proper chart area dimensions
+                    // IMPORTANT: Extend clipping area to include space for labels above bars
+                    const labelSpace = 30; // Extra space for labels above the chart area
+                    clipPath
+                        .attr("x", intelligentMargins.left)
+                        .attr("y", Math.max(0, intelligentMargins.top - labelSpace)) // Extend upward for labels
+                        .attr("width", width - intelligentMargins.left - intelligentMargins.right)
+                        .attr("height", height - intelligentMargins.top - intelligentMargins.bottom + labelSpace);
+                    console.log('🔧 Clipping path set:', {
+                        x: intelligentMargins.left,
+                        y: Math.max(0, intelligentMargins.top - labelSpace),
+                        width: width - intelligentMargins.left - intelligentMargins.right,
+                        height: height - intelligentMargins.top - intelligentMargins.bottom + labelSpace
+                    });
+                    console.log('Scale setup:', {
+                        domain: xScale.domain(),
+                        range: xScale.range(),
+                        intelligentMargins,
+                        bandwidth: xScale.bandwidth ? xScale.bandwidth() : 'N/A'
+                    });
+                    // Enhanced Y scale using d3.extent and nice()
+                    const yValues = processedData.map(d => d.cumulativeTotal);
+                    // For waterfall charts, ensure proper baseline handling
+                    const [min, max] = d3__namespace.extent(yValues);
+                    const hasNegativeValues = min < 0;
+                    let yScale;
+                    if (hasNegativeValues) {
+                        // When we have negative values, create scale that includes them but doesn't extend too far
+                        const range = max - min;
+                        const padding = range * 0.05; // 5% padding
+                        yScale = d3__namespace.scaleLinear()
+                            .domain([min - padding, max + padding])
+                            .range([height - intelligentMargins.bottom, intelligentMargins.top]);
+                    }
+                    else {
+                        // For positive-only data, start at 0
+                        yScale = scaleSystem.createLinearScale(yValues, {
+                            range: [height - intelligentMargins.bottom, intelligentMargins.top],
+                            nice: true
+                        });
+                    }
+                    // Create/update grid
+                    drawGrid(containerUpdate, yScale, intelligentMargins);
+                    // Create/update axes (on container, not chart group)
+                    drawAxes(containerUpdate, xScale, yScale, intelligentMargins);
+                    // Create/update bars with enhanced animations (in chart group for zoom)
+                    drawBars(chartGroup, processedData, xScale, yScale, intelligentMargins);
+                    // Create/update connectors (in chart group for zoom)
+                    drawConnectors(chartGroup, processedData, xScale, yScale);
+                    // Create/update trend line (handles both show and hide cases)
+                    drawTrendLine(chartGroup, processedData, xScale, yScale);
+                    // Add brush functionality if enabled
+                    if (enableBrush) {
+                        addBrushSelection(containerUpdate, processedData, xScale, yScale);
+                    }
+                    // Initialize features after rendering is complete
+                    setTimeout(() => {
+                        if (enableAccessibility) {
+                            initializeAccessibility(svg, processedData);
+                        }
+                        if (enableTooltips) {
+                            initializeTooltips(svg);
+                        }
+                        if (enableExport) {
+                            initializeExport(svg, processedData);
+                        }
+                        if (enableZoom) {
+                            // Initialize zoom system if not already created
+                            if (!chart.zoomSystemInstance) {
+                                chart.zoomSystemInstance = createZoomSystem();
+                            }
+                            // Attach zoom to the SVG container
+                            chart.zoomSystemInstance.attach(svgContainer);
+                            chart.zoomSystemInstance.setDimensions({ width, height, margin: intelligentMargins });
+                            chart.zoomSystemInstance.enable();
+                        }
+                        else {
+                            // Disable zoom if it was previously enabled
+                            if (chart.zoomSystemInstance) {
+                                chart.zoomSystemInstance.disable();
+                                chart.zoomSystemInstance.detach();
+                            }
+                        }
+                    }, 50); // Small delay to ensure DOM is ready
+                }
+                catch (error) {
+                    console.error("MintWaterfall rendering error:", error);
+                    console.error("Stack trace:", error.stack);
+                    // Clear any partial rendering and show error
+                    containerUpdate.selectAll("*").remove();
+                    containerUpdate.append("text")
+                        .attr("x", width / 2)
+                        .attr("y", height / 2)
+                        .attr("text-anchor", "middle")
+                        .style("font-size", "14px")
+                        .style("fill", "#ff6b6b")
+                        .text(`Chart Error: ${error.message}`);
+                }
+            });
+        }
+        function calculateIntelligentMargins(processedData, baseMargin) {
+            // Calculate required space for labels - handle all edge cases
+            const allValues = processedData.flatMap(d => [d.cumulativeTotal, d.prevCumulativeTotal || 0]);
+            const maxValue = d3__namespace.max(allValues) || 0;
+            const minValue = d3__namespace.min(allValues) || 0;
+            // Estimate label dimensions - be more generous with space
+            const labelHeight = 16; // Increased from 14 to account for font size
+            const labelPadding = 8; // Increased from 5 for better spacing
+            const requiredLabelSpace = labelHeight + labelPadding;
+            const safetyBuffer = 20; // Increased from 10 for more breathing room
+            // Handle edge cases for different data scenarios
+            const hasNegativeValues = minValue < 0;
+            // Start with a more generous top margin to ensure labels fit
+            const initialTopMargin = Math.max(baseMargin.top, 80); // Ensure minimum 80px for labels
+            // Create temporary scale that matches the actual rendering logic
+            let tempYScale;
+            const tempRange = [height - baseMargin.bottom, initialTopMargin];
+            if (hasNegativeValues) {
+                // Match the actual scale logic for negative values
+                const range = maxValue - minValue;
+                const padding = range * 0.05; // 5% padding (same as actual scale)
+                tempYScale = d3__namespace.scaleLinear()
+                    .domain([minValue - padding, maxValue + padding])
+                    .range(tempRange);
+            }
+            else {
+                // For positive-only data, start at 0 with padding
+                const paddedMax = maxValue * 1.02; // 2% padding (same as actual scale)
+                tempYScale = d3__namespace.scaleLinear()
+                    .domain([0, paddedMax])
+                    .range(tempRange)
+                    .nice(); // Apply nice() like the actual scale
+            }
+            // Find the highest point where any label will be positioned
+            const allLabelPositions = processedData.map(d => {
+                const barTop = tempYScale(d.cumulativeTotal);
+                return barTop - labelPadding;
+            });
+            const highestLabelPosition = Math.min(...allLabelPositions);
+            // Calculate required top margin - ensure labels have enough space above them
+            const spaceNeededFromTop = Math.max(initialTopMargin - highestLabelPosition + requiredLabelSpace, requiredLabelSpace + safetyBuffer // Minimum space needed
+            );
+            const extraTopMarginNeeded = Math.max(0, spaceNeededFromTop - initialTopMargin);
+            // For negative values, we might also need bottom space
+            let extraBottomMargin = 0;
+            if (hasNegativeValues) {
+                const negativeData = processedData.filter(d => d.cumulativeTotal < 0);
+                if (negativeData.length > 0) {
+                    const lowestLabelPosition = Math.max(...negativeData.map(d => tempYScale(d.cumulativeTotal) + labelHeight + labelPadding));
+                    if (lowestLabelPosition > height - baseMargin.bottom) {
+                        extraBottomMargin = lowestLabelPosition - (height - baseMargin.bottom);
+                    }
+                }
+            }
+            // Calculate required right margin for labels
+            const maxLabelLength = Math.max(...processedData.map(d => formatNumber(d.cumulativeTotal).length));
+            const estimatedLabelWidth = maxLabelLength * 9; // Increased from 8 to 9px per character
+            const minRightMargin = Math.max(baseMargin.right, estimatedLabelWidth / 2 + 15);
+            const intelligentMargin = {
+                top: initialTopMargin + extraTopMarginNeeded + safetyBuffer,
+                right: minRightMargin,
+                bottom: baseMargin.bottom + extraBottomMargin + (hasNegativeValues ? safetyBuffer : 10),
+                left: baseMargin.left
+            };
+            console.log('🔧 Intelligent margins calculated:', {
+                original: baseMargin,
+                calculated: intelligentMargin,
+                highestLabelPosition,
+                spaceNeededFromTop,
+                extraTopMarginNeeded
+            });
+            return intelligentMargin;
+        }
+        function prepareData(data) {
+            let workingData = [...data];
+            // Apply breakdown analysis if enabled
+            if (breakdownConfig && breakdownConfig.enabled) {
+                workingData = applyBreakdownAnalysis(workingData);
+            }
+            let cumulativeTotal = 0;
+            let prevCumulativeTotal = 0;
+            // Process each bar with cumulative totals
+            const processedData = workingData.map((bar, i) => {
+                const barTotal = bar.stacks.reduce((sum, stack) => sum + stack.value, 0);
+                prevCumulativeTotal = cumulativeTotal;
+                cumulativeTotal += barTotal;
+                // Apply conditional formatting if enabled
+                let processedStacks = bar.stacks;
+                if (formattingRules.size > 0) {
+                    processedStacks = applyConditionalFormatting(bar.stacks);
+                }
+                const result = {
+                    ...bar,
+                    stacks: processedStacks,
+                    barTotal,
+                    cumulativeTotal,
+                    prevCumulativeTotal: i === 0 ? 0 : prevCumulativeTotal
+                };
+                return result;
+            });
+            // Add total bar if enabled
+            if (showTotal && processedData.length > 0) {
+                const totalValue = cumulativeTotal;
+                processedData.push({
+                    label: totalLabel,
+                    stacks: [{ value: totalValue, color: totalColor }],
+                    barTotal: totalValue,
+                    cumulativeTotal: totalValue,
+                    prevCumulativeTotal: 0 // Total bar starts from zero
+                });
+            }
+            return processedData;
+        }
+        // Placeholder function implementations - these would be converted separately
+        function applyBreakdownAnalysis(data, config) {
+            // Implementation would be migrated from JavaScript version
+            return data;
+        }
+        function applyConditionalFormatting(stacks, barData, rules) {
+            // Implementation would be migrated from JavaScript version
+            return stacks;
+        }
+        function drawGrid(container, yScale, intelligentMargins) {
+            // Create horizontal grid lines
+            const gridGroup = container.selectAll(".grid-group").data([0]);
+            const gridGroupEnter = gridGroup.enter()
+                .append("g")
+                .attr("class", "grid-group");
+            const gridGroupUpdate = gridGroupEnter.merge(gridGroup);
+            // Get tick values from y scale
+            const tickValues = yScale.ticks();
+            // Create grid lines
+            const gridLines = gridGroupUpdate.selectAll(".grid-line").data(tickValues);
+            const gridLinesEnter = gridLines.enter()
+                .append("line")
+                .attr("class", "grid-line")
+                .attr("x1", intelligentMargins.left)
+                .attr("x2", width - intelligentMargins.right)
+                .attr("stroke", "rgba(224, 224, 224, 0.5)")
+                .attr("stroke-width", 1)
+                .style("opacity", 0);
+            gridLinesEnter.merge(gridLines)
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .attr("y1", (d) => yScale(d))
+                .attr("y2", (d) => yScale(d))
+                .attr("x1", intelligentMargins.left)
+                .attr("x2", width - intelligentMargins.right)
+                .style("opacity", 1);
+            gridLines.exit()
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .style("opacity", 0)
+                .remove();
+        }
+        function drawAxes(container, xScale, yScale, intelligentMargins) {
+            // Y-axis
+            const yAxisGroup = container.selectAll(".y-axis").data([0]);
+            const yAxisGroupEnter = yAxisGroup.enter()
+                .append("g")
+                .attr("class", "y-axis")
+                .attr("transform", `translate(${intelligentMargins.left},0)`);
+            yAxisGroupEnter.merge(yAxisGroup)
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .call(d3__namespace.axisLeft(yScale).tickFormat((d) => formatNumber(d)));
+            // X-axis
+            const xAxisGroup = container.selectAll(".x-axis").data([0]);
+            const xAxisGroupEnter = xAxisGroup.enter()
+                .append("g")
+                .attr("class", "x-axis")
+                .attr("transform", `translate(0,${height - intelligentMargins.bottom})`);
+            xAxisGroupEnter.merge(xAxisGroup)
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .call(d3__namespace.axisBottom(xScale));
+        }
+        function drawBars(container, processedData, xScale, yScale, intelligentMargins) {
+            const barsGroup = container.selectAll(".bars-group").data([0]);
+            const barsGroupEnter = barsGroup.enter()
+                .append("g")
+                .attr("class", "bars-group");
+            const barsGroupUpdate = barsGroupEnter.merge(barsGroup);
+            // Bar groups for each data point
+            const barGroups = barsGroupUpdate.selectAll(".bar-group").data(processedData, (d) => d.label);
+            // For band scales, we don't need manual positioning - the scale handles it
+            const barGroupsEnter = barGroups.enter()
+                .append("g")
+                .attr("class", "bar-group")
+                .attr("transform", (d) => {
+                if (xScale.bandwidth) {
+                    // Band scale - use the scale directly
+                    return `translate(${xScale(d.label)}, 0)`;
+                }
+                else {
+                    // Continuous scale - manual positioning using intelligent margins
+                    const barWidth = getBarWidth(xScale, processedData.length, width - intelligentMargins.left - intelligentMargins.right);
+                    const barX = getBarPosition(xScale, d.label, barWidth);
+                    return `translate(${barX}, 0)`;
+                }
+            });
+            const barGroupsUpdate = barGroupsEnter.merge(barGroups)
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .attr("transform", (d) => {
+                if (xScale.bandwidth) {
+                    // Band scale - use the scale directly
+                    return `translate(${xScale(d.label)}, 0)`;
+                }
+                else {
+                    // Continuous scale - manual positioning using intelligent margins
+                    const barWidth = getBarWidth(xScale, processedData.length, width - intelligentMargins.left - intelligentMargins.right);
+                    const barX = getBarPosition(xScale, d.label, barWidth);
+                    return `translate(${barX}, 0)`;
+                }
+            });
+            if (stacked) {
+                drawStackedBars(barGroupsUpdate, xScale, yScale, intelligentMargins);
+            }
+            else {
+                drawWaterfallBars(barGroupsUpdate, xScale, yScale, intelligentMargins);
+            }
+            // Add value labels
+            drawValueLabels(barGroupsUpdate, xScale, yScale, intelligentMargins);
+            barGroups.exit()
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .style("opacity", 0)
+                .remove();
+        }
+        function drawStackedBars(barGroups, xScale, yScale, intelligentMargins) {
+            barGroups.each(function (d) {
+                const group = d3__namespace.select(this);
+                const stackData = d.stacks.map((stack, i) => ({
+                    ...stack,
+                    stackIndex: i,
+                    parent: d
+                }));
+                // Calculate stack positions
+                let cumulativeHeight = d.prevCumulativeTotal || 0;
+                stackData.forEach((stack) => {
+                    stack.startY = cumulativeHeight;
+                    stack.endY = cumulativeHeight + stack.value;
+                    stack.y = yScale(Math.max(stack.startY, stack.endY));
+                    stack.height = Math.abs(yScale(stack.startY) - yScale(stack.endY));
+                    cumulativeHeight += stack.value;
+                });
+                const stacks = group.selectAll(".stack").data(stackData);
+                // Get bar width - use scale bandwidth if available, otherwise calculate using intelligent margins
+                const barWidth = xScale.bandwidth ? xScale.bandwidth() : getBarWidth(xScale, barGroups.size(), width - intelligentMargins.left - intelligentMargins.right);
+                const stacksEnter = stacks.enter()
+                    .append("rect")
+                    .attr("class", "stack")
+                    .attr("x", 0)
+                    .attr("width", barWidth)
+                    .attr("y", yScale(0))
+                    .attr("height", 0)
+                    .attr("fill", (stack) => stack.color);
+                stacksEnter.merge(stacks)
+                    .transition()
+                    .duration(duration)
+                    .ease(ease)
+                    .attr("y", (stack) => stack.y)
+                    .attr("height", (stack) => stack.height)
+                    .attr("fill", (stack) => stack.color)
+                    .attr("width", barWidth);
+                stacks.exit()
+                    .transition()
+                    .duration(duration)
+                    .ease(ease)
+                    .attr("height", 0)
+                    .attr("y", yScale(0))
+                    .remove();
+                // Add stack labels if they exist
+                const stackLabels = group.selectAll(".stack-label").data(stackData.filter((s) => s.label));
+                const stackLabelsEnter = stackLabels.enter()
+                    .append("text")
+                    .attr("class", "stack-label")
+                    .attr("text-anchor", "middle")
+                    .attr("x", barWidth / 2)
+                    .attr("y", yScale(0))
+                    .style("opacity", 0);
+                stackLabelsEnter.merge(stackLabels)
+                    .transition()
+                    .duration(duration)
+                    .ease(ease)
+                    .attr("y", (stack) => stack.y + stack.height / 2 + 4)
+                    .attr("x", barWidth / 2)
+                    .style("opacity", 1)
+                    .text((stack) => stack.label);
+                stackLabels.exit()
+                    .transition()
+                    .duration(duration)
+                    .ease(ease)
+                    .style("opacity", 0)
+                    .remove();
+            });
+        }
+        function drawWaterfallBars(barGroups, xScale, yScale, intelligentMargins) {
+            barGroups.each(function (d) {
+                const group = d3__namespace.select(this);
+                // Get bar width - use scale bandwidth if available, otherwise calculate using intelligent margins
+                const barWidth = xScale.bandwidth ? xScale.bandwidth() : getBarWidth(xScale, barGroups.size(), width - intelligentMargins.left - intelligentMargins.right);
+                const barData = [{
+                        value: d.barTotal,
+                        color: d.stacks.length === 1 ? d.stacks[0].color : "#3498db", // Default blue if multiple stacks
+                        y: d.isTotal ?
+                            Math.min(yScale(0), yScale(d.cumulativeTotal)) : // Total bar: position correctly regardless of scale direction
+                            yScale(Math.max(d.prevCumulativeTotal, d.cumulativeTotal)),
+                        height: d.isTotal ?
+                            Math.abs(yScale(0) - yScale(d.cumulativeTotal)) : // Total bar: full height from zero to total
+                            Math.abs(yScale(d.prevCumulativeTotal || 0) - yScale(d.cumulativeTotal)),
+                        parent: d
+                    }];
+                const bars = group.selectAll(".waterfall-bar").data(barData);
+                const barsEnter = bars.enter()
+                    .append("rect")
+                    .attr("class", "waterfall-bar")
+                    .attr("x", 0)
+                    .attr("width", barWidth)
+                    .attr("y", yScale(0))
+                    .attr("height", 0)
+                    .attr("fill", (bar) => bar.color);
+                barsEnter.merge(bars)
+                    .transition()
+                    .duration(duration)
+                    .ease(ease)
+                    .attr("y", (bar) => bar.y)
+                    .attr("height", (bar) => bar.height)
+                    .attr("fill", (bar) => bar.color)
+                    .attr("width", barWidth);
+                bars.exit()
+                    .transition()
+                    .duration(duration)
+                    .ease(ease)
+                    .attr("height", 0)
+                    .attr("y", yScale(0))
+                    .remove();
+            });
+        }
+        function drawValueLabels(barGroups, xScale, yScale, intelligentMargins) {
+            // Always show value labels on bars - this is independent of the total bar setting
+            console.log('🏷️ Drawing value labels, barGroups size:', barGroups.size());
+            barGroups.each(function (d) {
+                const group = d3__namespace.select(this);
+                const barWidth = getBarWidth(xScale, barGroups.size(), width - intelligentMargins.left - intelligentMargins.right);
+                console.log('🏷️ Processing label for:', d.label, 'barTotal:', d.barTotal, 'cumulativeTotal:', d.cumulativeTotal);
+                const labelData = [{
+                        value: d.barTotal,
+                        formattedValue: formatNumber(d.barTotal),
+                        parent: d
+                    }];
+                const totalLabels = group.selectAll(".total-label").data(labelData);
+                const totalLabelsEnter = totalLabels.enter()
+                    .append("text")
+                    .attr("class", "total-label")
+                    .attr("text-anchor", "middle")
+                    .attr("x", barWidth / 2)
+                    .attr("y", yScale(0))
+                    .style("opacity", 0)
+                    .style("font-family", "Arial, sans-serif"); // Ensure font is set
+                const labelUpdate = totalLabelsEnter.merge(totalLabels);
+                labelUpdate
+                    .transition()
+                    .duration(duration)
+                    .ease(ease)
+                    .attr("y", (labelD) => {
+                    const barTop = yScale(labelD.parent.cumulativeTotal);
+                    const padding = 8;
+                    const finalY = barTop - padding;
+                    console.log('🏷️ Label positioning:', {
+                        label: labelD.parent.label,
+                        cumulativeTotal: labelD.parent.cumulativeTotal,
+                        barTop: barTop,
+                        finalY: finalY,
+                        formattedValue: labelD.formattedValue
+                    });
+                    return finalY;
+                })
+                    .attr("x", barWidth / 2)
+                    .style("opacity", 1)
+                    .style("fill", "#333")
+                    .style("font-weight", "bold")
+                    .style("font-size", "14px")
+                    .style("pointer-events", "none")
+                    .style("visibility", "visible") // Ensure visibility
+                    .style("display", "block") // Ensure display
+                    .attr("clip-path", "none") // Remove any clipping from labels themselves
+                    .text((labelD) => labelD.formattedValue)
+                    .each(function (labelD) {
+                    // Debug: Log each created label element
+                    const element = d3__namespace.select(this);
+                    console.log('🏷️ Label element created:', {
+                        text: labelD.formattedValue,
+                        x: element.attr("x"),
+                        y: element.attr("y"),
+                        opacity: element.style("opacity"),
+                        fill: element.style("fill"),
+                        fontSize: element.style("font-size"),
+                        element: this
+                    });
+                });
+                totalLabels.exit()
+                    .transition()
+                    .duration(duration)
+                    .ease(ease)
+                    .style("opacity", 0)
+                    .remove();
+            });
+        }
+        function drawConnectors(container, processedData, xScale, yScale) {
+            if (stacked || processedData.length < 2)
+                return; // Only show connectors for waterfall charts
+            const connectorsGroup = container.selectAll(".connectors-group").data([0]);
+            const connectorsGroupEnter = connectorsGroup.enter()
+                .append("g")
+                .attr("class", "connectors-group");
+            const connectorsGroupUpdate = connectorsGroupEnter.merge(connectorsGroup);
+            // Create connector data
+            const connectorData = [];
+            for (let i = 0; i < processedData.length - 1; i++) {
+                const current = processedData[i];
+                const next = processedData[i + 1];
+                const barWidth = getBarWidth(xScale, processedData.length, width - margin.left - margin.right);
+                const currentX = getBarPosition(xScale, current.label, barWidth);
+                const nextX = getBarPosition(xScale, next.label, barWidth);
+                connectorData.push({
+                    x1: currentX + barWidth,
+                    x2: nextX,
+                    y: yScale(current.cumulativeTotal),
+                    id: `${current.label}-${next.label}`
+                });
+            }
+            // Create/update connector lines
+            const connectors = connectorsGroupUpdate.selectAll(".connector").data(connectorData, (d) => d.id);
+            const connectorsEnter = connectors.enter()
+                .append("line")
+                .attr("class", "connector")
+                .attr("stroke", "#bdc3c7")
+                .attr("stroke-width", 1)
+                .attr("stroke-dasharray", "3,3")
+                .style("opacity", 0)
+                .attr("x1", (d) => d.x1)
+                .attr("x2", (d) => d.x1)
+                .attr("y1", (d) => d.y)
+                .attr("y2", (d) => d.y);
+            connectorsEnter.merge(connectors)
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .delay((d, i) => staggeredAnimations ? i * staggerDelay : 0)
+                .attr("x1", (d) => d.x1)
+                .attr("x2", (d) => d.x2)
+                .attr("y1", (d) => d.y)
+                .attr("y2", (d) => d.y)
+                .style("opacity", 0.6);
+            connectors.exit()
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .style("opacity", 0)
+                .remove();
+        }
+        function drawTrendLine(container, processedData, xScale, yScale) {
+            // Remove trend line if disabled or insufficient data
+            if (!showTrendLine || processedData.length < 2) {
+                container.selectAll(".trend-group").remove();
+                return;
+            }
+            const trendGroup = container.selectAll(".trend-group").data([0]);
+            const trendGroupEnter = trendGroup.enter()
+                .append("g")
+                .attr("class", "trend-group");
+            const trendGroupUpdate = trendGroupEnter.merge(trendGroup);
+            // Calculate trend line data points based on trend type
+            const trendData = [];
+            // First, collect the actual data points
+            const dataPoints = [];
+            for (let i = 0; i < processedData.length; i++) {
+                const item = processedData[i];
+                const barWidth = getBarWidth(xScale, processedData.length, width - margin.left - margin.right);
+                const x = getBarPosition(xScale, item.label, barWidth) + barWidth / 2;
+                const actualY = yScale(item.cumulativeTotal);
+                dataPoints.push({ x, y: actualY, value: item.cumulativeTotal });
+            }
+            // Calculate trend based on type
+            if (trendLineType === "linear") {
+                // Linear regression
+                const n = dataPoints.length;
+                const sumX = dataPoints.reduce((sum, p, i) => sum + i, 0);
+                const sumY = dataPoints.reduce((sum, p) => sum + p.value, 0);
+                const sumXY = dataPoints.reduce((sum, p, i) => sum + (i * p.value), 0);
+                const sumXX = dataPoints.reduce((sum, p, i) => sum + (i * i), 0);
+                const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+                const intercept = (sumY - slope * sumX) / n;
+                dataPoints.forEach((point, i) => {
+                    const trendValue = slope * i + intercept;
+                    trendData.push({ x: point.x, y: yScale(trendValue) });
+                });
+            }
+            else if (trendLineType === "moving-average") {
+                // Moving average with configurable window
+                const window = trendLineWindow;
+                for (let i = 0; i < dataPoints.length; i++) {
+                    const start = Math.max(0, i - Math.floor(window / 2));
+                    const end = Math.min(dataPoints.length, start + window);
+                    const windowData = dataPoints.slice(start, end);
+                    const average = windowData.reduce((sum, p) => sum + p.value, 0) / windowData.length;
+                    trendData.push({ x: dataPoints[i].x, y: yScale(average) });
+                }
+            }
+            else if (trendLineType === "polynomial") {
+                // Simplified polynomial trend using D3's curve interpolation
+                const n = dataPoints.length;
+                if (n >= 3) {
+                    // Use a simple approach: create a smooth curve using D3's cardinal interpolation
+                    // and add some curvature based on the degree setting
+                    const curvature = trendLineDegree / 10; // Convert degree to curvature factor
+                    // Create control points for polynomial-like curve
+                    for (let i = 0; i < n; i++) {
+                        const point = dataPoints[i];
+                        let adjustedY = point.value;
+                        // Add polynomial-like adjustment based on position
+                        if (n > 2) {
+                            const t = i / (n - 1); // Normalize position 0-1
+                            const curveFactor = Math.sin(t * Math.PI) * curvature;
+                            // Apply curve adjustment to create polynomial-like behavior
+                            const avgValue = dataPoints.reduce((sum, p) => sum + p.value, 0) / n;
+                            adjustedY = point.value + (point.value - avgValue) * curveFactor * 0.5;
+                        }
+                        trendData.push({ x: point.x, y: yScale(adjustedY) });
+                    }
+                }
+                else {
+                    // Not enough points for polynomial, use linear
+                    dataPoints.forEach(point => {
+                        trendData.push({ x: point.x, y: point.y });
+                    });
+                }
+            }
+            else {
+                // Default to connecting actual points
+                dataPoints.forEach(point => {
+                    trendData.push({ x: point.x, y: point.y });
+                });
+            }
+            // Create line generator with appropriate curve type
+            const line = d3__namespace.line()
+                .x(d => d.x)
+                .y(d => d.y)
+                .curve(trendLineType === "polynomial" ? d3__namespace.curveCardinal :
+                trendLineType === "moving-average" ? d3__namespace.curveMonotoneX :
+                    d3__namespace.curveLinear);
+            // Create/update trend line
+            const trendLine = trendGroupUpdate.selectAll(".trend-line").data([trendData]);
+            const trendLineEnter = trendLine.enter()
+                .append("path")
+                .attr("class", "trend-line")
+                .attr("fill", "none")
+                .attr("stroke", trendLineColor)
+                .attr("stroke-width", trendLineWidth)
+                .attr("stroke-opacity", trendLineOpacity)
+                .style("opacity", 0);
+            // Apply stroke-dasharray based on style
+            function applyStrokeStyle(selection) {
+                if (trendLineStyle === "dashed") {
+                    selection.attr("stroke-dasharray", "5,5");
+                }
+                else if (trendLineStyle === "dotted") {
+                    selection.attr("stroke-dasharray", "2,3");
+                }
+                else {
+                    selection.attr("stroke-dasharray", null);
+                }
+            }
+            applyStrokeStyle(trendLineEnter);
+            const updatedTrendLine = trendLineEnter.merge(trendLine);
+            applyStrokeStyle(updatedTrendLine);
+            updatedTrendLine
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .attr("d", line)
+                .attr("stroke", trendLineColor)
+                .attr("stroke-width", trendLineWidth)
+                .attr("stroke-opacity", trendLineOpacity)
+                .style("opacity", 1);
+            trendLine.exit()
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .style("opacity", 0)
+                .remove();
+        }
+        function addBrushSelection(container, processedData, xScale, yScale) {
+            // Stub: would add brush interaction if enabled
+        }
+        function initializeAccessibility(svg, processedData) {
+            if (!enableAccessibility)
+                return;
+            // Add ARIA attributes to the SVG
+            svg.attr("role", "img")
+                .attr("aria-label", `Waterfall chart with ${processedData.length} data points`);
+            // Add title and description for screen readers
+            const title = svg.selectAll("title").data([0]);
+            title.enter()
+                .append("title")
+                .merge(title)
+                .text(`Waterfall chart showing ${stacked ? 'stacked' : 'sequential'} data visualization`);
+            const desc = svg.selectAll("desc").data([0]);
+            desc.enter()
+                .append("desc")
+                .merge(desc)
+                .text(() => {
+                const totalValue = processedData[processedData.length - 1]?.cumulativeTotal || 0;
+                return `Chart contains ${processedData.length} data points. ` +
+                    `Final cumulative value: ${formatNumber(totalValue)}. ` +
+                    `Data ranges from ${processedData[0]?.label} to ${processedData[processedData.length - 1]?.label}.`;
+            });
+            // Add keyboard navigation
+            svg.attr("tabindex", "0")
+                .on("keydown", function (event) {
+                const focusedElement = svg.select(".focused");
+                const allBars = svg.selectAll(".waterfall-bar, .stack");
+                const currentIndex = allBars.nodes().indexOf(focusedElement.node());
+                switch (event.key) {
+                    case "ArrowRight":
+                    case "ArrowDown":
+                        event.preventDefault();
+                        const nextIndex = Math.min(currentIndex + 1, allBars.size() - 1);
+                        focusBar(allBars, nextIndex);
+                        break;
+                    case "ArrowLeft":
+                    case "ArrowUp":
+                        event.preventDefault();
+                        const prevIndex = Math.max(currentIndex - 1, 0);
+                        focusBar(allBars, prevIndex);
+                        break;
+                    case "Home":
+                        event.preventDefault();
+                        focusBar(allBars, 0);
+                        break;
+                    case "End":
+                        event.preventDefault();
+                        focusBar(allBars, allBars.size() - 1);
+                        break;
+                }
+            });
+            // Helper function to focus a bar
+            function focusBar(allBars, index) {
+                allBars.classed("focused", false);
+                const targetBar = d3__namespace.select(allBars.nodes()[index]);
+                targetBar.classed("focused", true);
+                // Announce the focused element
+                const data = targetBar.datum();
+                const announcement = `${data.parent?.label || data.label}: ${formatNumber(data.value || data.barTotal)}`;
+                announceToScreenReader(announcement);
+            }
+            // Screen reader announcements
+            function announceToScreenReader(message) {
+                const announcement = d3__namespace.select("body").selectAll(".sr-announcement").data([0]);
+                const announcementEnter = announcement.enter()
+                    .append("div")
+                    .attr("class", "sr-announcement")
+                    .attr("aria-live", "polite")
+                    .attr("aria-atomic", "true")
+                    .style("position", "absolute")
+                    .style("left", "-10000px")
+                    .style("width", "1px")
+                    .style("height", "1px")
+                    .style("overflow", "hidden");
+                announcementEnter.merge(announcement)
+                    .text(message);
+            }
+            // Add focus styles
+            const style = svg.selectAll("style.accessibility-styles").data([0]);
+            style.enter()
+                .append("style")
+                .attr("class", "accessibility-styles")
+                .merge(style)
+                .text(`
+                .focused {
+                    stroke: #0066cc !important;
+                    stroke-width: 3px !important;
+                    filter: brightness(1.1);
+                }
+                .waterfall-bar:focus,
+                .stack:focus {
+                    outline: 2px solid #0066cc;
+                    outline-offset: 2px;
+                }
+            `);
+        }
+        function initializeTooltips(svg) {
+            if (!enableTooltips)
+                return;
+            // Initialize the tooltip system
+            const tooltip = tooltipSystem;
+            // Configure tooltip theme
+            tooltip.configure(tooltipConfig);
+            // Add tooltip events to all chart elements
+            svg.selectAll(".waterfall-bar, .stack")
+                .on("mouseover", function (event, d) {
+                const element = d3__namespace.select(this);
+                const data = d.parent || d; // Handle both stacked and waterfall bars
+                // Create tooltip content
+                const content = `
+                    <div style="font-weight: bold; margin-bottom: 8px;">${data.label}</div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span>Value:</span>
+                        <span style="font-weight: bold;">${formatNumber(d.value || data.barTotal)}</span>
+                    </div>
+                    ${data.cumulativeTotal !== undefined ? `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span>Cumulative:</span>
+                        <span style="font-weight: bold;">${formatNumber(data.cumulativeTotal)}</span>
+                    </div>
+                    ` : ''}
+                    ${d.label && d.label !== data.label ? `
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.3);">
+                        <div style="font-size: 11px; opacity: 0.8;">${d.label}</div>
+                    </div>
+                    ` : ''}
+                `;
+                // Show tooltip
+                tooltip.show(content, event, {
+                    label: data.label,
+                    value: d.value || data.barTotal,
+                    cumulative: data.cumulativeTotal,
+                    color: d.color || (data.stacks && data.stacks[0] ? data.stacks[0].color : '#3498db'),
+                    x: parseFloat(element.attr("x") || "0"),
+                    y: parseFloat(element.attr("y") || "0"),
+                    quadrant: 1
+                });
+                // Highlight element
+                element.style("opacity", 0.8);
+            })
+                .on("mousemove", function (event) {
+                tooltip.move(event);
+            })
+                .on("mouseout", function () {
+                // Hide tooltip
+                tooltip.hide();
+                // Remove highlight
+                d3__namespace.select(this).style("opacity", null);
+            });
+            // Also add tooltips to value labels
+            svg.selectAll(".total-label")
+                .on("mouseover", function (event, d) {
+                const data = d.parent;
+                const content = `
+                    <div style="font-weight: bold; margin-bottom: 8px;">${data.label}</div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Total Value:</span>
+                        <span style="font-weight: bold;">${formatNumber(data.barTotal)}</span>
+                    </div>
+                `;
+                tooltip.show(content, event, {
+                    label: data.label,
+                    value: data.barTotal,
+                    cumulative: data.cumulativeTotal,
+                    color: '#333',
+                    x: 0,
+                    y: 0,
+                    quadrant: 1
+                });
+            })
+                .on("mousemove", function (event) {
+                tooltip.move(event);
+            })
+                .on("mouseout", function () {
+                tooltip.hide();
+            });
+        }
+        function initializeExport(svg, processedData) {
+            // Stub: would initialize export functionality
+        }
+        // Getter/setter methods using TypeScript
+        chart.width = function (_) {
+            return arguments.length ? (width = _, chart) : width;
+        };
+        chart.height = function (_) {
+            return arguments.length ? (height = _, chart) : height;
+        };
+        chart.margin = function (_) {
+            return arguments.length ? (margin = _, chart) : margin;
+        };
+        chart.stacked = function (_) {
+            return arguments.length ? (stacked = _, chart) : stacked;
+        };
+        chart.showTotal = function (_) {
+            return arguments.length ? (showTotal = _, chart) : showTotal;
+        };
+        chart.totalLabel = function (_) {
+            return arguments.length ? (totalLabel = _, chart) : totalLabel;
+        };
+        chart.totalColor = function (_) {
+            return arguments.length ? (totalColor = _, chart) : totalColor;
+        };
+        chart.barPadding = function (_) {
+            return arguments.length ? (barPadding = _, chart) : barPadding;
+        };
+        chart.duration = function (_) {
+            return arguments.length ? (duration = _, chart) : duration;
+        };
+        chart.ease = function (_) {
+            return arguments.length ? (ease = _, chart) : ease;
+        };
+        chart.formatNumber = function (_) {
+            return arguments.length ? (formatNumber = _, chart) : formatNumber;
+        };
+        chart.theme = function (_) {
+            return arguments.length ? (theme = _, chart) : theme;
+        };
+        chart.enableBrush = function (_) {
+            return arguments.length ? (enableBrush = _, chart) : enableBrush;
+        };
+        chart.brushOptions = function (_) {
+            return arguments.length ? (brushOptions = { ...brushOptions, ..._ }, chart) : brushOptions;
+        };
+        chart.staggeredAnimations = function (_) {
+            return arguments.length ? (staggeredAnimations = _, chart) : staggeredAnimations;
+        };
+        chart.staggerDelay = function (_) {
+            return arguments.length ? (staggerDelay = _, chart) : staggerDelay;
+        };
+        chart.scaleType = function (_) {
+            return arguments.length ? (scaleType = _, chart) : scaleType;
+        };
+        chart.showTrendLine = function (_) {
+            return arguments.length ? (showTrendLine = _, chart) : showTrendLine;
+        };
+        chart.trendLineColor = function (_) {
+            return arguments.length ? (trendLineColor = _, chart) : trendLineColor;
+        };
+        chart.trendLineWidth = function (_) {
+            return arguments.length ? (trendLineWidth = _, chart) : trendLineWidth;
+        };
+        chart.trendLineStyle = function (_) {
+            return arguments.length ? (trendLineStyle = _, chart) : trendLineStyle;
+        };
+        chart.trendLineOpacity = function (_) {
+            return arguments.length ? (trendLineOpacity = _, chart) : trendLineOpacity;
+        };
+        chart.trendLineType = function (_) {
+            return arguments.length ? (trendLineType = _, chart) : trendLineType;
+        };
+        chart.trendLineWindow = function (_) {
+            return arguments.length ? (trendLineWindow = _, chart) : trendLineWindow;
+        };
+        chart.trendLineDegree = function (_) {
+            return arguments.length ? (trendLineDegree = _, chart) : trendLineDegree;
+        };
+        chart.enableAccessibility = function (_) {
+            return arguments.length ? (enableAccessibility = _, chart) : enableAccessibility;
+        };
+        chart.enableTooltips = function (_) {
+            return arguments.length ? (enableTooltips = _, chart) : enableTooltips;
+        };
+        chart.tooltipConfig = function (_) {
+            return arguments.length ? (tooltipConfig = { ...tooltipConfig, ..._ }, chart) : tooltipConfig;
+        };
+        chart.enableExport = function (_) {
+            return arguments.length ? (enableExport = _, chart) : enableExport;
+        };
+        chart.exportConfig = function (_) {
+            return arguments.length ? (exportConfig = { ...exportConfig, ..._ }, chart) : exportConfig;
+        };
+        chart.enableZoom = function (_) {
+            return arguments.length ? (enableZoom = _, chart) : enableZoom;
+        };
+        chart.zoomConfig = function (_) {
+            return arguments.length ? (zoomConfig = { ...zoomConfig, ..._ }, chart) : zoomConfig;
+        };
+        chart.breakdownConfig = function (_) {
+            return arguments.length ? (breakdownConfig = _, chart) : breakdownConfig;
+        };
+        chart.enablePerformanceOptimization = function (_) {
+            return arguments.length ? (enablePerformanceOptimization = _, chart) : enablePerformanceOptimization;
+        };
+        chart.performanceDashboard = function (_) {
+            return arguments.length ? (performanceDashboard = _, chart) : performanceDashboard;
+        };
+        chart.virtualizationThreshold = function (_) {
+            return arguments.length ? (virtualizationThreshold = _, chart) : virtualizationThreshold;
+        };
+        // Data method for API completeness
+        chart.data = function (_) {
+            // This method is for API completeness - actual data is passed to the chart function
+            // Always return the chart instance for method chaining
+            return chart;
+        };
+        // Event handling methods
+        chart.on = function () {
+            const value = listeners.on.apply(listeners, Array.from(arguments));
+            return value === listeners ? chart : value;
+        };
+        return chart;
+    }
+
+    // MintWaterfall Data Processing Utilities - TypeScript Version
+    // Provides data transformation, aggregation, and manipulation functions with full type safety
+    // Data loading utilities
+    async function loadData(source, options = {}) {
+        try {
+            let rawData;
+            if (typeof source === "string") {
+                // URL or file path
+                if (source.endsWith(".csv")) {
+                    rawData = await d3__namespace.csv(source);
+                }
+                else if (source.endsWith(".json")) {
+                    rawData = await d3__namespace.json(source);
+                }
+                else if (source.endsWith(".tsv")) {
+                    rawData = await d3__namespace.tsv(source);
+                }
+                else {
+                    // Try to detect if it's a URL by checking for http/https
+                    if (source.startsWith("http")) {
+                        const response = await fetch(source);
+                        const contentType = response.headers.get("content-type");
+                        if (contentType?.includes("application/json")) {
+                            rawData = await response.json();
+                        }
+                        else if (contentType?.includes("text/csv")) {
+                            const text = await response.text();
+                            rawData = d3__namespace.csvParse(text);
+                        }
+                        else {
+                            rawData = await response.json(); // fallback
+                        }
+                    }
+                    else {
+                        throw new Error(`Unsupported file format: ${source}`);
+                    }
+                }
+            }
+            else if (Array.isArray(source)) {
+                // Already an array
+                rawData = source;
+            }
+            else {
+                throw new Error("Source must be a URL, file path, or data array");
+            }
+            // Transform raw data to MintWaterfall format if needed
+            return transformToWaterfallFormat(rawData, options);
+        }
+        catch (error) {
+            console.error("Error loading data:", error);
+            throw error;
+        }
+    }
+    // Transform various data formats to MintWaterfall format
+    function transformToWaterfallFormat(data, options = {}) {
+        const { valueColumn = "value", labelColumn = "label", colorColumn = "color", 
+        // stacksColumn = "stacks", // Reserved for future use
+        defaultColor = "#3498db", parseNumbers = true } = options;
+        if (!Array.isArray(data)) {
+            throw new Error("Data must be an array");
+        }
+        return data.map((item, index) => {
+            // If already in correct format, return as-is
+            if (item.label && Array.isArray(item.stacks)) {
+                return item;
+            }
+            // Transform flat format to stacked format
+            const label = item[labelColumn] || `Item ${index + 1}`;
+            let value = item[valueColumn];
+            if (parseNumbers && typeof value === "string") {
+                value = parseFloat(value.replace(/[,$]/g, "")) || 0;
+            }
+            else if (typeof value !== "number") {
+                value = 0;
+            }
+            const color = item[colorColumn] || defaultColor;
+            return {
+                label: String(label),
+                stacks: [{
+                        value: value,
+                        color: color,
+                        label: item.stackLabel || `${value >= 0 ? "+" : ""}${value}`
+                    }]
+            };
+        });
+    }
+    function createDataProcessor() {
+        function validateData(data) {
+            if (!data || !Array.isArray(data)) {
+                throw new Error("Data must be an array");
+            }
+            if (data.length === 0) {
+                throw new Error("Data array cannot be empty");
+            }
+            const isValid = data.every((item, index) => {
+                if (!item || typeof item !== "object") {
+                    throw new Error(`Item at index ${index} must be an object`);
+                }
+                if (typeof item.label !== "string") {
+                    throw new Error(`Item at index ${index} must have a string 'label' property`);
+                }
+                if (!Array.isArray(item.stacks)) {
+                    throw new Error(`Item at index ${index} must have an array 'stacks' property`);
+                }
+                if (item.stacks.length === 0) {
+                    throw new Error(`Item at index ${index} must have at least one stack`);
+                }
+                item.stacks.forEach((stack, stackIndex) => {
+                    if (typeof stack.value !== "number" || isNaN(stack.value)) {
+                        throw new Error(`Stack ${stackIndex} in item ${index} must have a numeric 'value'`);
+                    }
+                    if (typeof stack.color !== "string") {
+                        throw new Error(`Stack ${stackIndex} in item ${index} must have a string 'color'`);
+                    }
+                });
+                return true;
+            });
+            return isValid;
+        }
+        function aggregateData(data, aggregateBy = "sum") {
+            validateData(data);
+            return data.map((item) => {
+                let aggregatedValue;
+                switch (aggregateBy) {
+                    case "sum":
+                        aggregatedValue = item.stacks.reduce((sum, stack) => sum + stack.value, 0);
+                        break;
+                    case "average":
+                        aggregatedValue = item.stacks.reduce((sum, stack) => sum + stack.value, 0) / item.stacks.length;
+                        break;
+                    case "max":
+                        aggregatedValue = Math.max(...item.stacks.map(s => s.value));
+                        break;
+                    case "min":
+                        aggregatedValue = Math.min(...item.stacks.map(s => s.value));
+                        break;
+                    default:
+                        aggregatedValue = item.stacks.reduce((sum, stack) => sum + stack.value, 0);
+                }
+                return {
+                    ...item,
+                    aggregatedValue,
+                    originalStacks: item.stacks
+                };
+            });
+        }
+        function sortData(data, sortBy = "label", direction = "ascending") {
+            validateData(data);
+            const sorted = [...data].sort((a, b) => {
+                let valueA, valueB;
+                switch (sortBy) {
+                    case "label":
+                        valueA = a.label.toLowerCase();
+                        valueB = b.label.toLowerCase();
+                        break;
+                    case "total":
+                        // Calculate total for each item
+                        const totalA = a.stacks.reduce((sum, stack) => sum + stack.value, 0);
+                        const totalB = b.stacks.reduce((sum, stack) => sum + stack.value, 0);
+                        // Smart sorting: use absolute value for comparison to handle decremental waterfalls
+                        // This ensures that larger impacts (whether positive or negative) are sorted appropriately
+                        valueA = Math.abs(totalA);
+                        valueB = Math.abs(totalB);
+                        break;
+                    case "maxStack":
+                        valueA = Math.max(...a.stacks.map(s => s.value));
+                        valueB = Math.max(...b.stacks.map(s => s.value));
+                        break;
+                    case "minStack":
+                        valueA = Math.min(...a.stacks.map(s => s.value));
+                        valueB = Math.min(...b.stacks.map(s => s.value));
+                        break;
+                    default:
+                        valueA = a.label.toLowerCase();
+                        valueB = b.label.toLowerCase();
+                }
+                let comparison;
+                if (typeof valueA === "string" && typeof valueB === "string") {
+                    comparison = valueA.localeCompare(valueB);
+                }
+                else {
+                    comparison = valueA - valueB;
+                }
+                return direction === "ascending" ? comparison : -comparison;
+            });
+            return sorted;
+        }
+        function filterData(data, filterFn) {
+            validateData(data);
+            return data.filter(filterFn);
+        }
+        function getDataSummary(data) {
+            validateData(data);
+            const allValues = [];
+            const allColors = [];
+            let totalStacks = 0;
+            data.forEach(item => {
+                item.stacks.forEach(stack => {
+                    allValues.push(stack.value);
+                    allColors.push(stack.color);
+                    totalStacks++;
+                });
+            });
+            const valueRange = {
+                min: Math.min(...allValues),
+                max: Math.max(...allValues)
+            };
+            const cumulativeTotal = allValues.reduce((sum, value) => sum + value, 0);
+            const stackColors = [...new Set(allColors)];
+            const labels = data.map(item => item.label);
+            return {
+                totalItems: data.length,
+                totalStacks,
+                valueRange,
+                cumulativeTotal,
+                stackColors,
+                labels
+            };
+        }
+        function transformData(data, transformFn) {
+            validateData(data);
+            return data.map(transformFn);
+        }
+        function groupData(data, groupBy) {
+            validateData(data);
+            const groups = new Map();
+            data.forEach(item => {
+                const key = typeof groupBy === "function" ? groupBy(item) : item.label;
+                if (!groups.has(key)) {
+                    groups.set(key, []);
+                }
+                groups.get(key).push(item);
+            });
+            return groups;
+        }
+        function transformStacks(data, transformer) {
+            if (typeof transformer !== 'function') {
+                throw new Error('Transformer must be a function');
+            }
+            return data.map(item => ({
+                ...item,
+                stacks: item.stacks.map(transformer)
+            }));
+        }
+        function normalizeValues(data, targetMax) {
+            // Find the maximum absolute value across all stacks
+            let maxValue = 0;
+            data.forEach(item => {
+                item.stacks.forEach(stack => {
+                    maxValue = Math.max(maxValue, Math.abs(stack.value));
+                });
+            });
+            if (maxValue === 0)
+                return data;
+            const scaleFactor = targetMax / maxValue;
+            return data.map(item => ({
+                ...item,
+                stacks: item.stacks.map(stack => ({
+                    ...stack,
+                    originalValue: stack.value,
+                    value: stack.value * scaleFactor
+                }))
+            }));
+        }
+        function groupByCategory(data, categoryFunction) {
+            if (typeof categoryFunction !== 'function') {
+                throw new Error('Category function must be a function');
+            }
+            const groups = {};
+            data.forEach(item => {
+                const category = categoryFunction(item);
+                if (!groups[category]) {
+                    groups[category] = [];
+                }
+                groups[category].push(item);
+            });
+            return groups;
+        }
+        function calculatePercentages(data) {
+            return data.map(item => {
+                const total = item.stacks.reduce((sum, stack) => sum + Math.abs(stack.value), 0);
+                return {
+                    ...item,
+                    stacks: item.stacks.map(stack => ({
+                        ...stack,
+                        percentage: total === 0 ? 0 : (Math.abs(stack.value) / total) * 100
+                    }))
+                };
+            });
+        }
+        function interpolateData(data1, data2, t) {
+            if (data1.length !== data2.length) {
+                throw new Error('Data arrays must have the same length');
+            }
+            return data1.map((item1, index) => {
+                const item2 = data2[index];
+                const minStacks = Math.min(item1.stacks.length, item2.stacks.length);
+                return {
+                    label: item1.label,
+                    stacks: Array.from({ length: minStacks }, (_, i) => ({
+                        value: item1.stacks[i].value + (item2.stacks[i].value - item1.stacks[i].value) * t,
+                        color: item1.stacks[i].color,
+                        label: item1.stacks[i].label
+                    }))
+                };
+            });
+        }
+        function generateSampleData(itemCount, stacksPerItem, valueRange = [10, 100]) {
+            const [minValue, maxValue] = valueRange;
+            const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
+            return Array.from({ length: itemCount }, (_, i) => ({
+                label: `Item ${i + 1}`,
+                stacks: Array.from({ length: stacksPerItem }, (_, j) => ({
+                    value: Math.random() * (maxValue - minValue) + minValue,
+                    color: colors[j % colors.length],
+                    label: `Stack ${j + 1}`
+                }))
+            }));
+        }
+        // Internal wrapper functions for the standalone functions
+        async function loadDataWrapper(source, options = {}) {
+            return await loadData(source, options);
+        }
+        function transformToWaterfallFormatWrapper(data, options = {}) {
+            return transformToWaterfallFormat(data, options);
+        }
+        return {
+            validateData,
+            loadData: loadDataWrapper,
+            transformToWaterfallFormat: transformToWaterfallFormatWrapper,
+            aggregateData,
+            sortData,
+            filterData,
+            getDataSummary,
+            transformData,
+            groupData,
+            transformStacks,
+            normalizeValues,
+            groupByCategory,
+            calculatePercentages,
+            interpolateData,
+            generateSampleData
+        };
+    }
+
+    // MintWaterfall Animation and Transitions System - TypeScript Version
+    // Provides smooth animations and transitions for chart updates with full type safety
+    function createAnimationSystem() {
+        // Advanced transition configuration
+        const transitionConfig = {
+            staggerDelay: 100, // Default stagger delay between elements
+            defaultDuration: 750, // Default animation duration
+            defaultEase: "easeOutQuad"
+        };
+        function createEasingFunctions() {
+            return {
+                linear: (t) => t,
+                easeInQuad: (t) => t * t,
+                easeOutQuad: (t) => t * (2 - t),
+                easeInOutQuad: (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
+                easeInCubic: (t) => t * t * t,
+                easeOutCubic: (t) => (--t) * t * t + 1,
+                easeInOutCubic: (t) => t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1,
+                easeInSine: (t) => 1 - Math.cos(t * Math.PI / 2),
+                easeOutSine: (t) => Math.sin(t * Math.PI / 2),
+                easeInOutSine: (t) => -(Math.cos(Math.PI * t) - 1) / 2,
+                easeInElastic: (t) => {
+                    const c4 = (2 * Math.PI) / 3;
+                    return t === 0 ? 0 : t === 1 ? 1 : -Math.pow(2, 10 * t - 10) * Math.sin((t * 10 - 10.75) * c4);
+                },
+                easeOutElastic: (t) => {
+                    const c4 = (2 * Math.PI) / 3;
+                    return t === 0 ? 0 : t === 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
+                },
+                easeOutBounce: (t) => {
+                    const n1 = 7.5625;
+                    const d1 = 2.75;
+                    if (t < 1 / d1) {
+                        return n1 * t * t;
+                    }
+                    else if (t < 2 / d1) {
+                        return n1 * (t -= 1.5 / d1) * t + 0.75;
+                    }
+                    else if (t < 2.5 / d1) {
+                        return n1 * (t -= 2.25 / d1) * t + 0.9375;
+                    }
+                    else {
+                        return n1 * (t -= 2.625 / d1) * t + 0.984375;
+                    }
+                }
+            };
+        }
+        const easingFunctions = createEasingFunctions();
+        function animateValue(startValue, endValue, duration, easingType = "easeOutQuad", onUpdate, onComplete) {
+            const startTime = performance.now();
+            const valueRange = endValue - startValue;
+            const easing = easingFunctions[easingType] || easingFunctions.easeOutQuad;
+            function frame(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easedProgress = easing(progress);
+                const currentValue = startValue + (valueRange * easedProgress);
+                if (onUpdate) {
+                    onUpdate(currentValue, progress);
+                }
+                if (progress < 1) {
+                    requestAnimationFrame(frame);
+                }
+                else if (onComplete) {
+                    onComplete();
+                }
+            }
+            requestAnimationFrame(frame);
+        }
+        function staggeredAnimation(items, animationFn, staggerDelay = 100, totalDuration = 1000) {
+            if (!Array.isArray(items)) {
+                throw new Error("Items must be an array");
+            }
+            items.forEach((item, index) => {
+                const delay = index * staggerDelay;
+                const adjustedDuration = totalDuration - delay;
+                setTimeout(() => {
+                    if (adjustedDuration > 0) {
+                        animationFn(item, index, adjustedDuration);
+                    }
+                }, delay);
+            });
+        }
+        function morphShape(fromPath, toPath, duration = 1000, easingType = "easeInOutQuad", onUpdate, onComplete) {
+            // Simple path morphing for basic shapes
+            // Note: In a real implementation, you'd want more sophisticated path interpolation
+            if (typeof fromPath !== "string" || typeof toPath !== "string") {
+                throw new Error("Path values must be strings");
+            }
+            const startTime = performance.now();
+            const easing = easingFunctions[easingType] || easingFunctions.easeInOutQuad;
+            function frame(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easedProgress = easing(progress);
+                // Simple interpolation - in production, use a proper path morphing library
+                const interpolatedPath = progress < 0.5 ? fromPath : toPath;
+                if (onUpdate) {
+                    onUpdate(interpolatedPath, easedProgress);
+                }
+                if (progress < 1) {
+                    requestAnimationFrame(frame);
+                }
+                else if (onComplete) {
+                    onComplete();
+                }
+            }
+            requestAnimationFrame(frame);
+        }
+        function fadeTransition(element, fromOpacity, toOpacity, duration = 500, easingType = "easeOutQuad") {
+            return new Promise((resolve) => {
+                animateValue(fromOpacity, toOpacity, duration, easingType, (value) => {
+                    if (element && element.style) {
+                        element.style.opacity = value.toString();
+                    }
+                    else if (element && element.attr) {
+                        // D3 selection
+                        element.attr("opacity", value);
+                    }
+                }, () => resolve());
+            });
+        }
+        function slideTransition(element, fromX, toX, duration = 500, easingType = "easeOutQuad") {
+            return new Promise((resolve) => {
+                animateValue(fromX, toX, duration, easingType, (value) => {
+                    if (element && element.style) {
+                        element.style.transform = `translateX(${value}px)`;
+                    }
+                    else if (element && element.attr) {
+                        // D3 selection
+                        element.attr("transform", `translate(${value}, 0)`);
+                    }
+                }, () => resolve());
+            });
+        }
+        function scaleTransition(element, fromScale, toScale, duration = 500, easingType = "easeOutQuad") {
+            return new Promise((resolve) => {
+                animateValue(fromScale, toScale, duration, easingType, (value) => {
+                    if (element && element.style) {
+                        element.style.transform = `scale(${value})`;
+                    }
+                    else if (element && element.attr) {
+                        // D3 selection
+                        element.attr("transform", `scale(${value})`);
+                    }
+                }, () => resolve());
+            });
+        }
+        function createTransitionSequence() {
+            const sequence = [];
+            let isRunning = false;
+            function add(transitionFn, delay = 0) {
+                sequence.push({ fn: transitionFn, delay });
+                return transitionSequence;
+            }
+            function parallel(...transitionFns) {
+                sequence.push({
+                    fn: () => Promise.all(transitionFns.map(fn => fn())),
+                    delay: 0
+                });
+                return transitionSequence;
+            }
+            async function play() {
+                if (isRunning) {
+                    throw new Error("Sequence is already running");
+                }
+                isRunning = true;
+                try {
+                    for (const step of sequence) {
+                        if (step.delay > 0) {
+                            await new Promise(resolve => setTimeout(resolve, step.delay));
+                        }
+                        await step.fn();
+                    }
+                }
+                finally {
+                    isRunning = false;
+                }
+            }
+            function stop() {
+                isRunning = false;
+                // Note: In a production system, you'd want to cancel running animations
+            }
+            const transitionSequence = {
+                add,
+                parallel,
+                play,
+                stop,
+                get isRunning() { return isRunning; }
+            };
+            return transitionSequence;
+        }
+        function createSpringAnimation(tension = 300, friction = 20) {
+            // Simple spring physics implementation
+            function animate(startValue, endValue, onUpdate, onComplete) {
+                let position = startValue;
+                let velocity = 0;
+                let lastTime = performance.now();
+                function frame(currentTime) {
+                    const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
+                    lastTime = currentTime;
+                    const displacement = position - endValue;
+                    const springForce = -tension * displacement;
+                    const dampingForce = -friction * velocity;
+                    const acceleration = springForce + dampingForce;
+                    velocity += acceleration * deltaTime;
+                    position += velocity * deltaTime;
+                    if (onUpdate) {
+                        onUpdate(position);
+                    }
+                    // Check if animation should continue
+                    const isAtRest = Math.abs(displacement) < 0.01 && Math.abs(velocity) < 0.01;
+                    if (!isAtRest) {
+                        requestAnimationFrame(frame);
+                    }
+                    else if (onComplete) {
+                        onComplete();
+                    }
+                }
+                requestAnimationFrame(frame);
+            }
+            return { animate };
+        }
+        function createAnimationPresets() {
+            return {
+                slideInLeft: (element, duration = 500) => slideTransition(element, -100, 0, duration, "easeOutQuad"),
+                slideInRight: (element, duration = 500) => slideTransition(element, 100, 0, duration, "easeOutQuad"),
+                fadeIn: (element, duration = 500) => fadeTransition(element, 0, 1, duration, "easeOutQuad"),
+                fadeOut: (element, duration = 500) => fadeTransition(element, 1, 0, duration, "easeOutQuad"),
+                scaleIn: (element, duration = 500) => scaleTransition(element, 0, 1, duration, "easeOutElastic"),
+                scaleOut: (element, duration = 500) => scaleTransition(element, 1, 0, duration, "easeInQuad"),
+                pulse: (element, duration = 300) => {
+                    const sequence = createTransitionSequence();
+                    return sequence
+                        .add(() => scaleTransition(element, 1, 1.1, duration / 2, "easeOutQuad"))
+                        .add(() => scaleTransition(element, 1.1, 1, duration / 2, "easeInQuad"))
+                        .play();
+                },
+                bounce: (element, duration = 600) => scaleTransition(element, 0, 1, duration, "easeOutBounce")
+            };
+        }
+        const presets = createAnimationPresets();
+        // Advanced staggered animations
+        function createStaggeredTransition(elements, animationFn, options = {}) {
+            const { delay = transitionConfig.staggerDelay, duration = transitionConfig.defaultDuration, ease = transitionConfig.defaultEase, reverse = false } = options;
+            const elementArray = Array.isArray(elements) ? elements : Array.from(elements);
+            const orderedElements = reverse ? [...elementArray].reverse() : elementArray;
+            return Promise.all(orderedElements.map((element, index) => {
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        animationFn(element, duration, ease).then(resolve);
+                    }, index * delay);
+                });
+            }));
+        }
+        // Custom tweening functions
+        function createCustomTween(startValue, endValue, interpolator) {
+            return function (t) {
+                if (typeof interpolator === "function") {
+                    return interpolator(startValue, endValue, t);
+                }
+                // Default linear interpolation
+                return startValue + (endValue - startValue) * t;
+            };
+        }
+        // Transition event handlers
+        function createTransitionWithEvents(element, config) {
+            const { duration = transitionConfig.defaultDuration, onStart, onEnd, onInterrupt } = config;
+            let isInterrupted = false;
+            const transition = {
+                start() {
+                    if (onStart)
+                        onStart();
+                    return this;
+                },
+                interrupt() {
+                    isInterrupted = true;
+                    if (onInterrupt)
+                        onInterrupt();
+                    return this;
+                },
+                then(callback) {
+                    if (!isInterrupted && onEnd) {
+                        setTimeout(() => {
+                            onEnd();
+                            if (callback)
+                                callback();
+                        }, duration);
+                    }
+                    return this;
+                }
+            };
+            return transition;
+        }
+        const animationSystem = {
+            easingFunctions,
+            animateValue,
+            staggeredAnimation,
+            morphShape,
+            fadeTransition,
+            slideTransition,
+            scaleTransition,
+            createTransitionSequence,
+            createSpringAnimation,
+            createStaggeredTransition,
+            createCustomTween,
+            createTransitionWithEvents,
+            transitionConfig,
+            presets
+        };
+        return animationSystem;
+    }
+
+    // MintWaterfall Theme System - TypeScript Version
+    // Provides predefined themes and color schemes with full type safety
+    const themes = {
+        default: {
+            name: "Default",
+            background: "#ffffff",
+            gridColor: "#e0e0e0",
+            axisColor: "#666666",
+            textColor: "#333333",
+            totalColor: "#95A5A6",
+            colors: ["#3498db", "#2ecc71", "#e74c3c", "#f39c12", "#9b59b6", "#1abc9c", "#e67e22", "#f1c40f"]
+        },
+        dark: {
+            name: "Dark",
+            background: "#2c3e50",
+            gridColor: "#34495e",
+            axisColor: "#bdc3c7",
+            textColor: "#ecf0f1",
+            totalColor: "#95a5a6",
+            colors: ["#3498db", "#2ecc71", "#e74c3c", "#f39c12", "#9b59b6", "#1abc9c", "#e67e22", "#f1c40f"]
+        },
+        corporate: {
+            name: "Corporate",
+            background: "#ffffff",
+            gridColor: "#e8e8e8",
+            axisColor: "#555555",
+            textColor: "#333333",
+            totalColor: "#7f8c8d",
+            colors: ["#2c3e50", "#34495e", "#7f8c8d", "#95a5a6", "#bdc3c7", "#ecf0f1"]
+        },
+        accessible: {
+            name: "Accessible",
+            background: "#ffffff",
+            gridColor: "#cccccc",
+            axisColor: "#000000",
+            textColor: "#000000",
+            totalColor: "#666666",
+            // High contrast, colorblind-friendly palette
+            colors: ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f"]
+        },
+        colorful: {
+            name: "Colorful",
+            background: "#ffffff",
+            gridColor: "#f0f0f0",
+            axisColor: "#666666",
+            textColor: "#333333",
+            totalColor: "#34495e",
+            colors: ["#ff6b6b", "#4ecdc4", "#45b7d1", "#f9ca24", "#f0932b", "#eb4d4b", "#6c5ce7", "#a29bfe"]
+        }
+    };
+    function applyTheme(chart, themeName = "default") {
+        const theme = themes[themeName] || themes.default;
+        // Apply theme colors to chart configuration
+        chart.totalColor(theme.totalColor);
+        return theme;
+    }
+
+    // MintWaterfall - D3.js compatible hierarchical layout system - TypeScript Version
+    // Implements d3.hierarchy, d3.treemap, d3.partition, and other layout algorithms with full type safety
+    /**
+     * Creates a hierarchical layout system for advanced data visualization
+     * @returns {HierarchicalLayout} Layout system API
+     */
+    function createHierarchicalLayout() {
+        let size = [800, 400];
+        let padding = 0;
+        let round = false;
+        let layoutType = "treemap";
+        let paddingInner = 0;
+        let paddingOuter = 0;
+        let paddingTop = 0;
+        let paddingRight = 0;
+        let paddingBottom = 0;
+        let paddingLeft = 0;
+        let ratio = 1.618033988749895; // Golden ratio by default
+        // Additional layout-specific options
+        let partitionOptions = {
+            orientation: "horizontal"
+        };
+        let treeOptions = {
+            nodeSize: null,
+            separation: null
+        };
+        /**
+         * Main layout function that processes hierarchical data
+         * @param {d3.HierarchyNode<any>} data - d3.hierarchy compatible data
+         * @returns {LayoutNode} Processed layout data
+         */
+        function layout(data) {
+            if (!data) {
+                console.error("MintWaterfall: No hierarchical data provided to layout");
+                throw new Error("No hierarchical data provided");
+            }
+            // Ensure we have a d3.hierarchy object with proper sum calculation
+            const root = data;
+            // Apply the selected layout
+            switch (layoutType) {
+                case "treemap":
+                    return applyTreemapLayout(root);
+                case "partition":
+                    return applyPartitionLayout(root);
+                case "pack":
+                    return applyPackLayout(root);
+                case "cluster":
+                    return applyClusterLayout(root);
+                case "tree":
+                    return applyTreeLayout(root);
+                default:
+                    console.warn(`MintWaterfall: Unknown layout type '${layoutType}', falling back to treemap`);
+                    return applyTreemapLayout(root);
+            }
+        }
+        /**
+         * Applies treemap layout to hierarchical data
+         * @param {d3.HierarchyNode<any>} root - d3.hierarchy data
+         * @returns {d3.HierarchyNode<any>} Processed layout data
+         */
+        function applyTreemapLayout(root) {
+            const treemap = d3__namespace.treemap()
+                .size(size)
+                .round(round)
+                .padding(padding);
+            // Apply additional padding options if they exist
+            if (paddingInner !== undefined)
+                treemap.paddingInner(paddingInner);
+            if (paddingOuter !== undefined)
+                treemap.paddingOuter(paddingOuter);
+            if (paddingTop !== undefined)
+                treemap.paddingTop(paddingTop);
+            if (paddingRight !== undefined)
+                treemap.paddingRight(paddingRight);
+            if (paddingBottom !== undefined)
+                treemap.paddingBottom(paddingBottom);
+            if (paddingLeft !== undefined)
+                treemap.paddingLeft(paddingLeft);
+            return treemap(root);
+        }
+        /**
+         * Applies partition layout to hierarchical data
+         * @param {d3.HierarchyNode<any>} root - d3.hierarchy data
+         * @returns {LayoutNode} Processed layout data
+         */
+        function applyPartitionLayout(root) {
+            const partitionLayout = d3__namespace.partition()
+                .size(size)
+                .round(round)
+                .padding(padding);
+            // Apply partition layout
+            const result = partitionLayout(root);
+            // Handle orientation for partition layout
+            if (partitionOptions.orientation === "vertical") {
+                // Swap x/y coordinates and dimensions for vertical orientation
+                result.each((node) => {
+                    if (node.x0 !== undefined && node.y0 !== undefined &&
+                        node.x1 !== undefined && node.y1 !== undefined) {
+                        const temp = node.x0;
+                        node.x0 = node.y0;
+                        node.y0 = temp;
+                        const tempX1 = node.x1;
+                        node.x1 = node.y1;
+                        node.y1 = tempX1;
+                    }
+                });
+            }
+            return result;
+        }
+        /**
+         * Applies pack layout to hierarchical data
+         * @param {d3.HierarchyNode<any>} root - d3.hierarchy data
+         * @returns {LayoutNode} Processed layout data
+         */
+        function applyPackLayout(root) {
+            return d3__namespace.pack()
+                .size(size)
+                .padding(padding)(root);
+        }
+        /**
+         * Applies cluster layout to hierarchical data
+         * @param {d3.HierarchyNode<any>} root - d3.hierarchy data
+         * @returns {LayoutNode} Processed layout data
+         */
+        function applyClusterLayout(root) {
+            const clusterLayout = d3__namespace.cluster()
+                .size(size);
+            if (treeOptions.nodeSize) {
+                clusterLayout.nodeSize(treeOptions.nodeSize);
+            }
+            if (treeOptions.separation) {
+                clusterLayout.separation(treeOptions.separation);
+            }
+            return clusterLayout(root);
+        }
+        /**
+         * Applies tree layout to hierarchical data
+         * @param {d3.HierarchyNode<any>} root - d3.hierarchy data
+         * @returns {LayoutNode} Processed layout data
+         */
+        function applyTreeLayout(root) {
+            const treeLayout = d3__namespace.tree()
+                .size(size);
+            if (treeOptions.nodeSize) {
+                treeLayout.nodeSize(treeOptions.nodeSize);
+            }
+            if (treeOptions.separation) {
+                treeLayout.separation(treeOptions.separation);
+            }
+            return treeLayout(root);
+        }
+        // Create layout object with simple object assignment
+        const hierarchicalLayout = layout;
+        // Add chainable methods
+        hierarchicalLayout.size = function (_) {
+            return arguments.length ? (size = _, hierarchicalLayout) : size;
+        };
+        hierarchicalLayout.padding = function (_) {
+            return arguments.length ? (padding = _, hierarchicalLayout) : padding;
+        };
+        hierarchicalLayout.paddingInner = function (_) {
+            return arguments.length ? (paddingInner = _, hierarchicalLayout) : paddingInner;
+        };
+        hierarchicalLayout.paddingOuter = function (_) {
+            return arguments.length ? (paddingOuter = _, hierarchicalLayout) : paddingOuter;
+        };
+        hierarchicalLayout.paddingTop = function (_) {
+            return arguments.length ? (paddingTop = _, hierarchicalLayout) : paddingTop;
+        };
+        hierarchicalLayout.paddingRight = function (_) {
+            return arguments.length ? (paddingRight = _, hierarchicalLayout) : paddingRight;
+        };
+        hierarchicalLayout.paddingBottom = function (_) {
+            return arguments.length ? (paddingBottom = _, hierarchicalLayout) : paddingBottom;
+        };
+        hierarchicalLayout.paddingLeft = function (_) {
+            return arguments.length ? (paddingLeft = _, hierarchicalLayout) : paddingLeft;
+        };
+        hierarchicalLayout.round = function (_) {
+            return arguments.length ? (round = _, hierarchicalLayout) : round;
+        };
+        hierarchicalLayout.ratio = function (_) {
+            return arguments.length ? (ratio = _, hierarchicalLayout) : ratio;
+        };
+        hierarchicalLayout.type = function (_) {
+            return arguments.length ? (layoutType = _, hierarchicalLayout) : layoutType;
+        };
+        hierarchicalLayout.partitionOrientation = function (_) {
+            return arguments.length ? (partitionOptions.orientation = _, hierarchicalLayout) : partitionOptions.orientation;
+        };
+        hierarchicalLayout.nodeSize = function (_) {
+            return arguments.length ? (treeOptions.nodeSize = _, hierarchicalLayout) : treeOptions.nodeSize;
+        };
+        hierarchicalLayout.separation = function (_) {
+            return arguments.length ? (treeOptions.separation = _, hierarchicalLayout) : treeOptions.separation;
+        };
+        return hierarchicalLayout;
+    }
+
+    const version = "0.8.5";
+    if (typeof window !== "undefined" && window.d3) {
+        window.d3.waterfallChart = waterfallChart;
+    }
+
+    exports.applyTheme = applyTheme;
+    exports.createAccessibilitySystem = createAccessibilitySystem;
+    exports.createAnimationSystem = createAnimationSystem;
+    exports.createBrushSystem = createBrushSystemFactory;
+    exports.createDataProcessor = createDataProcessor;
+    exports.createExportSystem = createExportSystem;
+    exports.createHierarchicalLayout = createHierarchicalLayout;
+    exports.createPerformanceManager = createPerformanceManager;
+    exports.createScaleSystem = createScaleSystem;
+    exports.createTooltipSystem = createTooltipSystem;
+    exports.createZoomSystem = createZoomSystem;
+    exports.default = waterfallChart;
+    exports.themes = themes;
+    exports.version = version;
+    exports.waterfallChart = waterfallChart;
+
+    Object.defineProperty(exports, '__esModule', { value: true });
+
+}));
+//# sourceMappingURL=mintwaterfall.umd.js.map

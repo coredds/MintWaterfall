@@ -27,7 +27,7 @@ __pycache__/
 coverage/
 
 # Build output
-dist/
+# dist/ - Commented out for GitHub Pages deployment
 build/
 
 # Misc
