@@ -1,9 +1,7 @@
 // Tests for Enhanced D3.js Features
 // Tests staggered animations, brush selection, and advanced scales
 
-import { createScaleSystem } from "../mintwaterfall-scales.js";
-import { createBrushSystem } from "../mintwaterfall-brush.js";
-import { createAnimationSystem } from "../mintwaterfall-animations.js";
+import { createScaleSystem, createBrushSystem, createAnimationSystem } from "../dist/mintwaterfall.esm.js";
 
 // Mock D3 for testing
 const d3Mock = require("../tests/__mocks__/d3.js");

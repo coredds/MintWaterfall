@@ -173,12 +173,20 @@ export function transformToWaterfallFormat(
 
 export interface DataProcessor {
     validateData(data: DataItem[]): boolean;
+    loadData(source: string | any[], options?: LoadDataOptions): Promise<DataItem[]>;
+    transformToWaterfallFormat(data: any[], options?: TransformOptions): DataItem[];
     aggregateData(data: DataItem[], aggregateBy?: AggregationType): ProcessedDataItem[];
     sortData(data: DataItem[], sortBy?: SortBy, direction?: SortDirection): DataItem[];
     filterData(data: DataItem[], filterFn: (item: DataItem) => boolean): DataItem[];
     getDataSummary(data: DataItem[]): DataSummary;
     transformData(data: DataItem[], transformFn: (item: DataItem) => DataItem): DataItem[];
     groupData(data: DataItem[], groupBy: string | ((item: DataItem) => string)): Map<string, DataItem[]>;
+    transformStacks(data: DataItem[], transformer: (stack: StackItem) => StackItem): DataItem[];
+    normalizeValues(data: DataItem[], targetMax: number): DataItem[];
+    groupByCategory(data: DataItem[], categoryFunction: (item: DataItem) => string): { [key: string]: DataItem[] };
+    calculatePercentages(data: DataItem[]): DataItem[];
+    interpolateData(data1: DataItem[], data2: DataItem[], t: number): DataItem[];
+    generateSampleData(itemCount: number, stacksPerItem: number, valueRange?: [number, number]): DataItem[];
 }
 
 export interface DataSummary {
@@ -374,14 +382,131 @@ export function createDataProcessor(): DataProcessor {
         return groups;
     }
     
+    function transformStacks(data: DataItem[], transformer: (stack: StackItem) => StackItem): DataItem[] {
+        if (typeof transformer !== 'function') {
+            throw new Error('Transformer must be a function');
+        }
+        
+        return data.map(item => ({
+            ...item,
+            stacks: item.stacks.map(transformer)
+        }));
+    }
+    
+    function normalizeValues(data: DataItem[], targetMax: number): DataItem[] {
+        // Find the maximum absolute value across all stacks
+        let maxValue = 0;
+        data.forEach(item => {
+            item.stacks.forEach(stack => {
+                maxValue = Math.max(maxValue, Math.abs(stack.value));
+            });
+        });
+        
+        if (maxValue === 0) return data;
+        
+        const scaleFactor = targetMax / maxValue;
+        
+        return data.map(item => ({
+            ...item,
+            stacks: item.stacks.map(stack => ({
+                ...stack,
+                originalValue: stack.value,
+                value: stack.value * scaleFactor
+            }))
+        }));
+    }
+    
+    function groupByCategory(data: DataItem[], categoryFunction: (item: DataItem) => string): { [key: string]: DataItem[] } {
+        if (typeof categoryFunction !== 'function') {
+            throw new Error('Category function must be a function');
+        }
+        
+        const groups: { [key: string]: DataItem[] } = {};
+        
+        data.forEach(item => {
+            const category = categoryFunction(item);
+            if (!groups[category]) {
+                groups[category] = [];
+            }
+            groups[category].push(item);
+        });
+        
+        return groups;
+    }
+    
+    function calculatePercentages(data: DataItem[]): DataItem[] {
+        return data.map(item => {
+            const total = item.stacks.reduce((sum, stack) => sum + Math.abs(stack.value), 0);
+            
+            return {
+                ...item,
+                stacks: item.stacks.map(stack => ({
+                    ...stack,
+                    percentage: total === 0 ? 0 : (Math.abs(stack.value) / total) * 100
+                }))
+            };
+        });
+    }
+    
+    function interpolateData(data1: DataItem[], data2: DataItem[], t: number): DataItem[] {
+        if (data1.length !== data2.length) {
+            throw new Error('Data arrays must have the same length');
+        }
+        
+        return data1.map((item1, index) => {
+            const item2 = data2[index];
+            const minStacks = Math.min(item1.stacks.length, item2.stacks.length);
+            
+            return {
+                label: item1.label,
+                stacks: Array.from({ length: minStacks }, (_, i) => ({
+                    value: item1.stacks[i].value + (item2.stacks[i].value - item1.stacks[i].value) * t,
+                    color: item1.stacks[i].color,
+                    label: item1.stacks[i].label
+                }))
+            };
+        });
+    }
+    
+    function generateSampleData(itemCount: number, stacksPerItem: number, valueRange: [number, number] = [10, 100]): DataItem[] {
+        const [minValue, maxValue] = valueRange;
+        const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
+        
+        return Array.from({ length: itemCount }, (_, i) => ({
+            label: `Item ${i + 1}`,
+            stacks: Array.from({ length: stacksPerItem }, (_, j) => ({
+                value: Math.random() * (maxValue - minValue) + minValue,
+                color: colors[j % colors.length],
+                label: `Stack ${j + 1}`
+            }))
+        }));
+    }
+
+    // Internal wrapper functions for the standalone functions
+    async function loadDataWrapper(source: string | any[], options: LoadDataOptions = {}): Promise<DataItem[]> {
+        return await loadData(source, options);
+    }
+    
+    function transformToWaterfallFormatWrapper(data: any[], options: TransformOptions = {}): DataItem[] {
+        return transformToWaterfallFormat(data, options);
+    }
+
     return {
         validateData,
+        loadData: loadDataWrapper,
+        transformToWaterfallFormat: transformToWaterfallFormatWrapper,
         aggregateData,
         sortData,
         filterData,
         getDataSummary,
         transformData,
-        groupData
+        groupData,
+        transformStacks,
+        normalizeValues,
+        groupByCategory,
+        calculatePercentages,
+        interpolateData,
+        generateSampleData
     };
 }
 

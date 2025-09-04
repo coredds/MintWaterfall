@@ -1,7 +1,32 @@
-// MintWaterfall Theme System
-// Provides predefined themes and color schemes
+// MintWaterfall Theme System - TypeScript Version
+// Provides predefined themes and color schemes with full type safety
 
-export const themes = {
+// Type definitions for theme system
+export interface Theme {
+    name: string;
+    background: string;
+    gridColor: string;
+    axisColor: string;
+    textColor: string;
+    totalColor: string;
+    colors: string[];
+}
+
+export interface ThemeCollection {
+    default: Theme;
+    dark: Theme;
+    corporate: Theme;
+    accessible: Theme;
+    colorful: Theme;
+    [key: string]: Theme;
+}
+
+export interface ChartWithTheme {
+    totalColor(color: string): ChartWithTheme;
+    [key: string]: any;
+}
+
+export const themes: ThemeCollection = {
     default: {
         name: "Default",
         background: "#ffffff",
@@ -54,7 +79,7 @@ export const themes = {
     }
 };
 
-export function applyTheme(chart, themeName = "default") {
+export function applyTheme(chart: ChartWithTheme, themeName: keyof ThemeCollection = "default"): Theme {
     const theme = themes[themeName] || themes.default;
     
     // Apply theme colors to chart configuration
@@ -63,7 +88,7 @@ export function applyTheme(chart, themeName = "default") {
     return theme;
 }
 
-export function getThemeColorPalette(themeName = "default") {
+export function getThemeColorPalette(themeName: keyof ThemeCollection = "default"): string[] {
     const theme = themes[themeName] || themes.default;
     return theme.colors;
 }

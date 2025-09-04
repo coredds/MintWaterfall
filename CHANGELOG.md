@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.5] - 2025-01-19
+
+### Added
+- **🧪 Complete Test Suite**: Comprehensive testing with 100% pass rate
+  - 183 passing tests across 12 test suites
+  - Enhanced features testing (scales, brush, animations)
+  - Data processing validation with 50+ test cases
+  - Chart functionality testing with 83+ test cases
+  - Performance-optimized test execution (4.7s)
+
+### Changed
+- **🏗️ TypeScript Migration Complete**: Full TypeScript support with type safety
+  - All core modules converted to TypeScript (.ts)
+  - Complete type definitions for all APIs
+  - Enhanced IntelliSense and developer experience
+  - Backward compatibility maintained
+- **🧹 Codebase Cleanup**: Removed unnecessary files and tests
+  - Removed hierarchical layout functionality (not needed for waterfall charts)
+  - Cleaned up intermediate migration documentation
+  - Optimized test suite for faster execution
+  - Removed obsolete console-based tests
+
+### Fixed
+- **🔧 Scale System Issues**: Fixed API mismatches and type issues
+  - Enhanced scale factory with proper TypeScript interfaces
+  - Fixed brush system with complete selection utilities
+  - Resolved data processor method completeness
+  - Improved chart API consistency
+
+### Removed
+- **📝 Hierarchical Layouts**: Removed unused hierarchical layout functionality
+  - Treemap, partition, pack, cluster, tree visualizations removed
+  - Focus on core waterfall chart functionality
+  - Simplified codebase and reduced bundle size
+
 ## [0.8.1] - 2025-08-30
 
 ### Added

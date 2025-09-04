@@ -26,6 +26,7 @@ export interface BandScaleOptions {
     paddingInner?: number | null;
     paddingOuter?: number | null;
     align?: number;
+    range?: [number, number];
 }
 
 export interface LinearScaleOptions {
@@ -42,11 +43,13 @@ export type DimensionType = 'x' | 'y';
 export interface ScaleFactory {
     createAdaptiveScale(data: any[], dimension?: DimensionType): d3.ScaleLinear<number, number> | d3.ScaleBand<string> | d3.ScaleTime<number, number>;
     createTimeScale(values: Date[], options?: TimeScaleOptions): d3.ScaleTime<number, number>;
-    createOrdinalScale(values: any[], options?: OrdinalScaleOptions): d3.ScaleOrdinal<any, string>;
+    createOrdinalScale(values: any[], options?: OrdinalScaleOptions): d3.ScaleOrdinal<any, string, string>;
     createBandScale(values: any[], options?: BandScaleOptions): d3.ScaleBand<string>;
     createLinearScale(values: number[], options?: LinearScaleOptions): d3.ScaleLinear<number, number>;
+    createLogScale(values: number[], options?: LinearScaleOptions): d3.ScaleLogarithmic<number, number> | d3.ScaleLinear<number, number>;
     setDefaultRange(range: [number, number]): void;
     getScaleInfo(scale: any): ScaleInfo;
+    scaleUtils: ScaleUtilities;
 }
 
 export interface ScaleInfo {
@@ -96,7 +99,7 @@ export function createScaleSystem(): ScaleFactory {
         }
         
         // Auto-detect appropriate time format
-        if (tickFormat === "auto") {
+        if (tickFormat === "auto" && extent[0] && extent[1] && extent[0] instanceof Date && extent[1] instanceof Date) {
             const timeSpan = extent[1].getTime() - extent[0].getTime();
             const days = timeSpan / (1000 * 60 * 60 * 24);
             
@@ -117,7 +120,7 @@ export function createScaleSystem(): ScaleFactory {
     }
     
     // Enhanced ordinal scale with color mapping
-    function createOrdinalScale(values: any[], options: OrdinalScaleOptions = {}): d3.ScaleOrdinal<any, string> {
+    function createOrdinalScale(values: any[], options: OrdinalScaleOptions = {}): d3.ScaleOrdinal<any, string, string> {
         const {
             range = d3.schemeCategory10,
             unknown = "#ccc"
@@ -125,10 +128,10 @@ export function createScaleSystem(): ScaleFactory {
         
         const uniqueValues = [...new Set(values)];
         
-        return d3.scaleOrdinal<any, string, string>()
+        return d3.scaleOrdinal<any, string>()
             .domain(uniqueValues)
             .range(range)
-            .unknown(unknown);
+            .unknown(unknown as string) as d3.ScaleOrdinal<any, string, string>;
     }
     
     // Band scale for categorical data positioning
@@ -137,13 +140,14 @@ export function createScaleSystem(): ScaleFactory {
             padding = 0.1,
             paddingInner = null,
             paddingOuter = null,
-            align = 0.5
+            align = 0.5,
+            range = defaultRange
         } = options;
         
         const uniqueValues = [...new Set(values.map(String))];
         const scale = d3.scaleBand<string>()
             .domain(uniqueValues)
-            .range(defaultRange)
+            .range(range)
             .align(align);
             
         if (paddingInner !== null) {
@@ -209,7 +213,9 @@ export function createScaleSystem(): ScaleFactory {
             if (typeof scale.bandwidth === 'function') {
                 info.type = 'band';
                 info.bandwidth = scale.bandwidth();
-                info.step = scale.step();
+                if (typeof scale.step === 'function') {
+                    info.step = scale.step();
+                }
             } else if (typeof scale.nice === 'function') {
                 // Check if it's a time scale by testing if domain contains dates
                 if (info.domain.length > 0 && info.domain[0] instanceof Date) {
@@ -228,35 +234,80 @@ export function createScaleSystem(): ScaleFactory {
         return info;
     }
     
+    // Log scale with fallback to linear for non-positive values
+    function createLogScale(values: number[], options: LinearScaleOptions = {}): d3.ScaleLogarithmic<number, number> | d3.ScaleLinear<number, number> {
+        // Check if all values are positive for log scale
+        const hasNonPositive = values.some(v => v <= 0);
+        
+        if (hasNonPositive) {
+            // Fallback to linear scale
+            return createLinearScale(values, options);
+        }
+        
+        const {
+            range = defaultRange,
+            nice = true,
+            clamp = false
+        } = options;
+        
+        const domain = d3.extent(values) as [number, number];
+        const scale = d3.scaleLog()
+            .domain(domain)
+            .range(range);
+            
+        if (nice) {
+            scale.nice();
+        }
+        
+        if (clamp) {
+            scale.clamp(true);
+        }
+        
+        return scale;
+    }
+
     return {
         createAdaptiveScale,
         createTimeScale,
         createOrdinalScale,
         createBandScale,
         createLinearScale,
+        createLogScale,
         setDefaultRange,
-        getScaleInfo
+        getScaleInfo,
+        scaleUtils: createScaleUtilities()
     };
 }
 
 // Standalone scale creation functions for backward compatibility
 export function createTimeScale(values: Date[], options: TimeScaleOptions = {}): d3.ScaleTime<number, number> {
     const factory = createScaleSystem();
+    if (options.range) {
+        factory.setDefaultRange(options.range);
+    }
     return factory.createTimeScale(values, options);
 }
 
 export function createOrdinalScale(values: any[], options: OrdinalScaleOptions = {}): d3.ScaleOrdinal<any, string, string> {
     const factory = createScaleSystem();
-    return factory.createOrdinalScale(values, options) as d3.ScaleOrdinal<any, string, string>;
+    const scale = factory.createOrdinalScale(values, options);
+    // Ensure the scale is properly configured and callable
+    return scale as d3.ScaleOrdinal<any, string, string>;
 }
 
 export function createBandScale(values: any[], options: BandScaleOptions = {}): d3.ScaleBand<string> {
     const factory = createScaleSystem();
+    // Set a default range for band scales if not provided
+    const range = options.range || [0, 400];
+    factory.setDefaultRange(range as [number, number]);
     return factory.createBandScale(values, options);
 }
 
 export function createLinearScale(values: number[], options: LinearScaleOptions = {}): d3.ScaleLinear<number, number> {
     const factory = createScaleSystem();
+    if (options.range) {
+        factory.setDefaultRange(options.range);
+    }
     return factory.createLinearScale(values, options);
 }
 
@@ -266,6 +317,8 @@ export interface ScaleUtilities {
     getTickCount(scale: any, targetSize: number): number;
     createColorScale(domain: any[], scheme?: readonly string[]): d3.ScaleOrdinal<any, string, string>;
     invertScale(scale: any, pixel: number): any;
+    detectScaleType(values: any[]): ScaleType;
+    createAxis(scale: any, orientation?: 'top' | 'bottom' | 'left' | 'right'): any;
 }
 
 export function createScaleUtilities(): ScaleUtilities {
@@ -335,11 +388,48 @@ export function createScaleUtilities(): ScaleUtilities {
         }
     }
     
+    function detectScaleType(values: any[]): ScaleType {
+        if (values.every(v => v instanceof Date)) {
+            return 'time';
+        } else if (values.every(v => typeof v === "string" || isNaN(v))) {
+            return 'band';
+        } else if (values.every(v => typeof v === "number")) {
+            return 'linear';
+        } else {
+            return 'adaptive';
+        }
+    }
+    
+    function createAxis(scale: any, orientation: 'top' | 'bottom' | 'left' | 'right' = 'bottom'): any {
+        let axis;
+        
+        switch (orientation) {
+            case 'top':
+                axis = d3.axisTop(scale);
+                break;
+            case 'bottom':
+                axis = d3.axisBottom(scale);
+                break;
+            case 'left':
+                axis = d3.axisLeft(scale);
+                break;
+            case 'right':
+                axis = d3.axisRight(scale);
+                break;
+            default:
+                axis = d3.axisBottom(scale);
+        }
+        
+        return axis;
+    }
+
     return {
         formatTickValue,
         getTickCount,
         createColorScale,
-        invertScale
+        invertScale,
+        detectScaleType,
+        createAxis
     };
 }
 

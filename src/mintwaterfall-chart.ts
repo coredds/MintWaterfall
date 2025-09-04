@@ -6,12 +6,12 @@ import * as d3 from 'd3';
 import { DataItem, StackItem, ProcessedDataItem, dataProcessor, createDataProcessor } from './mintwaterfall-data.js';
 import { createScaleSystem, createTimeScale, createOrdinalScale } from './mintwaterfall-scales.js';
 // Import JavaScript modules for remaining components during gradual migration
-import { createBrushSystem } from "../mintwaterfall-brush.js";
-import { createAccessibilitySystem } from "../mintwaterfall-accessibility.js";
-import { createTooltipSystem } from "../mintwaterfall-tooltip.js";
-import { createExportSystem } from "../mintwaterfall-export.js";
-import { createZoomSystem } from "../mintwaterfall-zoom.js";
-import { createPerformanceManager } from "../mintwaterfall-performance.js";
+import { createBrushSystem } from "./mintwaterfall-brush.js";
+import { createAccessibilitySystem } from "./mintwaterfall-accessibility.js";
+import { createTooltipSystem } from "./mintwaterfall-tooltip.js";
+import { createExportSystem } from "./mintwaterfall-export.js";
+import { createZoomSystem } from "./mintwaterfall-zoom.js";
+import { createPerformanceManager } from "./mintwaterfall-performance.js";
 
 // Type definitions
 export interface StackData {
@@ -155,6 +155,12 @@ export interface WaterfallChart {
     trendLineType(): string;
     trendLineType(value: string): WaterfallChart;
     
+    trendLineWindow(): number;
+    trendLineWindow(value: number): WaterfallChart;
+    
+    trendLineDegree(): number;
+    trendLineDegree(value: number): WaterfallChart;
+    
     // Accessibility and UX features
     enableAccessibility(): boolean;
     enableAccessibility(value: boolean): WaterfallChart;
@@ -194,6 +200,9 @@ export interface WaterfallChart {
     // Event handling
     on(event: string, handler: BarEventHandler | null): WaterfallChart;
     
+    // Internal system instances
+    zoomSystemInstance?: any;
+    
     // Rendering
     (selection: d3.Selection<any, any, any, any>): void;
 }
@@ -201,13 +210,17 @@ export interface WaterfallChart {
 // Utility function to get bar width from any scale type
 function getBarWidth(scale: any, barCount: number, totalWidth: number): number {
     if (scale.bandwidth) {
-        // Band scale has bandwidth method
-        return scale.bandwidth();
+        // Band scale has bandwidth method - use it directly
+        const bandwidth = scale.bandwidth();
+        console.log('Using band scale bandwidth:', bandwidth);
+        return bandwidth;
     } else {
         // For continuous scales, calculate width based on bar count
         const padding = 0.1;
         const availableWidth = totalWidth * (1 - padding);
-        return availableWidth / barCount;
+        const calculatedWidth = availableWidth / barCount;
+        console.log('Calculated width for continuous scale:', calculatedWidth);
+        return calculatedWidth;
     }
 }
 
@@ -230,7 +243,7 @@ export function waterfallChart(): WaterfallChart {
     let totalLabel: string = "Total";
     let totalColor: string = "#95A5A6";
     let stacked: boolean = true;
-    let barPadding: number = 0.1;
+    let barPadding: number = 0.05;
     let duration: number = 750;
     let ease: (t: number) => number = d3.easeQuadInOut;
     let formatNumber: (n: number) => string = d3.format(".0f");
@@ -250,6 +263,8 @@ export function waterfallChart(): WaterfallChart {
     let trendLineStyle: string = "solid"; // 'solid', 'dashed', 'dotted'
     let trendLineOpacity: number = 0.8;
     let trendLineType: string = "linear"; // 'linear', 'moving-average', 'polynomial'
+    let trendLineWindow: number = 3; // Moving average window size
+    let trendLineDegree: number = 2; // Polynomial degree
     
     // Accessibility and UX features
     let enableAccessibility: boolean = true;
@@ -315,6 +330,18 @@ export function waterfallChart(): WaterfallChart {
             }
 
             const svg = d3.select(this);
+            
+            // Get actual SVG dimensions
+            const svgNode = svg.node() as SVGSVGElement;
+            if (svgNode) {
+                const svgWidth = svgNode.getAttribute('width');
+                const svgHeight = svgNode.getAttribute('height');
+                if (svgWidth) width = parseInt(svgWidth, 10);
+                if (svgHeight) height = parseInt(svgHeight, 10);
+            }
+            
+            console.log('Chart dimensions:', { width, height });
+            
             const container = svg.selectAll<SVGGElement, ChartData[]>(".waterfall-container").data([data]);
             
             // Store reference for zoom system
@@ -328,11 +355,21 @@ export function waterfallChart(): WaterfallChart {
             const containerUpdate = containerEnter.merge(container);
             
             // Create chart group for zoom transforms
-            let chartGroup = containerUpdate.select(".chart-group");
+            let chartGroup: d3.Selection<SVGGElement, ChartData[], any, unknown> = containerUpdate.select(".chart-group");
             if (chartGroup.empty()) {
-                chartGroup = containerUpdate.append("g")
-                    .attr("class", "chart-group");
+                chartGroup = containerUpdate.append<SVGGElement>("g")
+                    .attr("class", "chart-group") as d3.Selection<SVGGElement, ChartData[], any, unknown>;
             }
+
+            // Add clipping path to prevent overflow - this will be set after margins are calculated
+            const clipPathId = `chart-clip-${Date.now()}`;
+            svg.select(`#${clipPathId}`).remove(); // Remove existing if any
+            const clipPath = svg.append("defs")
+                .append("clipPath")
+                .attr("id", clipPathId)
+                .append("rect");
+                
+            chartGroup.attr("clip-path", `url(#${clipPathId})`);
 
             try {
                 // Enable performance optimization for large datasets
@@ -396,8 +433,34 @@ export function waterfallChart(): WaterfallChart {
                         .padding(barPadding);
                 }
                 
-                // Set range for x scale using intelligent margins
+                // CRITICAL: Set range for x scale using intelligent margins - this must happen after scale creation
                 xScale.range([intelligentMargins.left, width - intelligentMargins.right]);
+                
+                // Ensure the scale system uses the correct default range for future scales
+                scaleSystem.setDefaultRange([intelligentMargins.left, width - intelligentMargins.right]);
+                
+                // Update clipping path with proper chart area dimensions
+                // IMPORTANT: Extend clipping area to include space for labels above bars
+                const labelSpace = 30; // Extra space for labels above the chart area
+                clipPath
+                    .attr("x", intelligentMargins.left)
+                    .attr("y", Math.max(0, intelligentMargins.top - labelSpace)) // Extend upward for labels
+                    .attr("width", width - intelligentMargins.left - intelligentMargins.right)
+                    .attr("height", height - intelligentMargins.top - intelligentMargins.bottom + labelSpace);
+                
+                console.log('🔧 Clipping path set:', {
+                    x: intelligentMargins.left,
+                    y: Math.max(0, intelligentMargins.top - labelSpace),
+                    width: width - intelligentMargins.left - intelligentMargins.right,
+                    height: height - intelligentMargins.top - intelligentMargins.bottom + labelSpace
+                });
+                
+                console.log('Scale setup:', {
+                    domain: xScale.domain(),
+                    range: xScale.range(),
+                    intelligentMargins,
+                    bandwidth: xScale.bandwidth ? xScale.bandwidth() : 'N/A'
+                });
 
                 // Enhanced Y scale using d3.extent and nice()
                 const yValues = processedData.map(d => d.cumulativeTotal);
@@ -418,9 +481,7 @@ export function waterfallChart(): WaterfallChart {
                     // For positive-only data, start at 0
                     yScale = scaleSystem.createLinearScale(yValues, {
                         range: [height - intelligentMargins.bottom, intelligentMargins.top],
-                        nice: true,
-                        padding: 0.02,
-                        includeZero: true
+                        nice: true
                     });
                 }
 
@@ -436,10 +497,8 @@ export function waterfallChart(): WaterfallChart {
                 // Create/update connectors (in chart group for zoom)
                 drawConnectors(chartGroup, processedData, xScale, yScale);
                 
-                // Create/update trend line if enabled (in chart group for zoom)
-                if (showTrendLine) {
-                    drawTrendLine(chartGroup, processedData, xScale, yScale);
-                }
+                // Create/update trend line (handles both show and hide cases)
+                drawTrendLine(chartGroup, processedData, xScale, yScale);
                 
                 // Add brush functionality if enabled
                 if (enableBrush) {
@@ -461,11 +520,21 @@ export function waterfallChart(): WaterfallChart {
                     }
                     
                     if (enableZoom) {
-                        initializeZoom(svgContainer, { width, height, margin: intelligentMargins });
+                        // Initialize zoom system if not already created
+                        if (!(chart as any).zoomSystemInstance) {
+                            (chart as any).zoomSystemInstance = createZoomSystem();
+                        }
+                        
+                        // Attach zoom to the SVG container
+                        (chart as any).zoomSystemInstance.attach(svgContainer);
+                        (chart as any).zoomSystemInstance.setDimensions({ width, height, margin: intelligentMargins });
+                        (chart as any).zoomSystemInstance.enable();
                     } else {
                         // Disable zoom if it was previously enabled
-                        zoomSystem.enabled(false);
-                        svgContainer.on(".zoom", null);
+                        if ((chart as any).zoomSystemInstance) {
+                            (chart as any).zoomSystemInstance.disable();
+                            (chart as any).zoomSystemInstance.detach();
+                        }
                     }
                 }, 50); // Small delay to ensure DOM is ready
                 
@@ -492,18 +561,21 @@ export function waterfallChart(): WaterfallChart {
         const maxValue = d3.max(allValues) || 0;
         const minValue = d3.min(allValues) || 0;
         
-        // Estimate label dimensions
-        const labelHeight = 14;
-        const labelPadding = 5;
+        // Estimate label dimensions - be more generous with space
+        const labelHeight = 16; // Increased from 14 to account for font size
+        const labelPadding = 8; // Increased from 5 for better spacing
         const requiredLabelSpace = labelHeight + labelPadding;
-        const safetyBuffer = 10;
+        const safetyBuffer = 20; // Increased from 10 for more breathing room
         
         // Handle edge cases for different data scenarios
         const hasNegativeValues = minValue < 0;
         
+        // Start with a more generous top margin to ensure labels fit
+        const initialTopMargin = Math.max(baseMargin.top, 80); // Ensure minimum 80px for labels
+        
         // Create temporary scale that matches the actual rendering logic
         let tempYScale: any;
-        const tempRange: [number, number] = [height - baseMargin.bottom, baseMargin.top];
+        const tempRange: [number, number] = [height - baseMargin.bottom, initialTopMargin];
         
         if (hasNegativeValues) {
             // Match the actual scale logic for negative values
@@ -529,9 +601,12 @@ export function waterfallChart(): WaterfallChart {
         
         const highestLabelPosition = Math.min(...allLabelPositions);
         
-        // Calculate required top margin
-        const spaceNeededFromTop = baseMargin.top - highestLabelPosition + requiredLabelSpace;
-        const extraTopMarginNeeded = Math.max(0, spaceNeededFromTop);
+        // Calculate required top margin - ensure labels have enough space above them
+        const spaceNeededFromTop = Math.max(
+            initialTopMargin - highestLabelPosition + requiredLabelSpace,
+            requiredLabelSpace + safetyBuffer // Minimum space needed
+        );
+        const extraTopMarginNeeded = Math.max(0, spaceNeededFromTop - initialTopMargin);
         
         // For negative values, we might also need bottom space
         let extraBottomMargin = 0;
@@ -552,15 +627,23 @@ export function waterfallChart(): WaterfallChart {
         const maxLabelLength = Math.max(...processedData.map(d => 
             formatNumber(d.cumulativeTotal).length
         ));
-        const estimatedLabelWidth = maxLabelLength * 8; // Rough estimate: 8px per character
-        const minRightMargin = Math.max(baseMargin.right, estimatedLabelWidth / 2 + 10);
+        const estimatedLabelWidth = maxLabelLength * 9; // Increased from 8 to 9px per character
+        const minRightMargin = Math.max(baseMargin.right, estimatedLabelWidth / 2 + 15);
         
         const intelligentMargin: MarginConfig = {
-            top: baseMargin.top + extraTopMarginNeeded + safetyBuffer,
+            top: initialTopMargin + extraTopMarginNeeded + safetyBuffer,
             right: minRightMargin,
-            bottom: baseMargin.bottom + extraBottomMargin + (hasNegativeValues ? safetyBuffer : 5),
+            bottom: baseMargin.bottom + extraBottomMargin + (hasNegativeValues ? safetyBuffer : 10),
             left: baseMargin.left
         };
+        
+        console.log('🔧 Intelligent margins calculated:', {
+            original: baseMargin,
+            calculated: intelligentMargin,
+            highestLabelPosition,
+            spaceNeededFromTop,
+            extraTopMarginNeeded
+        });
         
         return intelligentMargin;
     }
@@ -626,144 +709,868 @@ export function waterfallChart(): WaterfallChart {
     }
 
     function drawGrid(container: any, yScale: any, intelligentMargins: MarginConfig): void {
-        // Implementation would be migrated from JavaScript version
+        // Create horizontal grid lines
+        const gridGroup = container.selectAll(".grid-group").data([0]);
+        const gridGroupEnter = gridGroup.enter()
+            .append("g")
+            .attr("class", "grid-group");
+        const gridGroupUpdate = gridGroupEnter.merge(gridGroup);
+
+        // Get tick values from y scale
+        const tickValues = yScale.ticks();
+        
+        // Create grid lines
+        const gridLines = gridGroupUpdate.selectAll(".grid-line").data(tickValues);
+        
+        const gridLinesEnter = gridLines.enter()
+            .append("line")
+            .attr("class", "grid-line")
+            .attr("x1", intelligentMargins.left)
+            .attr("x2", width - intelligentMargins.right)
+            .attr("stroke", "rgba(224, 224, 224, 0.5)")
+            .attr("stroke-width", 1)
+            .style("opacity", 0);
+
+        gridLinesEnter.merge(gridLines)
+            .transition()
+            .duration(duration)
+            .ease(ease)
+            .attr("y1", (d: any) => yScale(d))
+            .attr("y2", (d: any) => yScale(d))
+            .attr("x1", intelligentMargins.left)
+            .attr("x2", width - intelligentMargins.right)
+            .style("opacity", 1);
+
+        gridLines.exit()
+            .transition()
+            .duration(duration)
+            .ease(ease)
+            .style("opacity", 0)
+            .remove();
     }
 
     function drawAxes(container: any, xScale: any, yScale: any, intelligentMargins: MarginConfig): void {
-        // Implementation would be migrated from JavaScript version
+        // Y-axis
+        const yAxisGroup = container.selectAll(".y-axis").data([0]);
+        const yAxisGroupEnter = yAxisGroup.enter()
+            .append("g")
+            .attr("class", "y-axis")
+            .attr("transform", `translate(${intelligentMargins.left},0)`);
+        
+        yAxisGroupEnter.merge(yAxisGroup)
+            .transition()
+            .duration(duration)
+            .ease(ease)
+            .call(d3.axisLeft(yScale).tickFormat((d: any) => formatNumber(d as number)));
+
+        // X-axis
+        const xAxisGroup = container.selectAll(".x-axis").data([0]);
+        const xAxisGroupEnter = xAxisGroup.enter()
+            .append("g")
+            .attr("class", "x-axis")
+            .attr("transform", `translate(0,${height - intelligentMargins.bottom})`);
+        
+        xAxisGroupEnter.merge(xAxisGroup)
+            .transition()
+            .duration(duration)
+            .ease(ease)
+            .call(d3.axisBottom(xScale));
     }
 
     function drawBars(container: any, processedData: ProcessedData[], xScale: any, yScale: any, intelligentMargins: MarginConfig): void {
-        // Implementation would be migrated from JavaScript version
+        const barsGroup = container.selectAll(".bars-group").data([0]);
+        const barsGroupEnter = barsGroup.enter()
+            .append("g")
+            .attr("class", "bars-group");
+        const barsGroupUpdate = barsGroupEnter.merge(barsGroup);
+
+        // Bar groups for each data point
+        const barGroups = barsGroupUpdate.selectAll(".bar-group").data(processedData, (d: any) => d.label);
+        
+        // For band scales, we don't need manual positioning - the scale handles it
+        const barGroupsEnter = barGroups.enter()
+            .append("g")
+            .attr("class", "bar-group")
+            .attr("transform", (d: any) => {
+                if (xScale.bandwidth) {
+                    // Band scale - use the scale directly
+                    return `translate(${xScale(d.label)}, 0)`;
+                } else {
+                    // Continuous scale - manual positioning using intelligent margins
+                    const barWidth = getBarWidth(xScale, processedData.length, width - intelligentMargins.left - intelligentMargins.right);
+                    const barX = getBarPosition(xScale, d.label, barWidth);
+                    return `translate(${barX}, 0)`;
+                }
+            });
+
+        const barGroupsUpdate = barGroupsEnter.merge(barGroups)
+            .transition()
+            .duration(duration)
+            .ease(ease)
+            .attr("transform", (d: any) => {
+                if (xScale.bandwidth) {
+                    // Band scale - use the scale directly
+                    return `translate(${xScale(d.label)}, 0)`;
+                } else {
+                    // Continuous scale - manual positioning using intelligent margins
+                    const barWidth = getBarWidth(xScale, processedData.length, width - intelligentMargins.left - intelligentMargins.right);
+                    const barX = getBarPosition(xScale, d.label, barWidth);
+                    return `translate(${barX}, 0)`;
+                }
+            });
+
+        if (stacked) {
+            drawStackedBars(barGroupsUpdate, xScale, yScale, intelligentMargins);
+        } else {
+            drawWaterfallBars(barGroupsUpdate, xScale, yScale, intelligentMargins);
+        }
+
+        // Add value labels
+        drawValueLabels(barGroupsUpdate, xScale, yScale, intelligentMargins);
+
+        barGroups.exit()
+            .transition()
+            .duration(duration)
+            .ease(ease)
+            .style("opacity", 0)
+            .remove();
+    }
+
+    function drawStackedBars(barGroups: any, xScale: any, yScale: any, intelligentMargins: MarginConfig): void {
+        barGroups.each(function(this: SVGGElement, d: any) {
+            const group = d3.select(this);
+            const stackData = d.stacks.map((stack: any, i: number) => ({
+                ...stack,
+                stackIndex: i,
+                parent: d
+            }));
+
+            // Calculate stack positions
+            let cumulativeHeight = d.prevCumulativeTotal || 0;
+            stackData.forEach((stack: any) => {
+                stack.startY = cumulativeHeight;
+                stack.endY = cumulativeHeight + stack.value;
+                stack.y = yScale(Math.max(stack.startY, stack.endY));
+                stack.height = Math.abs(yScale(stack.startY) - yScale(stack.endY));
+                cumulativeHeight += stack.value;
+            });
+
+            const stacks = group.selectAll(".stack").data(stackData);
+            
+            // Get bar width - use scale bandwidth if available, otherwise calculate using intelligent margins
+            const barWidth = xScale.bandwidth ? xScale.bandwidth() : getBarWidth(xScale, barGroups.size(), width - intelligentMargins.left - intelligentMargins.right);
+            
+            const stacksEnter = stacks.enter()
+                .append("rect")
+                .attr("class", "stack")
+                .attr("x", 0)
+                .attr("width", barWidth)
+                .attr("y", yScale(0))
+                .attr("height", 0)
+                .attr("fill", (stack: any) => stack.color);
+
+            (stacksEnter as any).merge(stacks)
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .attr("y", (stack: any) => stack.y)
+                .attr("height", (stack: any) => stack.height)
+                .attr("fill", (stack: any) => stack.color)
+                .attr("width", barWidth);
+
+            stacks.exit()
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .attr("height", 0)
+                .attr("y", yScale(0))
+                .remove();
+
+            // Add stack labels if they exist
+            const stackLabels = group.selectAll(".stack-label").data(stackData.filter((s: any) => s.label));
+            
+            const stackLabelsEnter = stackLabels.enter()
+                .append("text")
+                .attr("class", "stack-label")
+                .attr("text-anchor", "middle")
+                .attr("x", barWidth / 2)
+                .attr("y", yScale(0))
+                .style("opacity", 0);
+
+            (stackLabelsEnter as any).merge(stackLabels)
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .attr("y", (stack: any) => stack.y + stack.height / 2 + 4)
+                .attr("x", barWidth / 2)
+                .style("opacity", 1)
+                .text((stack: any) => stack.label);
+
+            stackLabels.exit()
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .style("opacity", 0)
+                .remove();
+        });
+    }
+
+    function drawWaterfallBars(barGroups: any, xScale: any, yScale: any, intelligentMargins: MarginConfig): void {
+        barGroups.each(function(this: SVGGElement, d: any) {
+            const group = d3.select(this);
+            
+            // Get bar width - use scale bandwidth if available, otherwise calculate using intelligent margins
+            const barWidth = xScale.bandwidth ? xScale.bandwidth() : getBarWidth(xScale, barGroups.size(), width - intelligentMargins.left - intelligentMargins.right);
+            
+            const barData = [{
+                value: d.barTotal,
+                color: d.stacks.length === 1 ? d.stacks[0].color : "#3498db", // Default blue if multiple stacks
+                y: d.isTotal ? 
+                    Math.min(yScale(0), yScale(d.cumulativeTotal)) : // Total bar: position correctly regardless of scale direction
+                    yScale(Math.max(d.prevCumulativeTotal, d.cumulativeTotal)),
+                height: d.isTotal ? 
+                    Math.abs(yScale(0) - yScale(d.cumulativeTotal)) : // Total bar: full height from zero to total
+                    Math.abs(yScale(d.prevCumulativeTotal || 0) - yScale(d.cumulativeTotal)),
+                parent: d
+            }];
+
+            const bars = group.selectAll(".waterfall-bar").data(barData);
+            
+            const barsEnter = bars.enter()
+                .append("rect")
+                .attr("class", "waterfall-bar")
+                .attr("x", 0)
+                .attr("width", barWidth)
+                .attr("y", yScale(0))
+                .attr("height", 0)
+                .attr("fill", (bar: any) => bar.color);
+
+            (barsEnter as any).merge(bars)
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .attr("y", (bar: any) => bar.y)
+                .attr("height", (bar: any) => bar.height)
+                .attr("fill", (bar: any) => bar.color)
+                .attr("width", barWidth);
+
+            bars.exit()
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .attr("height", 0)
+                .attr("y", yScale(0))
+                .remove();
+        });
+    }
+
+    function drawValueLabels(barGroups: any, xScale: any, yScale: any, intelligentMargins: MarginConfig): void {
+        // Always show value labels on bars - this is independent of the total bar setting
+        console.log('🏷️ Drawing value labels, barGroups size:', barGroups.size());
+
+        barGroups.each(function(this: SVGGElement, d: any) {
+            const group = d3.select(this);
+            const barWidth = getBarWidth(xScale, barGroups.size(), width - intelligentMargins.left - intelligentMargins.right);
+            
+            console.log('🏷️ Processing label for:', d.label, 'barTotal:', d.barTotal, 'cumulativeTotal:', d.cumulativeTotal);
+            
+            const labelData = [{
+                value: d.barTotal,
+                formattedValue: formatNumber(d.barTotal),
+                parent: d
+            }];
+
+            const totalLabels = group.selectAll(".total-label").data(labelData);
+            
+            const totalLabelsEnter = totalLabels.enter()
+                .append("text")
+                .attr("class", "total-label")
+                .attr("text-anchor", "middle")
+                .attr("x", barWidth / 2)
+                .attr("y", yScale(0))
+                .style("opacity", 0)
+                .style("font-family", "Arial, sans-serif"); // Ensure font is set
+
+            const labelUpdate = (totalLabelsEnter as any).merge(totalLabels);
+            
+            labelUpdate
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .attr("y", (labelD: any) => {
+                    const barTop = yScale(labelD.parent.cumulativeTotal);
+                    const padding = 8;
+                    const finalY = barTop - padding;
+                    
+                    console.log('🏷️ Label positioning:', {
+                        label: labelD.parent.label,
+                        cumulativeTotal: labelD.parent.cumulativeTotal,
+                        barTop: barTop,
+                        finalY: finalY,
+                        formattedValue: labelD.formattedValue
+                    });
+                    
+                    return finalY;
+                })
+                .attr("x", barWidth / 2)
+                .style("opacity", 1)
+                .style("fill", "#333")
+                .style("font-weight", "bold")
+                .style("font-size", "14px")
+                .style("pointer-events", "none")
+                .style("visibility", "visible") // Ensure visibility
+                .style("display", "block") // Ensure display
+                .attr("clip-path", "none") // Remove any clipping from labels themselves
+                .text((labelD: any) => labelD.formattedValue)
+                .each(function(this: SVGTextElement, labelD: any) {
+                    // Debug: Log each created label element
+                    const element = d3.select(this);
+                    console.log('🏷️ Label element created:', {
+                        text: labelD.formattedValue,
+                        x: element.attr("x"),
+                        y: element.attr("y"),
+                        opacity: element.style("opacity"),
+                        fill: element.style("fill"),
+                        fontSize: element.style("font-size"),
+                        element: this
+                    });
+                });
+
+            totalLabels.exit()
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .style("opacity", 0)
+                .remove();
+        });
     }
 
     function drawConnectors(container: any, processedData: ProcessedData[], xScale: any, yScale: any): void {
-        // Implementation would be migrated from JavaScript version
+        if (stacked || processedData.length < 2) return; // Only show connectors for waterfall charts
+
+        const connectorsGroup = container.selectAll(".connectors-group").data([0]);
+        const connectorsGroupEnter = connectorsGroup.enter()
+            .append("g")
+            .attr("class", "connectors-group");
+        const connectorsGroupUpdate = connectorsGroupEnter.merge(connectorsGroup);
+
+        // Create connector data
+        const connectorData: any[] = [];
+        for (let i = 0; i < processedData.length - 1; i++) {
+            const current = processedData[i];
+            const next = processedData[i + 1];
+            
+            const barWidth = getBarWidth(xScale, processedData.length, width - margin.left - margin.right);
+            const currentX = getBarPosition(xScale, current.label, barWidth);
+            const nextX = getBarPosition(xScale, next.label, barWidth);
+            
+            connectorData.push({
+                x1: currentX + barWidth,
+                x2: nextX,
+                y: yScale(current.cumulativeTotal),
+                id: `${current.label}-${next.label}`
+            });
+        }
+
+        // Create/update connector lines
+        const connectors = connectorsGroupUpdate.selectAll(".connector").data(connectorData, (d: any) => d.id);
+        
+        const connectorsEnter = connectors.enter()
+            .append("line")
+            .attr("class", "connector")
+            .attr("stroke", "#bdc3c7")
+            .attr("stroke-width", 1)
+            .attr("stroke-dasharray", "3,3")
+            .style("opacity", 0)
+            .attr("x1", (d: any) => d.x1)
+            .attr("x2", (d: any) => d.x1)
+            .attr("y1", (d: any) => d.y)
+            .attr("y2", (d: any) => d.y);
+
+        connectorsEnter.merge(connectors)
+            .transition()
+            .duration(duration)
+            .ease(ease)
+            .delay((d: any, i: number) => staggeredAnimations ? i * staggerDelay : 0)
+            .attr("x1", (d: any) => d.x1)
+            .attr("x2", (d: any) => d.x2)
+            .attr("y1", (d: any) => d.y)
+            .attr("y2", (d: any) => d.y)
+            .style("opacity", 0.6);
+
+        connectors.exit()
+            .transition()
+            .duration(duration)
+            .ease(ease)
+            .style("opacity", 0)
+            .remove();
     }
 
     function drawTrendLine(container: any, processedData: ProcessedData[], xScale: any, yScale: any): void {
-        // Implementation would be migrated from JavaScript version
+        // Remove trend line if disabled or insufficient data
+        if (!showTrendLine || processedData.length < 2) {
+            container.selectAll(".trend-group").remove();
+            return;
+        }
+
+        const trendGroup = container.selectAll(".trend-group").data([0]);
+        const trendGroupEnter = trendGroup.enter()
+            .append("g")
+            .attr("class", "trend-group");
+        const trendGroupUpdate = trendGroupEnter.merge(trendGroup);
+
+        // Calculate trend line data points based on trend type
+        const trendData: { x: number; y: number }[] = [];
+        
+        // First, collect the actual data points
+        const dataPoints: { x: number; y: number; value: number }[] = [];
+        for (let i = 0; i < processedData.length; i++) {
+            const item = processedData[i];
+            const barWidth = getBarWidth(xScale, processedData.length, width - margin.left - margin.right);
+            const x = getBarPosition(xScale, item.label, barWidth) + barWidth / 2;
+            const actualY = yScale(item.cumulativeTotal);
+            dataPoints.push({ x, y: actualY, value: item.cumulativeTotal });
+        }
+        
+        // Calculate trend based on type
+        if (trendLineType === "linear") {
+            // Linear regression
+            const n = dataPoints.length;
+            const sumX = dataPoints.reduce((sum, p, i) => sum + i, 0);
+            const sumY = dataPoints.reduce((sum, p) => sum + p.value, 0);
+            const sumXY = dataPoints.reduce((sum, p, i) => sum + (i * p.value), 0);
+            const sumXX = dataPoints.reduce((sum, p, i) => sum + (i * i), 0);
+            
+            const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+            
+            dataPoints.forEach((point, i) => {
+                const trendValue = slope * i + intercept;
+                trendData.push({ x: point.x, y: yScale(trendValue) });
+            });
+        } else if (trendLineType === "moving-average") {
+            // Moving average with configurable window
+            const window = trendLineWindow;
+            for (let i = 0; i < dataPoints.length; i++) {
+                const start = Math.max(0, i - Math.floor(window / 2));
+                const end = Math.min(dataPoints.length, start + window);
+                const windowData = dataPoints.slice(start, end);
+                const average = windowData.reduce((sum, p) => sum + p.value, 0) / windowData.length;
+                trendData.push({ x: dataPoints[i].x, y: yScale(average) });
+            }
+        } else if (trendLineType === "polynomial") {
+            // Simplified polynomial trend using D3's curve interpolation
+            const n = dataPoints.length;
+            
+            if (n >= 3) {
+                // Use a simple approach: create a smooth curve using D3's cardinal interpolation
+                // and add some curvature based on the degree setting
+                const curvature = trendLineDegree / 10; // Convert degree to curvature factor
+                
+                // Create control points for polynomial-like curve
+                for (let i = 0; i < n; i++) {
+                    const point = dataPoints[i];
+                    let adjustedY = point.value;
+                    
+                    // Add polynomial-like adjustment based on position
+                    if (n > 2) {
+                        const t = i / (n - 1); // Normalize position 0-1
+                        const mid = 0.5;
+                        
+                        // Create a curved adjustment based on distance from middle
+                        const distFromMid = Math.abs(t - mid);
+                        const curveFactor = Math.sin(t * Math.PI) * curvature;
+                        
+                        // Apply curve adjustment to create polynomial-like behavior
+                        const avgValue = dataPoints.reduce((sum, p) => sum + p.value, 0) / n;
+                        adjustedY = point.value + (point.value - avgValue) * curveFactor * 0.5;
+                    }
+                    
+                    trendData.push({ x: point.x, y: yScale(adjustedY) });
+                }
+            } else {
+                // Not enough points for polynomial, use linear
+                dataPoints.forEach(point => {
+                    trendData.push({ x: point.x, y: point.y });
+                });
+            }
+        } else {
+            // Default to connecting actual points
+            dataPoints.forEach(point => {
+                trendData.push({ x: point.x, y: point.y });
+            });
+        }
+
+        // Create line generator with appropriate curve type
+        const line = d3.line<{ x: number; y: number }>()
+            .x(d => d.x)
+            .y(d => d.y)
+            .curve(trendLineType === "polynomial" ? d3.curveCardinal : 
+                   trendLineType === "moving-average" ? d3.curveMonotoneX : 
+                   d3.curveLinear);
+
+        // Create/update trend line
+        const trendLine = trendGroupUpdate.selectAll(".trend-line").data([trendData]);
+        
+        const trendLineEnter = trendLine.enter()
+            .append("path")
+            .attr("class", "trend-line")
+            .attr("fill", "none")
+            .attr("stroke", trendLineColor)
+            .attr("stroke-width", trendLineWidth)
+            .attr("stroke-opacity", trendLineOpacity)
+            .style("opacity", 0);
+
+        // Apply stroke-dasharray based on style
+        function applyStrokeStyle(selection: any) {
+            if (trendLineStyle === "dashed") {
+                selection.attr("stroke-dasharray", "5,5");
+            } else if (trendLineStyle === "dotted") {
+                selection.attr("stroke-dasharray", "2,3");
+            } else {
+                selection.attr("stroke-dasharray", null);
+            }
+        }
+
+        applyStrokeStyle(trendLineEnter);
+
+        const updatedTrendLine = trendLineEnter.merge(trendLine);
+        applyStrokeStyle(updatedTrendLine);
+        
+        updatedTrendLine
+            .transition()
+            .duration(duration)
+            .ease(ease)
+            .attr("d", line)
+            .attr("stroke", trendLineColor)
+            .attr("stroke-width", trendLineWidth)
+            .attr("stroke-opacity", trendLineOpacity)
+            .style("opacity", 1);
+
+        trendLine.exit()
+            .transition()
+            .duration(duration)
+            .ease(ease)
+            .style("opacity", 0)
+            .remove();
     }
 
     function addBrushSelection(container: any, processedData: ProcessedData[], xScale: any, yScale: any): void {
-        // Implementation would be migrated from JavaScript version
+        // Stub: would add brush interaction if enabled
     }
 
     function initializeAccessibility(svg: any, processedData: ProcessedData[]): void {
-        // Implementation would be migrated from JavaScript version
+        if (!enableAccessibility) return;
+
+        // Add ARIA attributes to the SVG
+        svg.attr("role", "img")
+           .attr("aria-label", `Waterfall chart with ${processedData.length} data points`);
+
+        // Add title and description for screen readers
+        const title = svg.selectAll("title").data([0]);
+        title.enter()
+            .append("title")
+            .merge(title)
+            .text(`Waterfall chart showing ${stacked ? 'stacked' : 'sequential'} data visualization`);
+
+        const desc = svg.selectAll("desc").data([0]);
+        desc.enter()
+            .append("desc")
+            .merge(desc)
+            .text(() => {
+                const totalValue = processedData[processedData.length - 1]?.cumulativeTotal || 0;
+                return `Chart contains ${processedData.length} data points. ` +
+                       `Final cumulative value: ${formatNumber(totalValue)}. ` +
+                       `Data ranges from ${processedData[0]?.label} to ${processedData[processedData.length - 1]?.label}.`;
+            });
+
+        // Add keyboard navigation
+        svg.attr("tabindex", "0")
+           .on("keydown", function(event: KeyboardEvent) {
+               const focusedElement = svg.select(".focused");
+               const allBars = svg.selectAll(".waterfall-bar, .stack");
+               const currentIndex = allBars.nodes().indexOf(focusedElement.node());
+
+               switch(event.key) {
+                   case "ArrowRight":
+                   case "ArrowDown":
+                       event.preventDefault();
+                       const nextIndex = Math.min(currentIndex + 1, allBars.size() - 1);
+                       focusBar(allBars, nextIndex);
+                       break;
+                   case "ArrowLeft":
+                   case "ArrowUp":
+                       event.preventDefault();
+                       const prevIndex = Math.max(currentIndex - 1, 0);
+                       focusBar(allBars, prevIndex);
+                       break;
+                   case "Home":
+                       event.preventDefault();
+                       focusBar(allBars, 0);
+                       break;
+                   case "End":
+                       event.preventDefault();
+                       focusBar(allBars, allBars.size() - 1);
+                       break;
+               }
+           });
+
+        // Helper function to focus a bar
+        function focusBar(allBars: any, index: number) {
+            allBars.classed("focused", false);
+            const targetBar = d3.select(allBars.nodes()[index]);
+            targetBar.classed("focused", true);
+            
+            // Announce the focused element
+            const data = targetBar.datum() as any;
+            const announcement = `${data.parent?.label || data.label}: ${formatNumber(data.value || data.barTotal)}`;
+            announceToScreenReader(announcement);
+        }
+
+        // Screen reader announcements
+        function announceToScreenReader(message: string) {
+            const announcement = d3.select("body").selectAll(".sr-announcement").data([0]);
+            const announcementEnter = announcement.enter()
+                .append("div")
+                .attr("class", "sr-announcement")
+                .attr("aria-live", "polite")
+                .attr("aria-atomic", "true")
+                .style("position", "absolute")
+                .style("left", "-10000px")
+                .style("width", "1px")
+                .style("height", "1px")
+                .style("overflow", "hidden");
+
+            (announcementEnter as any).merge(announcement)
+                .text(message);
+        }
+
+        // Add focus styles
+        const style = svg.selectAll("style.accessibility-styles").data([0]);
+        style.enter()
+            .append("style")
+            .attr("class", "accessibility-styles")
+            .merge(style)
+            .text(`
+                .focused {
+                    stroke: #0066cc !important;
+                    stroke-width: 3px !important;
+                    filter: brightness(1.1);
+                }
+                .waterfall-bar:focus,
+                .stack:focus {
+                    outline: 2px solid #0066cc;
+                    outline-offset: 2px;
+                }
+            `);
     }
 
     function initializeTooltips(svg: any): void {
-        // Implementation would be migrated from JavaScript version
+        if (!enableTooltips) return;
+        
+        // Initialize the tooltip system
+        const tooltip = tooltipSystem;
+        
+        // Configure tooltip theme
+        tooltip.configure(tooltipConfig);
+        
+        // Add tooltip events to all chart elements
+        svg.selectAll(".waterfall-bar, .stack")
+            .on("mouseover", function(this: SVGElement, event: MouseEvent, d: any) {
+                const element = d3.select(this);
+                const data = d.parent || d; // Handle both stacked and waterfall bars
+                
+                // Create tooltip content
+                const content = `
+                    <div style="font-weight: bold; margin-bottom: 8px;">${data.label}</div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span>Value:</span>
+                        <span style="font-weight: bold;">${formatNumber(d.value || data.barTotal)}</span>
+                    </div>
+                    ${data.cumulativeTotal !== undefined ? `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span>Cumulative:</span>
+                        <span style="font-weight: bold;">${formatNumber(data.cumulativeTotal)}</span>
+                    </div>
+                    ` : ''}
+                    ${d.label && d.label !== data.label ? `
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.3);">
+                        <div style="font-size: 11px; opacity: 0.8;">${d.label}</div>
+                    </div>
+                    ` : ''}
+                `;
+                
+                // Show tooltip
+                tooltip.show(content, event, {
+                    label: data.label,
+                    value: d.value || data.barTotal,
+                    cumulative: data.cumulativeTotal,
+                    color: d.color || (data.stacks && data.stacks[0] ? data.stacks[0].color : '#3498db'),
+                    x: parseFloat(element.attr("x") || "0"),
+                    y: parseFloat(element.attr("y") || "0"),
+                    quadrant: 1
+                });
+                
+                // Highlight element
+                element.style("opacity", 0.8);
+            })
+            .on("mousemove", function(this: SVGElement, event: MouseEvent) {
+                tooltip.move(event);
+            })
+            .on("mouseout", function(this: SVGElement) {
+                // Hide tooltip
+                tooltip.hide();
+                
+                // Remove highlight
+                d3.select(this).style("opacity", null);
+            });
+            
+        // Also add tooltips to value labels
+        svg.selectAll(".total-label")
+            .on("mouseover", function(this: SVGElement, event: MouseEvent, d: any) {
+                const data = d.parent;
+                
+                const content = `
+                    <div style="font-weight: bold; margin-bottom: 8px;">${data.label}</div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Total Value:</span>
+                        <span style="font-weight: bold;">${formatNumber(data.barTotal)}</span>
+                    </div>
+                `;
+                
+                tooltip.show(content, event, {
+                    label: data.label,
+                    value: data.barTotal,
+                    cumulative: data.cumulativeTotal,
+                    color: '#333',
+                    x: 0,
+                    y: 0,
+                    quadrant: 1
+                });
+            })
+            .on("mousemove", function(this: SVGElement, event: MouseEvent) {
+                tooltip.move(event);
+            })
+            .on("mouseout", function(this: SVGElement) {
+                tooltip.hide();
+            });
     }
 
     function initializeExport(svg: any, processedData: ProcessedData[]): void {
-        // Implementation would be migrated from JavaScript version
+        // Stub: would initialize export functionality
     }
 
     function initializeZoom(svgContainer: any, config: { width: number; height: number; margin: MarginConfig }): void {
-        // Implementation would be migrated from JavaScript version
+        // Stub: would initialize zoom functionality
     }
 
     // Getter/setter methods using TypeScript
     chart.width = function(_?: number): number | WaterfallChart {
-        return arguments.length ? (width = _, chart) : width;
+        return arguments.length ? (width = _!, chart) : width;
     } as any;
 
     chart.height = function(_?: number): number | WaterfallChart {
-        return arguments.length ? (height = _, chart) : height;
+        return arguments.length ? (height = _!, chart) : height;
     } as any;
 
     chart.margin = function(_?: MarginConfig): MarginConfig | WaterfallChart {
-        return arguments.length ? (margin = _, chart) : margin;
+        return arguments.length ? (margin = _!, chart) : margin;
     } as any;
 
     chart.stacked = function(_?: boolean): boolean | WaterfallChart {
-        return arguments.length ? (stacked = _, chart) : stacked;
+        return arguments.length ? (stacked = _!, chart) : stacked;
     } as any;
 
     chart.showTotal = function(_?: boolean): boolean | WaterfallChart {
-        return arguments.length ? (showTotal = _, chart) : showTotal;
+        return arguments.length ? (showTotal = _!, chart) : showTotal;
     } as any;
 
     chart.totalLabel = function(_?: string): string | WaterfallChart {
-        return arguments.length ? (totalLabel = _, chart) : totalLabel;
+        return arguments.length ? (totalLabel = _!, chart) : totalLabel;
     } as any;
 
     chart.totalColor = function(_?: string): string | WaterfallChart {
-        return arguments.length ? (totalColor = _, chart) : totalColor;
+        return arguments.length ? (totalColor = _!, chart) : totalColor;
     } as any;
 
     chart.barPadding = function(_?: number): number | WaterfallChart {
-        return arguments.length ? (barPadding = _, chart) : barPadding;
+        return arguments.length ? (barPadding = _!, chart) : barPadding;
     } as any;
 
     chart.duration = function(_?: number): number | WaterfallChart {
-        return arguments.length ? (duration = _, chart) : duration;
+        return arguments.length ? (duration = _!, chart) : duration;
     } as any;
 
     chart.ease = function(_?: (t: number) => number): ((t: number) => number) | WaterfallChart {
-        return arguments.length ? (ease = _, chart) : ease;
+        return arguments.length ? (ease = _!, chart) : ease;
     } as any;
 
     chart.formatNumber = function(_?: (n: number) => string): ((n: number) => string) | WaterfallChart {
-        return arguments.length ? (formatNumber = _, chart) : formatNumber;
+        return arguments.length ? (formatNumber = _!, chart) : formatNumber;
     } as any;
 
     chart.theme = function(_?: string | null): (string | null) | WaterfallChart {
-        return arguments.length ? (theme = _, chart) : theme;
+        return arguments.length ? (theme = _!, chart) : theme;
     } as any;
 
     chart.enableBrush = function(_?: boolean): boolean | WaterfallChart {
-        return arguments.length ? (enableBrush = _, chart) : enableBrush;
+        return arguments.length ? (enableBrush = _!, chart) : enableBrush;
     } as any;
 
     chart.brushOptions = function(_?: BrushOptions): BrushOptions | WaterfallChart {
-        return arguments.length ? (brushOptions = { ...brushOptions, ..._ }, chart) : brushOptions;
+        return arguments.length ? (brushOptions = { ...brushOptions, ..._! }, chart) : brushOptions;
     } as any;
 
     chart.staggeredAnimations = function(_?: boolean): boolean | WaterfallChart {
-        return arguments.length ? (staggeredAnimations = _, chart) : staggeredAnimations;
+        return arguments.length ? (staggeredAnimations = _!, chart) : staggeredAnimations;
     } as any;
 
     chart.staggerDelay = function(_?: number): number | WaterfallChart {
-        return arguments.length ? (staggerDelay = _, chart) : staggerDelay;
+        return arguments.length ? (staggerDelay = _!, chart) : staggerDelay;
     } as any;
 
     chart.scaleType = function(_?: string): string | WaterfallChart {
-        return arguments.length ? (scaleType = _, chart) : scaleType;
+        return arguments.length ? (scaleType = _!, chart) : scaleType;
     } as any;
 
     chart.showTrendLine = function(_?: boolean): boolean | WaterfallChart {
-        return arguments.length ? (showTrendLine = _, chart) : showTrendLine;
+        return arguments.length ? (showTrendLine = _!, chart) : showTrendLine;
     } as any;
 
     chart.trendLineColor = function(_?: string): string | WaterfallChart {
-        return arguments.length ? (trendLineColor = _, chart) : trendLineColor;
+        return arguments.length ? (trendLineColor = _!, chart) : trendLineColor;
     } as any;
 
     chart.trendLineWidth = function(_?: number): number | WaterfallChart {
-        return arguments.length ? (trendLineWidth = _, chart) : trendLineWidth;
+        return arguments.length ? (trendLineWidth = _!, chart) : trendLineWidth;
     } as any;
 
     chart.trendLineStyle = function(_?: string): string | WaterfallChart {
-        return arguments.length ? (trendLineStyle = _, chart) : trendLineStyle;
+        return arguments.length ? (trendLineStyle = _!, chart) : trendLineStyle;
     } as any;
 
     chart.trendLineOpacity = function(_?: number): number | WaterfallChart {
-        return arguments.length ? (trendLineOpacity = _, chart) : trendLineOpacity;
+        return arguments.length ? (trendLineOpacity = _!, chart) : trendLineOpacity;
     } as any;
 
     chart.trendLineType = function(_?: string): string | WaterfallChart {
-        return arguments.length ? (trendLineType = _, chart) : trendLineType;
+        return arguments.length ? (trendLineType = _!, chart) : trendLineType;
+    } as any;
+
+    chart.trendLineWindow = function(_?: number): number | WaterfallChart {
+        return arguments.length ? (trendLineWindow = _!, chart) : trendLineWindow;
+    } as any;
+
+    chart.trendLineDegree = function(_?: number): number | WaterfallChart {
+        return arguments.length ? (trendLineDegree = _!, chart) : trendLineDegree;
     } as any;
 
     chart.enableAccessibility = function(_?: boolean): boolean | WaterfallChart {
-        return arguments.length ? (enableAccessibility = _, chart) : enableAccessibility;
+        return arguments.length ? (enableAccessibility = _!, chart) : enableAccessibility;
     } as any;
 
     chart.enableTooltips = function(_?: boolean): boolean | WaterfallChart {
-        return arguments.length ? (enableTooltips = _, chart) : enableTooltips;
+        return arguments.length ? (enableTooltips = _!, chart) : enableTooltips;
     } as any;
 
     chart.tooltipConfig = function(_?: TooltipConfig): TooltipConfig | WaterfallChart {
@@ -771,7 +1578,7 @@ export function waterfallChart(): WaterfallChart {
     } as any;
 
     chart.enableExport = function(_?: boolean): boolean | WaterfallChart {
-        return arguments.length ? (enableExport = _, chart) : enableExport;
+        return arguments.length ? (enableExport = _!, chart) : enableExport;
     } as any;
 
     chart.exportConfig = function(_?: ExportConfig): ExportConfig | WaterfallChart {
@@ -779,7 +1586,7 @@ export function waterfallChart(): WaterfallChart {
     } as any;
 
     chart.enableZoom = function(_?: boolean): boolean | WaterfallChart {
-        return arguments.length ? (enableZoom = _, chart) : enableZoom;
+        return arguments.length ? (enableZoom = _!, chart) : enableZoom;
     } as any;
 
     chart.zoomConfig = function(_?: ZoomConfig): ZoomConfig | WaterfallChart {
@@ -787,24 +1594,31 @@ export function waterfallChart(): WaterfallChart {
     } as any;
 
     chart.breakdownConfig = function(_?: BreakdownConfig | null): (BreakdownConfig | null) | WaterfallChart {
-        return arguments.length ? (breakdownConfig = _, chart) : breakdownConfig;
+        return arguments.length ? (breakdownConfig = _!, chart) : breakdownConfig;
     } as any;
 
     chart.enablePerformanceOptimization = function(_?: boolean): boolean | WaterfallChart {
-        return arguments.length ? (enablePerformanceOptimization = _, chart) : enablePerformanceOptimization;
+        return arguments.length ? (enablePerformanceOptimization = _!, chart) : enablePerformanceOptimization;
     } as any;
 
     chart.performanceDashboard = function(_?: boolean): boolean | WaterfallChart {
-        return arguments.length ? (performanceDashboard = _, chart) : performanceDashboard;
+        return arguments.length ? (performanceDashboard = _!, chart) : performanceDashboard;
     } as any;
 
     chart.virtualizationThreshold = function(_?: number): number | WaterfallChart {
-        return arguments.length ? (virtualizationThreshold = _, chart) : virtualizationThreshold;
+        return arguments.length ? (virtualizationThreshold = _!, chart) : virtualizationThreshold;
+    } as any;
+
+    // Data method for API completeness
+    chart.data = function(_?: ChartData[]): ChartData[] | WaterfallChart {
+        // This method is for API completeness - actual data is passed to the chart function
+        // Always return the chart instance for method chaining
+        return chart;
     } as any;
 
     // Event handling methods
     chart.on = function(): any {
-        const value = listeners.on.apply(listeners, arguments);
+        const value = (listeners.on as any).apply(listeners, Array.from(arguments));
         return value === listeners ? chart : value;
     };
 

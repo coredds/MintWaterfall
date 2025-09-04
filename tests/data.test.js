@@ -1,5 +1,6 @@
 // Data Processing Utilities Test Suite
-import { dataProcessor } from "../mintwaterfall-data.js";
+import { createDataProcessor } from "../dist/mintwaterfall.esm.js";
+const dataProcessor = createDataProcessor();
 
 describe("MintWaterfall Data Processing", () => {
     const sampleData = [
