@@ -1,36 +1,174 @@
-// MintWaterfall Animation and Transitions System
-// Provides smooth animations and transitions for chart updates
+// MintWaterfall Animation and Transitions System - TypeScript Version
+// Provides smooth animations and transitions for chart updates with full type safety
 
-export function createAnimationSystem() {
+// Type definitions for animation system
+export interface EasingFunction {
+    (t: number): number;
+}
+
+export interface EasingFunctions {
+    linear: EasingFunction;
+    easeInQuad: EasingFunction;
+    easeOutQuad: EasingFunction;
+    easeInOutQuad: EasingFunction;
+    easeInCubic: EasingFunction;
+    easeOutCubic: EasingFunction;
+    easeInOutCubic: EasingFunction;
+    easeInSine: EasingFunction;
+    easeOutSine: EasingFunction;
+    easeInOutSine: EasingFunction;
+    easeInElastic: EasingFunction;
+    easeOutElastic: EasingFunction;
+    easeOutBounce: EasingFunction;
+}
+
+export interface TransitionConfig {
+    staggerDelay: number;
+    defaultDuration: number;
+    defaultEase: keyof EasingFunctions;
+}
+
+export interface AnimationOptions {
+    delay?: number;
+    duration?: number;
+    ease?: keyof EasingFunctions;
+    reverse?: boolean;
+}
+
+export interface TransitionStep {
+    fn: () => Promise<any>;
+    delay: number;
+}
+
+export interface TransitionSequence {
+    add(transitionFn: () => Promise<any>, delay?: number): TransitionSequence;
+    parallel(...transitionFns: (() => Promise<any>)[]): TransitionSequence;
+    play(): Promise<void>;
+    stop(): void;
+    readonly isRunning: boolean;
+}
+
+export interface SpringAnimation {
+    animate(
+        startValue: number,
+        endValue: number,
+        onUpdate?: (value: number) => void,
+        onComplete?: () => void
+    ): void;
+}
+
+export interface TransitionWithEvents {
+    start(): TransitionWithEvents;
+    interrupt(): TransitionWithEvents;
+    then(callback?: () => void): TransitionWithEvents;
+}
+
+export interface TransitionEventConfig {
+    duration?: number;
+    onStart?: () => void;
+    onEnd?: () => void;
+    onInterrupt?: () => void;
+}
+
+export interface AnimationPresets {
+    slideInLeft(element: any, duration?: number): Promise<void>;
+    slideInRight(element: any, duration?: number): Promise<void>;
+    fadeIn(element: any, duration?: number): Promise<void>;
+    fadeOut(element: any, duration?: number): Promise<void>;
+    scaleIn(element: any, duration?: number): Promise<void>;
+    scaleOut(element: any, duration?: number): Promise<void>;
+    pulse(element: any, duration?: number): Promise<void>;
+    bounce(element: any, duration?: number): Promise<void>;
+}
+
+export interface AnimationSystem {
+    easingFunctions: EasingFunctions;
+    animateValue(
+        startValue: number,
+        endValue: number,
+        duration: number,
+        easingType?: keyof EasingFunctions,
+        onUpdate?: (value: number, progress: number) => void,
+        onComplete?: () => void
+    ): void;
+    staggeredAnimation(
+        items: any[],
+        animationFn: (item: any, index: number, duration: number) => void,
+        staggerDelay?: number,
+        totalDuration?: number
+    ): void;
+    morphShape(
+        fromPath: string,
+        toPath: string,
+        duration?: number,
+        easingType?: keyof EasingFunctions,
+        onUpdate?: (path: string, progress: number) => void,
+        onComplete?: () => void
+    ): void;
+    fadeTransition(
+        element: any,
+        fromOpacity: number,
+        toOpacity: number,
+        duration?: number,
+        easingType?: keyof EasingFunctions
+    ): Promise<void>;
+    slideTransition(
+        element: any,
+        fromX: number,
+        toX: number,
+        duration?: number,
+        easingType?: keyof EasingFunctions
+    ): Promise<void>;
+    scaleTransition(
+        element: any,
+        fromScale: number,
+        toScale: number,
+        duration?: number,
+        easingType?: keyof EasingFunctions
+    ): Promise<void>;
+    createTransitionSequence(): TransitionSequence;
+    createSpringAnimation(tension?: number, friction?: number): SpringAnimation;
+    createStaggeredTransition(
+        elements: any[] | NodeListOf<Element>,
+        animationFn: (element: any, duration: number, ease: keyof EasingFunctions) => Promise<any>,
+        options?: AnimationOptions
+    ): Promise<any[]>;
+    createCustomTween(startValue: number, endValue: number, interpolator?: (start: number, end: number, t: number) => number): (t: number) => number;
+    createTransitionWithEvents(element: any, config: TransitionEventConfig): TransitionWithEvents;
+    transitionConfig: TransitionConfig;
+    presets: AnimationPresets;
+}
+
+export function createAnimationSystem(): AnimationSystem {
     
     // Advanced transition configuration
-    const transitionConfig = {
+    const transitionConfig: TransitionConfig = {
         staggerDelay: 100,      // Default stagger delay between elements
         defaultDuration: 750,   // Default animation duration
         defaultEase: "easeOutQuad"
     };
     
-    function createEasingFunctions() {
+    function createEasingFunctions(): EasingFunctions {
         return {
-            linear: t => t,
-            easeInQuad: t => t * t,
-            easeOutQuad: t => t * (2 - t),
-            easeInOutQuad: t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
-            easeInCubic: t => t * t * t,
-            easeOutCubic: t => (--t) * t * t + 1,
-            easeInOutCubic: t => t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1,
-            easeInSine: t => 1 - Math.cos(t * Math.PI / 2),
-            easeOutSine: t => Math.sin(t * Math.PI / 2),
-            easeInOutSine: t => -(Math.cos(Math.PI * t) - 1) / 2,
-            easeInElastic: t => {
+            linear: (t: number) => t,
+            easeInQuad: (t: number) => t * t,
+            easeOutQuad: (t: number) => t * (2 - t),
+            easeInOutQuad: (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
+            easeInCubic: (t: number) => t * t * t,
+            easeOutCubic: (t: number) => (--t) * t * t + 1,
+            easeInOutCubic: (t: number) => t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1,
+            easeInSine: (t: number) => 1 - Math.cos(t * Math.PI / 2),
+            easeOutSine: (t: number) => Math.sin(t * Math.PI / 2),
+            easeInOutSine: (t: number) => -(Math.cos(Math.PI * t) - 1) / 2,
+            easeInElastic: (t: number) => {
                 const c4 = (2 * Math.PI) / 3;
                 return t === 0 ? 0 : t === 1 ? 1 : -Math.pow(2, 10 * t - 10) * Math.sin((t * 10 - 10.75) * c4);
             },
-            easeOutElastic: t => {
+            easeOutElastic: (t: number) => {
                 const c4 = (2 * Math.PI) / 3;
                 return t === 0 ? 0 : t === 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
             },
-            easeOutBounce: t => {
+            easeOutBounce: (t: number) => {
                 const n1 = 7.5625;
                 const d1 = 2.75;
                 
@@ -49,12 +187,19 @@ export function createAnimationSystem() {
     
     const easingFunctions = createEasingFunctions();
     
-    function animateValue(startValue, endValue, duration, easingType = "easeOutQuad", onUpdate, onComplete) {
+    function animateValue(
+        startValue: number,
+        endValue: number,
+        duration: number,
+        easingType: keyof EasingFunctions = "easeOutQuad",
+        onUpdate?: (value: number, progress: number) => void,
+        onComplete?: () => void
+    ): void {
         const startTime = performance.now();
         const valueRange = endValue - startValue;
         const easing = easingFunctions[easingType] || easingFunctions.easeOutQuad;
         
-        function frame(currentTime) {
+        function frame(currentTime: number): void {
             const elapsed = currentTime - startTime;
             const progress = Math.min(elapsed / duration, 1);
             
@@ -75,7 +220,12 @@ export function createAnimationSystem() {
         requestAnimationFrame(frame);
     }
     
-    function staggeredAnimation(items, animationFn, staggerDelay = 100, totalDuration = 1000) {
+    function staggeredAnimation(
+        items: any[],
+        animationFn: (item: any, index: number, duration: number) => void,
+        staggerDelay: number = 100,
+        totalDuration: number = 1000
+    ): void {
         if (!Array.isArray(items)) {
             throw new Error("Items must be an array");
         }
@@ -92,7 +242,14 @@ export function createAnimationSystem() {
         });
     }
     
-    function morphShape(fromPath, toPath, duration = 1000, easingType = "easeInOutQuad", onUpdate, onComplete) {
+    function morphShape(
+        fromPath: string,
+        toPath: string,
+        duration: number = 1000,
+        easingType: keyof EasingFunctions = "easeInOutQuad",
+        onUpdate?: (path: string, progress: number) => void,
+        onComplete?: () => void
+    ): void {
         // Simple path morphing for basic shapes
         // Note: In a real implementation, you'd want more sophisticated path interpolation
         
@@ -103,7 +260,7 @@ export function createAnimationSystem() {
         const startTime = performance.now();
         const easing = easingFunctions[easingType] || easingFunctions.easeInOutQuad;
         
-        function frame(currentTime) {
+        function frame(currentTime: number): void {
             const elapsed = currentTime - startTime;
             const progress = Math.min(elapsed / duration, 1);
             
@@ -126,7 +283,13 @@ export function createAnimationSystem() {
         requestAnimationFrame(frame);
     }
     
-    function fadeTransition(element, fromOpacity, toOpacity, duration = 500, easingType = "easeOutQuad") {
+    function fadeTransition(
+        element: any,
+        fromOpacity: number,
+        toOpacity: number,
+        duration: number = 500,
+        easingType: keyof EasingFunctions = "easeOutQuad"
+    ): Promise<void> {
         return new Promise((resolve) => {
             animateValue(
                 fromOpacity,
@@ -135,18 +298,24 @@ export function createAnimationSystem() {
                 easingType,
                 (value) => {
                     if (element && element.style) {
-                        element.style.opacity = value;
+                        element.style.opacity = value.toString();
                     } else if (element && element.attr) {
                         // D3 selection
                         element.attr("opacity", value);
                     }
                 },
-                resolve
+                () => resolve()
             );
         });
     }
     
-    function slideTransition(element, fromX, toX, duration = 500, easingType = "easeOutQuad") {
+    function slideTransition(
+        element: any,
+        fromX: number,
+        toX: number,
+        duration: number = 500,
+        easingType: keyof EasingFunctions = "easeOutQuad"
+    ): Promise<void> {
         return new Promise((resolve) => {
             animateValue(
                 fromX,
@@ -161,12 +330,18 @@ export function createAnimationSystem() {
                         element.attr("transform", `translate(${value}, 0)`);
                     }
                 },
-                resolve
+                () => resolve()
             );
         });
     }
     
-    function scaleTransition(element, fromScale, toScale, duration = 500, easingType = "easeOutQuad") {
+    function scaleTransition(
+        element: any,
+        fromScale: number,
+        toScale: number,
+        duration: number = 500,
+        easingType: keyof EasingFunctions = "easeOutQuad"
+    ): Promise<void> {
         return new Promise((resolve) => {
             animateValue(
                 fromScale,
@@ -181,29 +356,29 @@ export function createAnimationSystem() {
                         element.attr("transform", `scale(${value})`);
                     }
                 },
-                resolve
+                () => resolve()
             );
         });
     }
     
-    function createTransitionSequence() {
-        const sequence = [];
+    function createTransitionSequence(): TransitionSequence {
+        const sequence: TransitionStep[] = [];
         let isRunning = false;
         
-        function add(transitionFn, delay = 0) {
+        function add(transitionFn: () => Promise<any>, delay: number = 0): TransitionSequence {
             sequence.push({ fn: transitionFn, delay });
-            return this;
+            return transitionSequence;
         }
         
-        function parallel(...transitionFns) {
+        function parallel(...transitionFns: (() => Promise<any>)[]): TransitionSequence {
             sequence.push({
                 fn: () => Promise.all(transitionFns.map(fn => fn())),
                 delay: 0
             });
-            return this;
+            return transitionSequence;
         }
         
-        async function play() {
+        async function play(): Promise<void> {
             if (isRunning) {
                 throw new Error("Sequence is already running");
             }
@@ -213,7 +388,7 @@ export function createAnimationSystem() {
             try {
                 for (const step of sequence) {
                     if (step.delay > 0) {
-                        await new Promise(resolve => setTimeout(resolve, step.delay));
+                        await new Promise<void>(resolve => setTimeout(resolve, step.delay));
                     }
                     await step.fn();
                 }
@@ -222,28 +397,35 @@ export function createAnimationSystem() {
             }
         }
         
-        function stop() {
+        function stop(): void {
             isRunning = false;
             // Note: In a production system, you'd want to cancel running animations
         }
         
-        return {
+        const transitionSequence: TransitionSequence = {
             add,
             parallel,
             play,
             stop,
             get isRunning() { return isRunning; }
         };
+        
+        return transitionSequence;
     }
     
-    function createSpringAnimation(tension = 300, friction = 20) {
+    function createSpringAnimation(tension: number = 300, friction: number = 20): SpringAnimation {
         // Simple spring physics implementation
-        function animate(startValue, endValue, onUpdate, onComplete) {
+        function animate(
+            startValue: number,
+            endValue: number,
+            onUpdate?: (value: number) => void,
+            onComplete?: () => void
+        ): void {
             let position = startValue;
             let velocity = 0;
             let lastTime = performance.now();
             
-            function frame(currentTime) {
+            function frame(currentTime: number): void {
                 const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
                 lastTime = currentTime;
                 
@@ -275,27 +457,27 @@ export function createAnimationSystem() {
         return { animate };
     }
     
-    function createAnimationPresets() {
+    function createAnimationPresets(): AnimationPresets {
         return {
-            slideInLeft: (element, duration = 500) => 
+            slideInLeft: (element: any, duration: number = 500) => 
                 slideTransition(element, -100, 0, duration, "easeOutQuad"),
             
-            slideInRight: (element, duration = 500) => 
+            slideInRight: (element: any, duration: number = 500) => 
                 slideTransition(element, 100, 0, duration, "easeOutQuad"),
             
-            fadeIn: (element, duration = 500) => 
+            fadeIn: (element: any, duration: number = 500) => 
                 fadeTransition(element, 0, 1, duration, "easeOutQuad"),
             
-            fadeOut: (element, duration = 500) => 
+            fadeOut: (element: any, duration: number = 500) => 
                 fadeTransition(element, 1, 0, duration, "easeOutQuad"),
             
-            scaleIn: (element, duration = 500) => 
+            scaleIn: (element: any, duration: number = 500) => 
                 scaleTransition(element, 0, 1, duration, "easeOutElastic"),
             
-            scaleOut: (element, duration = 500) => 
+            scaleOut: (element: any, duration: number = 500) => 
                 scaleTransition(element, 1, 0, duration, "easeInQuad"),
             
-            pulse: (element, duration = 300) => {
+            pulse: (element: any, duration: number = 300) => {
                 const sequence = createTransitionSequence();
                 return sequence
                     .add(() => scaleTransition(element, 1, 1.1, duration / 2, "easeOutQuad"))
@@ -303,7 +485,7 @@ export function createAnimationSystem() {
                     .play();
             },
             
-            bounce: (element, duration = 600) => 
+            bounce: (element: any, duration: number = 600) => 
                 scaleTransition(element, 0, 1, duration, "easeOutBounce")
         };
     }
@@ -311,7 +493,11 @@ export function createAnimationSystem() {
     const presets = createAnimationPresets();
     
     // Advanced staggered animations
-    function createStaggeredTransition(elements, animationFn, options = {}) {
+    function createStaggeredTransition(
+        elements: any[] | NodeListOf<Element>,
+        animationFn: (element: any, duration: number, ease: keyof EasingFunctions) => Promise<any>,
+        options: AnimationOptions = {}
+    ): Promise<any[]> {
         const {
             delay = transitionConfig.staggerDelay,
             duration = transitionConfig.defaultDuration,
@@ -320,11 +506,11 @@ export function createAnimationSystem() {
         } = options;
         
         const elementArray = Array.isArray(elements) ? elements : Array.from(elements);
-        const orderedElements = reverse ? elementArray.reverse() : elementArray;
+        const orderedElements = reverse ? [...elementArray].reverse() : elementArray;
         
         return Promise.all(
             orderedElements.map((element, index) => {
-                return new Promise(resolve => {
+                return new Promise<any>(resolve => {
                     setTimeout(() => {
                         animationFn(element, duration, ease).then(resolve);
                     }, index * delay);
@@ -334,8 +520,12 @@ export function createAnimationSystem() {
     }
     
     // Custom tweening functions
-    function createCustomTween(startValue, endValue, interpolator) {
-        return function(t) {
+    function createCustomTween(
+        startValue: number,
+        endValue: number,
+        interpolator?: (start: number, end: number, t: number) => number
+    ): (t: number) => number {
+        return function(t: number): number {
             if (typeof interpolator === "function") {
                 return interpolator(startValue, endValue, t);
             }
@@ -345,7 +535,7 @@ export function createAnimationSystem() {
     }
     
     // Transition event handlers
-    function createTransitionWithEvents(element, config) {
+    function createTransitionWithEvents(element: any, config: TransitionEventConfig): TransitionWithEvents {
         const {
             duration = transitionConfig.defaultDuration,
             onStart,
@@ -355,19 +545,19 @@ export function createAnimationSystem() {
         
         let isInterrupted = false;
         
-        const transition = {
-            start() {
+        const transition: TransitionWithEvents = {
+            start(): TransitionWithEvents {
                 if (onStart) onStart();
                 return this;
             },
             
-            interrupt() {
+            interrupt(): TransitionWithEvents {
                 isInterrupted = true;
                 if (onInterrupt) onInterrupt();
                 return this;
             },
             
-            then(callback) {
+            then(callback?: () => void): TransitionWithEvents {
                 if (!isInterrupted && onEnd) {
                     setTimeout(() => {
                         onEnd();
@@ -381,7 +571,7 @@ export function createAnimationSystem() {
         return transition;
     }
     
-    return {
+    const animationSystem: AnimationSystem = {
         easingFunctions,
         animateValue,
         staggeredAnimation,
@@ -397,6 +587,8 @@ export function createAnimationSystem() {
         transitionConfig,
         presets
     };
+    
+    return animationSystem;
 }
 
 // Create a global animation system instance

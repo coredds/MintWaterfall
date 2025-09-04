@@ -1,16 +1,80 @@
-// MintWaterfall Accessibility System
-// Provides WCAG 2.1 AA compliance features for screen readers and keyboard navigation
+// MintWaterfall Accessibility System - TypeScript Version
+// Provides WCAG 2.1 AA compliance features for screen readers and keyboard navigation with full type safety
 
-export function createAccessibilitySystem() {
+import * as d3 from 'd3';
+
+// Type definitions for accessibility system
+export interface AccessibilityConfig {
+    title?: string;
+    summary?: string;
+    totalItems?: number;
+    showTotal?: boolean;
+    formatNumber?: (n: number) => string;
+}
+
+export interface WaterfallDataItem {
+    label: string;
+    stacks: StackItem[];
+    cumulative?: number;
+}
+
+export interface StackItem {
+    label?: string;
+    value: number;
+}
+
+export interface HierarchicalData {
+    children?: HierarchicalData[];
+    value?: number;
+}
+
+export interface ContrastResult {
+    ratio: number;
+    passesAA: boolean;
+    passesAAA: boolean;
+}
+
+export interface AccessibilityResult {
+    bars: d3.Selection<d3.BaseType, any, any, any>;
+    focusableElements: number;
+}
+
+export interface ChartAccessibilityResult {
+    accessibilitySystem: AccessibilitySystem;
+    descriptionId: string;
+    focusableElements: number;
+}
+
+export interface AccessibilitySystem {
+    createLiveRegion(container: d3.Selection<d3.BaseType, any, any, any>): d3.Selection<HTMLDivElement, any, any, any>;
+    createChartDescription(container: d3.Selection<d3.BaseType, any, any, any>, data: WaterfallDataItem[] | HierarchicalData, config?: AccessibilityConfig): string;
+    makeAccessible(chartContainer: d3.Selection<d3.BaseType, any, any, any>, data: WaterfallDataItem[], config?: AccessibilityConfig): AccessibilityResult;
+    handleChartKeydown(event: KeyboardEvent, data: WaterfallDataItem[], config: AccessibilityConfig): void;
+    handleBarKeydown(event: KeyboardEvent, barData: WaterfallDataItem, index: number, allData: WaterfallDataItem[], config: AccessibilityConfig): void;
+    moveFocus(direction: number, data: WaterfallDataItem[], config: AccessibilityConfig): void;
+    focusElement(index: number, data: WaterfallDataItem[], config: AccessibilityConfig): void;
+    announce(message: string): void;
+    detectHighContrast(): boolean;
+    applyHighContrastStyles(chartContainer: d3.Selection<d3.BaseType, any, any, any>): void;
+    injectForcedColorsCSS(): void;
+    respectsReducedMotion(): boolean;
+    getAccessibleAnimationDuration(defaultDuration: number): number;
+    validateColorContrast(foreground: string, background: string): ContrastResult;
+    setAnnounceFunction(fn: (message: string) => void): AccessibilitySystem;
+    getCurrentFocus(): number;
+    getFocusableCount(): number;
+}
+
+export function createAccessibilitySystem(): AccessibilitySystem {
     
-    let currentFocusIndex = -1;
-    let focusableElements = [];
-    let announceFunction = null;
-    let descriptionId = null;
+    let currentFocusIndex: number = -1;
+    let focusableElements: any[] = [];
+    let announceFunction: ((message: string) => void) | null = null;
+    let descriptionId: string | null = null;
     
     // ARIA live region for dynamic announcements
-    function createLiveRegion(container) {
-        const liveRegion = container.append("div")
+    function createLiveRegion(container: d3.Selection<d3.BaseType, any, any, any>): d3.Selection<HTMLDivElement, any, any, any> {
+        const liveRegion = container.append<HTMLDivElement>("div")
             .attr("id", "waterfall-live-region")
             .attr("aria-live", "polite")
             .attr("aria-atomic", "true")
@@ -24,12 +88,16 @@ export function createAccessibilitySystem() {
     }
     
     // Create chart description for screen readers
-    function createChartDescription(container, data, config = {}) {
+    function createChartDescription(
+        container: d3.Selection<d3.BaseType, any, any, any>, 
+        data: WaterfallDataItem[] | HierarchicalData, 
+        config: AccessibilityConfig = {}
+    ): string {
         const {
             title = "Waterfall Chart",
             summary = "Interactive waterfall chart showing data progression",
-            totalItems = data.length,
-            hasTotal = config.showTotal || false
+            totalItems = Array.isArray(data) ? data.length : 1,
+            showTotal: hasTotal = false
         } = config;
         
         const descId = "waterfall-description-" + Math.random().toString(36).substr(2, 9);
@@ -46,6 +114,7 @@ export function createAccessibilitySystem() {
         // Calculate summary statistics based on data structure
         let totalValue = 0;
         let positiveCount = 0;
+        let negativeCount = 0;
         
         if (Array.isArray(data)) {
             // Waterfall chart data structure
@@ -59,9 +128,13 @@ export function createAccessibilitySystem() {
             positiveCount = data.filter(item => 
                 item.stacks && item.stacks.some(stack => (stack.value || 0) > 0)
             ).length;
-        } else if (data && typeof data === "object" && data.children) {
+            
+            negativeCount = data.filter(item => 
+                item.stacks && item.stacks.some(stack => stack.value < 0)
+            ).length;
+        } else if (data && typeof data === "object" && (data as HierarchicalData).children) {
             // Hierarchical chart data structure
-            function calculateHierarchicalStats(node) {
+            function calculateHierarchicalStats(node: HierarchicalData): number {
                 if (node.children && Array.isArray(node.children)) {
                     return node.children.reduce((sum, child) => sum + calculateHierarchicalStats(child), 0);
                 } else {
@@ -69,13 +142,10 @@ export function createAccessibilitySystem() {
                 }
             }
             
-            totalValue = calculateHierarchicalStats(data);
+            totalValue = calculateHierarchicalStats(data as HierarchicalData);
             positiveCount = 1; // For hierarchical data, we consider it as one positive entity
+            negativeCount = 0;
         }
-        
-        const negativeCount = data.filter(item => 
-            item.stacks.some(stack => stack.value < 0)
-        ).length;
         
         description.html(`
             <h3>${title}</h3>
@@ -92,7 +162,11 @@ export function createAccessibilitySystem() {
     }
     
     // Make chart elements keyboard accessible
-    function makeAccessible(chartContainer, data, config = {}) {
+    function makeAccessible(
+        chartContainer: d3.Selection<d3.BaseType, any, any, any>, 
+        data: WaterfallDataItem[], 
+        config: AccessibilityConfig = {}
+    ): AccessibilityResult {
         const svg = chartContainer.select("svg");
         
         // Add main chart ARIA attributes
@@ -102,34 +176,41 @@ export function createAccessibilitySystem() {
            .attr("aria-describedby", descriptionId);
         
         // Add keyboard event handlers to main SVG
-        svg.on("keydown", function(event) {
+        svg.on("keydown", function(event: KeyboardEvent) {
             handleChartKeydown(event, data, config);
         });
         
         // Make individual bars focusable and accessible
         const bars = svg.selectAll(".bar-group");
         
-        bars.each(function(d, i) {
+        bars.each(function(d: any, i: number) {
             const bar = d3.select(this);
+            const data = d as WaterfallDataItem;
             
             bar.attr("role", "button")
                .attr("tabindex", "-1")
-               .attr("aria-label", createBarAriaLabel(d, i, config))
+               .attr("aria-label", createBarAriaLabel(data, i, config))
                .attr("aria-describedby", `bar-description-${i}`)
-               .on("keydown", function(event) {
-                   handleBarKeydown(event, d, i, data, config);
+               .on("keydown", function(event: KeyboardEvent) {
+                   handleBarKeydown(event, data, i, [data], config);
                })
                .on("focus", function() {
                    currentFocusIndex = i;
-                   highlightFocusedElement(this);
+                   const element = this as Element;
+                   if (element) {
+                       highlightFocusedElement(element);
+                   }
                })
                .on("blur", function() {
-                   removeFocusHighlight(this);
+                   const element = this as Element;
+                   if (element) {
+                       removeFocusHighlight(element);
+                   }
                });
         });
         
         // Store focusable elements
-        focusableElements = bars.nodes();
+        focusableElements = bars.nodes().filter(node => node !== null);
         
         return {
             bars,
@@ -138,10 +219,10 @@ export function createAccessibilitySystem() {
     }
     
     // Create ARIA label for individual bars
-    function createBarAriaLabel(data, index, config = {}) {
+    function createBarAriaLabel(data: WaterfallDataItem, index: number, config: AccessibilityConfig = {}): string {
         const totalValue = data.stacks.reduce((sum, stack) => sum + stack.value, 0);
         const stackCount = data.stacks.length;
-        const formatNumber = config.formatNumber || (n => n.toString());
+        const formatNumber = config.formatNumber || ((n: number) => n.toString());
         
         let label = `${data.label}: ${formatNumber(totalValue)}`;
         
@@ -159,7 +240,7 @@ export function createAccessibilitySystem() {
     }
     
     // Handle keyboard navigation on chart level
-    function handleChartKeydown(event, data, config) {
+    function handleChartKeydown(event: KeyboardEvent, data: WaterfallDataItem[], config: AccessibilityConfig): void {
         switch(event.key) {
             case "Tab":
                 // Let default tab behavior work
@@ -205,14 +286,20 @@ export function createAccessibilitySystem() {
     }
     
     // Handle keyboard events on individual bars
-    function handleBarKeydown(event, barData, index, allData, config) {
+    function handleBarKeydown(
+        event: KeyboardEvent, 
+        barData: WaterfallDataItem, 
+        index: number, 
+        allData: WaterfallDataItem[], 
+        config: AccessibilityConfig
+    ): void {
         switch(event.key) {
             case "Enter":
             case " ":
                 event.preventDefault();
                 announceBarDetails(barData, index, config);
                 // Trigger click event for compatibility
-                d3.select(event.target).dispatch("click");
+                d3.select(event.target as Element).dispatch("click");
                 break;
                 
             case "ArrowRight":
@@ -230,7 +317,7 @@ export function createAccessibilitySystem() {
     }
     
     // Move focus between chart elements
-    function moveFocus(direction, data, config) {
+    function moveFocus(direction: number, data: WaterfallDataItem[], config: AccessibilityConfig): void {
         if (focusableElements.length === 0) return;
         
         let newIndex = currentFocusIndex + direction;
@@ -246,11 +333,14 @@ export function createAccessibilitySystem() {
     }
     
     // Focus specific element by index
-    function focusElement(index, data, config) {
+    function focusElement(index: number, data: WaterfallDataItem[], config: AccessibilityConfig): void {
         if (index < 0 || index >= focusableElements.length) return;
         
         currentFocusIndex = index;
-        focusableElements[index].focus();
+        const element = focusableElements[index] as HTMLElement;
+        if (element && element.focus) {
+            element.focus();
+        }
         
         // Announce the focused element
         const barData = data[index];
@@ -258,38 +348,41 @@ export function createAccessibilitySystem() {
     }
     
     // Return focus to main chart container
-    function returnFocusToChart() {
+    function returnFocusToChart(): void {
         const svg = d3.select("svg[role='img']");
         if (!svg.empty()) {
-            svg.node().focus();
+            const svgNode = svg.node() as HTMLElement;
+            if (svgNode) {
+                svgNode.focus();
+            }
             currentFocusIndex = -1;
         }
     }
     
     // Visual focus indicators
-    function highlightFocusedElement(element) {
+    function highlightFocusedElement(element: Element): void {
         d3.select(element)
           .style("outline", "3px solid #4A90E2")
           .style("outline-offset", "2px");
     }
     
-    function removeFocusHighlight(element) {
+    function removeFocusHighlight(element: Element): void {
         d3.select(element)
           .style("outline", null)
           .style("outline-offset", null);
     }
     
     // Screen reader announcements
-    function announceBarFocus(data, index, config) {
-        const formatNumber = config.formatNumber || (n => n.toString());
+    function announceBarFocus(data: WaterfallDataItem, index: number, config: AccessibilityConfig): void {
+        const formatNumber = config.formatNumber || ((n: number) => n.toString());
         const totalValue = data.stacks.reduce((sum, stack) => sum + stack.value, 0);
         
         const message = `Focused on ${data.label}, value ${formatNumber(totalValue)}`;
         announce(message);
     }
     
-    function announceBarDetails(data, index, config) {
-        const formatNumber = config.formatNumber || (n => n.toString());
+    function announceBarDetails(data: WaterfallDataItem, index: number, config: AccessibilityConfig): void {
+        const formatNumber = config.formatNumber || ((n: number) => n.toString());
         const totalValue = data.stacks.reduce((sum, stack) => sum + stack.value, 0);
         
         let message = `${data.label}: Total value ${formatNumber(totalValue)}`;
@@ -309,8 +402,8 @@ export function createAccessibilitySystem() {
         announce(message);
     }
     
-    function announceChartSummary(data, config) {
-        const formatNumber = config.formatNumber || (n => n.toString());
+    function announceChartSummary(data: WaterfallDataItem[], config: AccessibilityConfig): void {
+        const formatNumber = config.formatNumber || ((n: number) => n.toString());
         const totalValue = data.reduce((sum, item) => {
             return sum + item.stacks.reduce((stackSum, stack) => stackSum + stack.value, 0);
         }, 0);
@@ -320,7 +413,7 @@ export function createAccessibilitySystem() {
     }
     
     // Announce message to screen readers
-    function announce(message) {
+    function announce(message: string): void {
         const liveRegion = d3.select("#waterfall-live-region");
         if (!liveRegion.empty()) {
             liveRegion.text(message);
@@ -333,7 +426,7 @@ export function createAccessibilitySystem() {
     }
     
     // High contrast mode detection and support (Updated: 2025-08-28)
-    function detectHighContrast() {
+    function detectHighContrast(): boolean {
         // Check for modern forced colors mode and high contrast preferences
         if (window.matchMedia) {
             // First check for modern forced-colors mode (preferred)
@@ -369,7 +462,7 @@ export function createAccessibilitySystem() {
                 
                 // If the computed color doesn't match what we set, forced colors is likely active
                 return computedColor !== "rgb(1, 2, 3)";
-            } catch (e) { // eslint-disable-line no-unused-vars
+            } catch (e) {
                 // If detection fails, assume no high contrast for safety
                 return false;
             }
@@ -377,7 +470,7 @@ export function createAccessibilitySystem() {
         return false;
     }
     
-    function applyHighContrastStyles(chartContainer) {
+    function applyHighContrastStyles(chartContainer: d3.Selection<d3.BaseType, any, any, any>): void {
         if (!detectHighContrast()) return;
         
         const svg = chartContainer.select("svg");
@@ -409,7 +502,7 @@ export function createAccessibilitySystem() {
     }
     
     // Inject CSS for forced colors mode support
-    function injectForcedColorsCSS() {
+    function injectForcedColorsCSS(): void {
         // Check if we're in a browser environment
         if (typeof document === "undefined") return; // Node.js environment
         
@@ -469,22 +562,22 @@ export function createAccessibilitySystem() {
     }
 
     // Reduced motion support
-    function respectsReducedMotion() {
+    function respectsReducedMotion(): boolean {
         if (window.matchMedia) {
             return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         }
         return false;
     }
     
-    function getAccessibleAnimationDuration(defaultDuration) {
+    function getAccessibleAnimationDuration(defaultDuration: number): number {
         return respectsReducedMotion() ? 0 : defaultDuration;
     }
     
     // Color contrast validation
-    function validateColorContrast(foreground, background) {
+    function validateColorContrast(foreground: string, background: string): ContrastResult {
         // Simplified contrast ratio calculation
         // In production, use a proper color contrast library
-        const getLuminance = (color) => {
+        const getLuminance = (color: string): number => {
             // This is a simplified version - use a proper color library
             const rgb = d3.rgb(color);
             return (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
@@ -502,7 +595,7 @@ export function createAccessibilitySystem() {
     }
     
     // Public API
-    return {
+    const accessibilitySystem: AccessibilitySystem = {
         createLiveRegion,
         createChartDescription,
         makeAccessible,
@@ -519,19 +612,21 @@ export function createAccessibilitySystem() {
         validateColorContrast,
         
         // Configuration
-        setAnnounceFunction(fn) {
+        setAnnounceFunction(fn: (message: string) => void): AccessibilitySystem {
             announceFunction = fn;
             return this;
         },
         
-        getCurrentFocus() {
+        getCurrentFocus(): number {
             return currentFocusIndex;
         },
         
-        getFocusableCount() {
+        getFocusableCount(): number {
             return focusableElements.length;
         }
     };
+    
+    return accessibilitySystem;
 }
 
 // Global accessibility system instance
@@ -543,7 +638,11 @@ if (typeof document !== "undefined") {
 }
 
 // Utility function to make any chart accessible
-export function makeChartAccessible(chartContainer, data, config = {}) {
+export function makeChartAccessible(
+    chartContainer: d3.Selection<d3.BaseType, any, any, any>, 
+    data: WaterfallDataItem[], 
+    config: AccessibilityConfig = {}
+): ChartAccessibilityResult {
     const a11y = createAccessibilitySystem();
     
     // Inject forced colors CSS support (only in browser)

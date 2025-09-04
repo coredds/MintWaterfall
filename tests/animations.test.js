@@ -1,5 +1,8 @@
 // Animation System Test Suite
-import { animationSystem } from "../mintwaterfall-animations.js";
+import { createAnimationSystem } from "../dist/mintwaterfall.esm.js";
+
+// Create animation system instance
+const animationSystem = createAnimationSystem();
 
 // Mock performance.now for testing
 let mockTime = 0;

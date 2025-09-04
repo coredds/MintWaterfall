@@ -1,58 +1,57 @@
-# MintWaterfall v0.8.1
+# MintWaterfall v0.8.5
 
 [![CI](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml/badge.svg?branch=main)](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml)
 [![Security Audit](https://github.com/coredds/MintWaterfall/actions/workflows/security.yml/badge.svg)](https://github.com/coredds/MintWaterfall/actions/workflows/security.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.8.1-blue.svg)](https://github.com/coredds/MintWaterfall/releases)
+[![Version](https://img.shields.io/badge/version-0.8.5-blue.svg)](https://github.com/coredds/MintWaterfall/releases)
 [![codecov](https://codecov.io/gh/coredds/MintWaterfall/branch/main/graph/badge.svg)](https://codecov.io/gh/coredds/MintWaterfall)
 
-A production-ready, D3.js-compatible waterfall chart component with enterprise features including hierarchical layouts, advanced data processing, performance optimization, and Power BI integration capabilities.
+A production-ready, TypeScript-first waterfall chart component built on D3.js v7. Features comprehensive interactive capabilities including tooltips, themes, zoom, accessibility, and trend analysis with full type safety and enterprise-grade performance.
 
 **[Live Demo](https://coredds.github.io/MintWaterfall/mintwaterfall-example.html)**
 
 ## Features
 
-### Core Functionality
-- **Waterfall Charts**: Traditional waterfall and stacked visualization modes
-- **Data Loading**: CSV, JSON, TSV support with HTTP URL loading and auto-detection
-- **Export Options**: High-DPI PNG (2x), SVG, JPEG, PDF with quality controls
-- **Trend Analysis**: Linear, moving average, and polynomial overlays
-- **Accessibility**: WCAG 2.1 compliance with Forced Colors Mode support
+### Core Waterfall Charts
+- **Dual Modes**: Traditional waterfall and stacked visualization
+- **Interactive Elements**: Hover tooltips, click events, zoom and pan
+- **Theming System**: Multiple built-in themes with custom color schemes
+- **Accessibility**: WCAG 2.1 compliance with keyboard navigation and screen reader support
+- **Export Capabilities**: SVG, PNG, JSON, and CSV export formats
 
-### Enterprise Features
-- **Breakdown Analysis**: Hierarchical data drill-down with smart grouping and interactive exploration
-- **Conditional Formatting**: Dynamic styling based on values, thresholds, and custom business rules
-- **Performance Dashboard**: Real-time monitoring with render time, memory usage, and FPS tracking
+### Advanced Analytics
+- **Trend Analysis**: Linear regression, moving average, and polynomial curve fitting
+- **Data Processing**: Built-in support for grouping, rollup, and cross-tabulation
+- **Conditional Formatting**: Dynamic styling based on value thresholds
+- **Breakdown Analysis**: Hierarchical drill-down with interactive exploration
 
-### Advanced Layouts (v0.8.1)
-- **Hierarchical Layouts**: Complete D3.js layout system with treemap, partition, sunburst, and pack layouts
-- **Advanced Data Processing**: Modern D3.js data structures (`d3.group`, `d3.rollup`) with transformation pipelines
-- **Performance Optimization**: Handle large datasets (>500K data points) with virtualization and memory management
-
-### Production Quality
-- **210+ Test Cases**: Comprehensive test coverage with zero errors
-- **Zero Lint Issues**: Perfect ESLint compliance with clean architecture
-- **D3.js v7 Compatible**: Full integration with modern D3.js ecosystem
-- **Power BI Ready**: Enhanced D3.js feature coverage for enterprise integration
+### TypeScript Architecture
+- **Full Type Safety**: Complete TypeScript definitions with strict type checking
+- **Modular Design**: Clean separation of concerns across 12 specialized modules
+- **D3.js Integration**: Native D3.js v7 compatibility with enhanced type support
+- **Enterprise Ready**: Production-tested with comprehensive test coverage
 
 ## Quick Start
 
 ### Installation
 
+**NPM/Yarn:**
+```bash
+npm install mintwaterfall
+# or
+yarn add mintwaterfall
+```
+
+**CDN:**
 ```html
-<!DOCTYPE html>
-<html>
-<head>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="dist/mintwaterfall.min.js"></script>
-</head>
-<body>
-    <svg id="chart"></svg>
-    <script>
-        // Your chart code here
-    </script>
-</body>
-</html>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://unpkg.com/mintwaterfall@latest/dist/mintwaterfall.min.js"></script>
+```
+
+**ES Modules:**
+```javascript
+import { waterfallChart } from 'mintwaterfall';
+import * as d3 from 'd3';
 ```
 
 ### Basic Usage
@@ -73,11 +72,13 @@ const data = [
     }
 ];
 
-const chart = d3.waterfallChart()
-    .width(1100)
-    .height(600)
+const chart = waterfallChart()
+    .width(800)
+    .height(400)
     .showTotal(true)
-    .stacked(true);
+    .stacked(false)
+    .enableTooltips(true)
+    .theme('default');
 
 d3.select('#chart')
     .datum(data)
@@ -124,98 +125,41 @@ const chart = d3.waterfallChart()
     });
 ```
 
-## Hierarchical Layouts
+## Interactive Features
 
-### Treemap Chart
+### Tooltips and Themes
 
 ```javascript
-const hierarchicalData = {
-    name: "Budget",
-    children: [
-        {
-            name: "Operations",
-            children: [
-                { name: "Payroll", value: 300000 },
-                { name: "Facilities", value: 150000 }
-            ]
-        },
-        {
-            name: "Development", 
-            children: [
-                { name: "R&D", value: 200000 },
-                { name: "Software", value: 120000 }
-            ]
-        }
-    ]
-};
+const chart = waterfallChart()
+    .enableTooltips(true)
+    .tooltipConfig({ theme: 'light' })
+    .theme('corporate');
 
-const treemap = d3.treemapChart()
-    .width(800)
-    .height(400)
-    .padding(1);
-
-d3.select('#chart')
-    .datum(hierarchicalData)
-    .call(treemap);
+// Available themes: default, dark, corporate, accessible, colorful
 ```
 
-### Partition Charts (Sunburst/Icicle)
+### Zoom and Pan
 
 ```javascript
-const sunburst = d3.partitionChart()
-    .width(600)
-    .height(600)
-    .orientation("radial")
-    .layoutType("sunburst");
-
-d3.select('#chart')
-    .datum(hierarchicalData)
-    .call(sunburst);
-```
-
-## Advanced Data Processing
-
-```javascript
-// Group data by multiple levels
-const grouped = d3.advancedDataProcessor.groupData(data, 
-    d => d.region, 
-    d => d.category
-);
-
-// Aggregate with rollup
-const aggregated = d3.advancedDataProcessor.rollupData(data,
-    values => d3.sum(values, d => d.sales),
-    d => d.region
-);
-
-// Create cross-tabulation
-const crosstab = d3.advancedDataProcessor.crossTabulate(data, 
-    'region', 'category', 'sales'
-);
-```
-
-## Performance Optimization
-
-### Large Dataset Handling
-
-```javascript
-const chart = d3.waterfallChart()
-    .enablePerformanceMonitoring(true)
-    .performanceConfig({
-        virtualizationThreshold: 10000,
-        chunkSize: 5000,
-        enableVirtualization: true
+const chart = waterfallChart()
+    .enableZoom(true)
+    .zoomConfig({
+        scaleExtent: [0.5, 10],
+        translateExtent: [[-100, -100], [width + 100, height + 100]]
     });
+```
 
-// Generate large dataset for testing
-const largeData = d3.largeDatasetUtils.generateSampleData(100000);
+### Trend Lines
 
-d3.select('#chart')
-    .datum(largeData)
-    .call(chart);
+```javascript
+const chart = waterfallChart()
+    .showTrendLine(true)
+    .trendLineType('polynomial')
+    .trendLineColor('#e74c3c')
+    .trendLineWidth(3)
+    .trendLineDegree(2);
 
-// Monitor performance
-console.log(chart.getPerformanceMetrics());
+// Available types: linear, moving-average, polynomial
 ```
 
 ## API Reference
@@ -226,25 +170,21 @@ chart
     .width(800)                    // Chart width
     .height(400)                   // Chart height  
     .showTotal(true)               // Show total bar
-    .stacked(true)                 // Toggle stacked/waterfall mode
+    .stacked(false)                // Toggle stacked/waterfall mode
     .margin({top: 20, right: 30, bottom: 40, left: 50})  // Chart margins
+    .barPadding(0.1)               // Space between bars
+    .duration(750)                 // Animation duration
 ```
 
-### Enterprise Configuration
+### Interactive Features
 ```javascript
 chart
-    .breakdown(config)             // Configure breakdown analysis
-    .conditionalFormatting(config) // Configure conditional formatting
+    .enableTooltips(true)          // Enable hover tooltips
+    .enableZoom(true)              // Enable zoom and pan
+    .enableAccessibility(true)     // Enable accessibility features
+    .theme('corporate')            // Apply theme
     .showTrendLine(true)           // Enable trend line overlay
-    .export('png', options)        // Export chart (PNG, SVG, JPEG, PDF)
-```
-
-### Performance Configuration
-```javascript
-chart
-    .enablePerformanceMonitoring(true)    // Enable performance tracking
-    .performanceConfig(config)            // Configure performance options
-    .getPerformanceMetrics()              // Get current performance data
+    .trendLineType('linear')       // Set trend line algorithm
 ```
 
 ### Event Handling
@@ -285,18 +225,18 @@ npm install
 
 ### Scripts
 ```bash
-npm test              # Run comprehensive test suite
-npm run lint          # Code quality checks
-npm run build         # Build distribution files
-npm run dev           # Development server (port 8080)
-npm run demo          # Launch demo server
+npm test              # Run test suite (183 tests)
+npm run lint          # ESLint code quality checks
+npm run build         # Build TypeScript and bundle
+npm start             # Development server (port 8080)
 ```
 
 ### Build Output
-- `dist/mintwaterfall.esm.js` - ES Module (209KB)
-- `dist/mintwaterfall.umd.js` - UMD Bundle (232KB)
-- `dist/mintwaterfall.min.js` - Minified UMD (89KB)
-- `dist/mintwaterfall.cjs.js` - CommonJS (210KB)
+- `dist/mintwaterfall.esm.js` - ES Module (177KB)
+- `dist/mintwaterfall.umd.js` - UMD Bundle (197KB)
+- `dist/mintwaterfall.min.js` - Minified UMD (64KB)
+- `dist/mintwaterfall.cjs.js` - CommonJS (179KB)
+- `dist/index.d.ts` - TypeScript definitions
 
 ## Browser Support
 
@@ -310,30 +250,32 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## Contributing
 
 Contributions welcome! Please ensure:
+- TypeScript compatibility with strict type checking
 - D3.js v7+ compatibility maintained
-- Tests included for new features
-- Zero linting errors (strict policy)
+- Tests included for new features (Jest framework)
+- Zero linting errors (ESLint strict policy)
 - Documentation updated
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## Changelog
 
-### v0.8.1 (Current)
-- **Hierarchical Layouts**: Complete D3.js layout system (treemap, partition, sunburst, pack)
-- **Performance Optimization**: Large dataset handling with virtualization and memory management
-- **Advanced Data Processing**: Modern D3.js data structures with transformation pipelines
-- **Power BI Integration**: Enhanced D3.js feature coverage for enterprise integration
+### v0.8.5 (Current)
+- **TypeScript Migration**: Complete TypeScript rewrite with full type safety
+- **Interactive Features**: Working tooltips, themes, zoom, accessibility, and trend lines
+- **Code Cleanup**: Removed unused legacy code, optimized bundle sizes
+- **Test Coverage**: 183 tests passing with comprehensive coverage
+- **Production Ready**: Zero lint errors, clean architecture
 
 ### v0.8.0
 - **Enterprise Features**: Breakdown analysis and conditional formatting
 - **Advanced Analytics**: Interactive drill-down with smart grouping
-- **Production Quality**: 210+ tests passing, zero lint errors
+- **Production Quality**: Comprehensive test coverage
 
 ### v0.6.0
 - **Trend Analysis**: Linear, moving average, polynomial overlays
 - **Data Loading**: CSV, JSON, TSV with HTTP URL support
-- **High-DPI Export**: 2x scaling PNG, SVG, JPEG, PDF
-- **Accessibility**: WCAG 2.1 compliance, Forced Colors Mode
+- **Export Capabilities**: SVG, PNG, JSON, CSV export formats
+- **Accessibility**: WCAG 2.1 compliance with keyboard navigation
 
 For complete version history, see [CHANGELOG.md](CHANGELOG.md).

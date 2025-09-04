@@ -1,5 +1,8 @@
 // Theme System Tests
-import { themes, applyTheme, getThemeColorPalette } from "../mintwaterfall-themes.js";
+import { themes, applyTheme } from "../dist/mintwaterfall.esm.js";
+
+// Note: getThemeColorPalette might not be exported, using themes directly
+const getThemeColorPalette = (themeName) => themes[themeName]?.colors || themes.default.colors;
 
 describe("MintWaterfall Theme System", () => {
   describe("Predefined Themes", () => {

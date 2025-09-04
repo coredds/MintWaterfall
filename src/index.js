@@ -1,56 +1,41 @@
 // MintWaterfall - Main Entry Point
 // D3.js-compatible waterfall chart component library with enhanced features
 
-export { waterfallChart } from "../mintwaterfall-chart.js";
-export { createDataProcessor, dataProcessor } from "../mintwaterfall-data.js";
-export { createAnimationSystem, animationSystem } from "../mintwaterfall-animations.js";
-export { themes, applyTheme, getThemeColorPalette } from "../mintwaterfall-themes.js";
+// Core chart functionality
+export { waterfallChart } from "./mintwaterfall-chart.ts";
+
+// Data processing
+export { createDataProcessor } from "./mintwaterfall-data.ts";
+
+// Animation system
+export { createAnimationSystem } from "./mintwaterfall-animations.ts";
+
+// Themes
+export { themes, applyTheme } from "./mintwaterfall-themes.ts";
 
 // Enhanced D3.js features
-export { createScaleSystem, createTimeScale, createOrdinalScale } from "../mintwaterfall-scales.js";
-export { createBrushSystem, addQuickBrush } from "../mintwaterfall-brush.js";
+export { createScaleSystem } from "./mintwaterfall-scales.ts";
+export { createBrushSystemFactory as createBrushSystem } from "./mintwaterfall-brush.ts";
 
 // Hierarchical Layout Features
-export { 
-    createHierarchicalLayout, 
-    createHierarchy, 
-    createHierarchyFromFlatData,
-    extractLayoutData,
-    convertToWaterfallFormat,
-    hierarchyLayouts 
-} from "../mintwaterfall-layouts.js";
-export { treemapChart } from "../mintwaterfall-treemap.js";
-export { partitionChart, sunburstChart } from "../mintwaterfall-partition.js";
+export { createHierarchicalLayout } from "./mintwaterfall-layouts.ts";
 
-// Advanced Data Processing Features
-export { 
-    createAdvancedDataProcessor, 
-    advancedDataProcessor, 
-    dataUtils 
-} from "../mintwaterfall-data-advanced.js";
+// Performance
+export { createPerformanceManager } from "./mintwaterfall-performance.ts";
 
-// Performance Optimization Features
-export { 
-    createPerformanceManager, 
-    performanceManager, 
-    largeDatasetUtils 
-} from "../mintwaterfall-performance.js";
+// Accessibility & UX Features
+export { createAccessibilitySystem } from "./mintwaterfall-accessibility.ts";
+export { createTooltipSystem } from "./mintwaterfall-tooltip.ts";
+export { createExportSystem } from "./mintwaterfall-export.ts";
 
-// Phase 1: Critical Accessibility & UX Features
-export { createAccessibilitySystem, accessibilitySystem, makeChartAccessible } from "../mintwaterfall-accessibility.js";
-export { createTooltipSystem, createChartTooltip, tooltip } from "../mintwaterfall-tooltip.js";
-export { createExportSystem, addExportToChart, exportSystem } from "../mintwaterfall-export.js";
-
-// Phase 2: Enhanced Interactivity Features  
-export { createZoomSystem, createZoomControls, addZoomToChart, zoomSystem } from "../mintwaterfall-zoom.js";
+// Interactivity Features  
+export { createZoomSystem } from "./mintwaterfall-zoom.ts";
 
 // Version information
-export const version = "0.8.1";
+export const version = "0.8.5";
 
 // Default exports for convenience
-import { waterfallChart } from "../mintwaterfall-chart.js";
-import { treemapChart } from "../mintwaterfall-treemap.js";
-import { partitionChart } from "../mintwaterfall-partition.js";
+import { waterfallChart } from "./mintwaterfall-chart.ts";
 
 // Export main chart as default
 export default waterfallChart;
@@ -58,7 +43,4 @@ export default waterfallChart;
 // Add to d3 namespace for compatibility
 if (typeof window !== "undefined" && window.d3) {
     window.d3.waterfallChart = waterfallChart;
-    window.d3.treemapChart = treemapChart;
-    window.d3.partitionChart = partitionChart;
-    window.d3.sunburstChart = partitionChart().orientation("radial");
 }

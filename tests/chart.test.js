@@ -1,5 +1,5 @@
 // MintWaterfall Chart Component Tests
-import { waterfallChart } from "../mintwaterfall-chart.js";
+import { waterfallChart } from "../dist/mintwaterfall.esm.js";
 
 describe("MintWaterfall Chart", () => {
   let chart;
