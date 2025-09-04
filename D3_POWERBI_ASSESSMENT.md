@@ -1,7 +1,7 @@
 # D3.js Features Assessment for Power BI Visual Component
 
 **Date**: September 1, 2025  
-**Project**: MintWaterfall v0.8.5 Enterprise Edition  
+**Project**: MintWaterfall v0.8.6 Enterprise Edition  
 **Purpose**: Assessment of D3.js features and Power BI visual requirements  
 **Status**: ✅ **SIGNIFICANT PROGRESS** - Major D3.js layout algorithms now implemented  
 

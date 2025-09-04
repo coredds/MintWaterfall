@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MintWaterfall v0.8.1 TypeScript - Chart Showcase</title>
+    <title>MintWaterfall v0.8.6 - Advanced Data Processing</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
@@ -406,7 +406,7 @@
     </style>
 </head>
 <body>
-    <h1>MintWaterfall v0.8.5 - TypeScript</h1>
+    <h1>MintWaterfall v0.8.6 - Advanced Data Processing</h1>
     
     <!-- Chart 1: Revenue Analysis -->
     <div class="chart-container">
@@ -564,6 +564,70 @@
 
 
 
+    <!-- NEW: Advanced Data Processing Demo Chart -->
+    <div class="chart-container">
+        <h2>Advanced D3.js Data Processing Features</h2>
+        <p style="text-align: center; color: #666; font-style: italic; margin-bottom: 20px;">
+            Multi-dimensional grouping, temporal aggregation, cross-tabulation, and financial analysis
+        </p>
+        
+        <!-- Advanced Data Processing Controls -->
+        <div class="feature-controls" style="margin: 15px 0; padding: 20px; background: linear-gradient(135deg, #e8f5e8, #f0f8f0); border-radius: 12px; border-left: 5px solid #27ae60;">
+            <h4 style="margin: 0 0 15px 0; color: #27ae60; font-size: 18px;">📊 Advanced D3.js Data Operations</h4>
+            
+            <div class="control-group" style="margin-bottom: 15px;">
+                <h4>Core D3.js Functions</h4>
+                <div class="feature-buttons">
+                    <button onclick="demonstrateGroupRollup('chartAdvancedData')" style="background: linear-gradient(45deg, #3498db, #2980b9);">d3.group() & d3.rollup()</button>
+                    <button onclick="demonstrateFlatRollup('chartAdvancedData')" style="background: linear-gradient(45deg, #e74c3c, #c0392b);">d3.flatRollup()</button>
+                    <button onclick="demonstrateCrossIndex('chartAdvancedData')" style="background: linear-gradient(45deg, #f39c12, #e67e22);">d3.cross() & d3.index()</button>
+                    <button onclick="demonstrateTemporalAgg('chartAdvancedData')" style="background: linear-gradient(45deg, #9b59b6, #8e44ad);">Temporal Aggregation</button>
+                </div>
+            </div>
+            
+            <div class="control-group" style="margin-bottom: 15px;">
+                <h4>Waterfall-Specific Helpers</h4>
+                <div class="feature-buttons">
+                    <button onclick="demonstrateRevenueWaterfall('chartAdvancedData')" style="background: linear-gradient(45deg, #27ae60, #2ecc71);">Revenue Waterfall</button>
+                    <button onclick="demonstrateVarianceWaterfall('chartAdvancedData')" style="background: linear-gradient(45deg, #e67e22, #f39c12);">Variance Analysis</button>
+                    <button onclick="demonstrateComparisonWaterfall('chartAdvancedData')" style="background: linear-gradient(45deg, #8e44ad, #9b59b6);">Period Comparison</button>
+                    <button onclick="demonstrateBreakdownWaterfall('chartAdvancedData')" style="background: linear-gradient(45deg, #34495e, #2c3e50);">Breakdown Analysis</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h4>Financial Analysis</h4>
+                <div class="feature-buttons">
+                    <button onclick="demonstrateFinancialReducers('chartAdvancedData')" style="background: linear-gradient(45deg, #16a085, #1abc9c);">Financial Reducers</button>
+                    <button onclick="demonstrateTransformData('chartAdvancedData')" style="background: linear-gradient(45deg, #d35400, #e74c3c);">Transaction Transform</button>
+                    <button onclick="resetAdvancedDemo('chartAdvancedData')" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d);">Reset Demo</button>
+                </div>
+            </div>
+        </div>
+        
+        <svg id="chartAdvancedData" width="1100" height="400"></svg>
+        
+        <div class="controls">
+            <button onclick="toggleStacked('chartAdvancedData')">Switch Mode</button>
+            <button onclick="animateChart('chartAdvancedData')">Animate</button>
+            <button onclick="generateAdvancedSampleData('chartAdvancedData')">Generate Sample Data</button>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #27ae60;">
+            <h4 style="color: #27ae60; margin: 0 0 10px 0;">💡 Current Demonstration</h4>
+            <div id="advanced-demo-info" style="color: #666; font-size: 14px; line-height: 1.5;">
+                <strong>Ready:</strong> Click any button above to see advanced D3.js data processing in action! Each demo transforms raw data using different D3.js functions and displays the results as waterfall charts.
+            </div>
+        </div>
+        
+        <div class="export-controls">
+            <button class="export-btn" onclick="exportChart('chartAdvancedData', 'svg')">Export SVG</button>
+            <button class="export-btn" onclick="exportChart('chartAdvancedData', 'png')">Export PNG</button>
+            <button class="export-btn" onclick="exportChart('chartAdvancedData', 'json')">Export JSON</button>
+            <button class="export-btn" onclick="exportChart('chartAdvancedData', 'csv')">Export CSV</button>
+        </div>
+    </div>
+
     <!-- Trend Line Demo Chart -->
     <div class="chart-container">
         <h2>Trend Line Overlays - Interactive Demonstration</h2>
@@ -652,9 +716,9 @@
 
 
     <script>
-        // MintWaterfall v0.8.1 TypeScript implementation loaded via UMD
+        // MintWaterfall v0.8.6 Advanced Data Processing implementation loaded via UMD
         try {
-            console.log('📦 Starting v0.8.1 TypeScript module initialization...');
+            console.log('📦 Starting v0.8.6 TypeScript module initialization...');
             
             // Access from the global namespace (loaded via UMD script)
             const waterfallChart = window.waterfallChart || (window.MintWaterfall && window.MintWaterfall.waterfallChart);
@@ -749,10 +813,18 @@
         function initializeCharts(waterfallChart, themes, applyTheme, dataProcessor, animationSystem, 
                                 createTooltipSystem, createAccessibilitySystem, createExportSystem, 
                                 createZoomSystem, createZoomControls, performanceManager) {
-            console.log('🚀 Initializing v0.8.1 TypeScript enterprise charts with new features...');
+            console.log('🚀 Initializing v0.8.6 TypeScript enterprise charts with new features...');
 
             // Test D3 availability first
             console.log('🔍 D3 availability:', typeof d3, d3?.version || 'no version');
+            console.log('🔍 D3 advanced functions:', {
+                group: typeof d3.group,
+                rollup: typeof d3.rollup,
+                flatRollup: typeof d3.flatRollup,
+                cross: typeof d3.cross,
+                index: typeof d3.index,
+                timeMonth: typeof d3.timeMonth
+            });
             
             // Test chart function
             console.log('🔍 waterfallChart function:', typeof waterfallChart);
@@ -1138,7 +1210,7 @@
 
 
 
-        // Chart configurations with enterprise features v0.8.1
+        // Chart configurations with enterprise features v0.8.6
         console.log('🔧 Creating chart configurations...');
         const charts = {
             chart1: {
@@ -1268,6 +1340,27 @@
                     window: 3,
                     degree: 2
                 }
+            },
+            chartAdvancedData: {
+                config: {
+                    width: 1100,
+                    height: 400,
+                    showTotal: true,
+                    totalLabel: 'Advanced Data Total',
+                    stacked: true,
+                    accessibility: false,
+                    tooltips: false,
+                    barPadding: 0.1,
+                    duration: 750
+                },
+                data: [
+                    { label: "Initial Data", stacks: [{ value: 100, color: "#95a5a6", label: "100" }] },
+                    { label: "Click buttons above", stacks: [{ value: 50, color: "#bdc3c7", label: "50" }] },
+                    { label: "to see advanced", stacks: [{ value: 75, color: "#ecf0f1", label: "75" }] },
+                    { label: "data processing!", stacks: [{ value: 125, color: "#d5dbdb", label: "125" }] }
+                ],
+                currentTheme: 'default',
+                currentDemo: 'initial'
             }
         };
 
@@ -2038,7 +2131,7 @@
         };
 
         // ========================================
-        // 🏢 ENTERPRISE FEATURE FUNCTIONS v0.8.0
+        // 🏢 ENTERPRISE FEATURE FUNCTIONS v0.8.6
         // ========================================
 
         window.toggleBreakdownAnalysis = function(chartId) {
@@ -2163,7 +2256,7 @@
         };
 
         // ========================================
-        // 🏢 ENTERPRISE v0.8.0 FUNCTIONS
+        // 🏢 ENTERPRISE v0.8.6 FUNCTIONS
         // ========================================
 
         // Enterprise Breakdown Analysis
@@ -2849,6 +2942,644 @@
         
         // Initialize responsive charts after a longer delay to ensure full initialization
         setTimeout(makeChartsResponsive, 1000);
+
+        // ========================================
+        // 🚀 ADVANCED DATA PROCESSING DEMONSTRATIONS
+        // ========================================
+
+        // Sample data for demonstrations
+        const advancedSampleData = [
+            { region: 'North', product: 'Widget A', channel: 'Direct', revenue: 85000, date: '2024-01-15', actual: 85000, budget: 80000 },
+            { region: 'North', product: 'Widget A', channel: 'Partner', revenue: 45000, date: '2024-01-22', actual: 45000, budget: 50000 },
+            { region: 'North', product: 'Widget B', channel: 'Direct', revenue: 62000, date: '2024-02-10', actual: 62000, budget: 60000 },
+            { region: 'South', product: 'Widget A', channel: 'Direct', revenue: 95000, date: '2024-01-08', actual: 95000, budget: 90000 },
+            { region: 'South', product: 'Widget B', channel: 'Partner', revenue: 58000, date: '2024-02-18', actual: 58000, budget: 55000 },
+            { region: 'East', product: 'Widget A', channel: 'Online', revenue: 72000, date: '2024-01-25', actual: 72000, budget: 75000 },
+            { region: 'West', product: 'Widget B', channel: 'Direct', revenue: 88000, date: '2024-02-05', actual: 88000, budget: 85000 },
+            { region: 'East', product: 'Widget B', channel: 'Partner', revenue: 41000, date: '2024-02-15', actual: 41000, budget: 45000 }
+        ];
+
+        const expenseTransactionData = [
+            { category: 'Marketing', subcategory: 'Digital Ads', amount: -25000, date: '2024-01-10' },
+            { category: 'Marketing', subcategory: 'Events', amount: -15000, date: '2024-01-20' },
+            { category: 'Operations', subcategory: 'Salaries', amount: -80000, date: '2024-01-31' },
+            { category: 'Operations', subcategory: 'Rent', amount: -12000, date: '2024-02-01' },
+            { category: 'Technology', subcategory: 'Software', amount: -8000, date: '2024-01-15' },
+            { category: 'Technology', subcategory: 'Hardware', amount: -5000, date: '2024-02-10' },
+            { category: 'Marketing', subcategory: 'Content', amount: -18000, date: '2024-02-20' },
+            { category: 'Operations', subcategory: 'Utilities', amount: -6000, date: '2024-02-05' }
+        ];
+
+        // Demo: d3.group() and d3.rollup()
+        window.demonstrateGroupRollup = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (!chartConfig) return;
+
+            // Simulate d3.group() and d3.rollup() functionality
+            const grouped = d3.group(advancedSampleData, d => d.region, d => d.product);
+            const rollup = d3.rollup(
+                advancedSampleData,
+                values => ({
+                    totalRevenue: d3.sum(values, d => d.revenue),
+                    avgRevenue: d3.mean(values, d => d.revenue),
+                    count: values.length
+                }),
+                d => d.region
+            );
+
+            // Convert rollup to waterfall format
+            const waterfallData = Array.from(rollup.entries()).map(([region, summary]) => ({
+                label: region,
+                stacks: [{
+                    value: Math.round(summary.totalRevenue / 1000),
+                    color: ['#3498db', '#e74c3c', '#f39c12', '#27ae60'][Array.from(rollup.keys()).indexOf(region)],
+                    label: `$${Math.round(summary.totalRevenue / 1000)}K (${summary.count} items)`
+                }]
+            }));
+
+            chartConfig.data = waterfallData;
+            chartConfig.currentDemo = 'group-rollup';
+            d3.select(`#${chartId}`).datum(waterfallData).call(chartConfig.chart);
+
+            document.getElementById('advanced-demo-info').innerHTML = `
+                <strong>d3.group() & d3.rollup():</strong> Grouped ${advancedSampleData.length} records by region, then aggregated revenue.
+                <br><strong>Result:</strong> ${waterfallData.length} regional totals showing $${d3.sum(waterfallData, d => d.stacks[0].value)}K total revenue.
+                <br><strong>Technique:</strong> Multi-dimensional grouping with custom reducer functions.
+            `;
+
+            showFeedback(chartId, 'd3.group() & d3.rollup() demonstration complete', 'success');
+        };
+
+        // Demo: d3.flatRollup()
+        window.demonstrateFlatRollup = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (!chartConfig) return;
+
+            // Use d3.flatRollup() to get flattened hierarchical results
+            const flatRollup = d3.flatRollup(
+                advancedSampleData,
+                values => d3.sum(values, d => d.revenue),
+                d => d.region,
+                d => d.product,
+                d => d.channel
+            );
+
+            // Convert to waterfall format
+            const waterfallData = flatRollup.slice(0, 8).map(([region, product, channel, revenue], index) => ({
+                label: `${region}/${product}/${channel}`,
+                stacks: [{
+                    value: Math.round(revenue / 1000),
+                    color: d3.schemeCategory10[index % 10],
+                    label: `$${Math.round(revenue / 1000)}K`
+                }]
+            }));
+
+            chartConfig.data = waterfallData;
+            chartConfig.currentDemo = 'flat-rollup';
+            d3.select(`#${chartId}`).datum(waterfallData).call(chartConfig.chart);
+
+            document.getElementById('advanced-demo-info').innerHTML = `
+                <strong>d3.flatRollup():</strong> Created flattened 3-dimensional aggregation (Region → Product → Channel).
+                <br><strong>Result:</strong> ${flatRollup.length} combinations flattened to array of [key1, key2, key3, value] tuples.
+                <br><strong>Showing:</strong> Top ${waterfallData.length} revenue combinations from multi-dimensional breakdown.
+            `;
+
+            showFeedback(chartId, 'd3.flatRollup() demonstration complete', 'success');
+        };
+
+        // Demo: d3.cross() and d3.index()
+        window.demonstrateCrossIndex = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (!chartConfig) return;
+
+            try {
+                // Check if D3.js functions are available
+                if (!d3.cross || !d3.index) {
+                    throw new Error('d3.cross() or d3.index() not available in this D3.js version');
+                }
+
+                // Ensure we have sample data
+                if (!advancedSampleData || advancedSampleData.length === 0) {
+                    generateAdvancedSampleData(chartId);
+                }
+
+                // Create unique lists for cross-tabulation
+                const regions = [...new Set(advancedSampleData.map(d => d.region))];
+                const products = [...new Set(advancedSampleData.map(d => d.product))];
+
+                console.log('Regions:', regions);
+                console.log('Products:', products);
+                console.log('Sample data length:', advancedSampleData.length);
+
+                // Use d3.cross() for cartesian product
+                const crossTab = d3.cross(regions, products, (region, product) => {
+                    const matches = advancedSampleData.filter(d => d.region === region && d.product === product);
+                    return {
+                        region,
+                        product,
+                        revenue: d3.sum(matches, d => d.revenue),
+                        count: matches.length
+                    };
+                });
+
+                console.log('Cross tab result:', crossTab);
+
+                // Use d3.index() for fast lookups
+                const indexed = d3.index(advancedSampleData, d => d.region, d => d.product);
+                console.log('Indexed result:', indexed);
+
+                // Convert cross-tabulation to waterfall
+                const waterfallData = crossTab
+                    .filter(d => d.revenue > 0)
+                    .map((item, index) => ({
+                        label: `${item.region} × ${item.product}`,
+                        stacks: [{
+                            value: Math.round(item.revenue / 1000),
+                            color: ['#3498db', '#e74c3c', '#f39c12', '#27ae60', '#9b59b6', '#1abc9c'][index % 6],
+                            label: `$${Math.round(item.revenue / 1000)}K (${item.count} records)`
+                        }]
+                    }));
+
+                if (waterfallData.length === 0) {
+                    // Fallback data
+                    waterfallData.push(
+                        { label: "North × Widget", stacks: [{ value: 120, color: "#3498db", label: "$120K (5 records)" }] },
+                        { label: "South × Gadget", stacks: [{ value: 85, color: "#e74c3c", label: "$85K (3 records)" }] },
+                        { label: "East × Widget", stacks: [{ value: 95, color: "#f39c12", label: "$95K (4 records)" }] },
+                        { label: "West × Gadget", stacks: [{ value: 110, color: "#27ae60", label: "$110K (6 records)" }] }
+                    );
+                }
+
+                chartConfig.data = waterfallData;
+                chartConfig.currentDemo = 'cross-index';
+                d3.select(`#${chartId}`).datum(waterfallData).call(chartConfig.chart);
+
+                document.getElementById('advanced-demo-info').innerHTML = `
+                    <strong>d3.cross() & d3.index():</strong> Cross-tabulated ${regions.length} regions × ${products.length} products.
+                    <br><strong>Cross Result:</strong> ${crossTab.length} total combinations, ${waterfallData.length} with revenue.
+                    <br><strong>Index Result:</strong> Created nested Map for O(1) lookups by region and product.
+                    <br><strong>Performance:</strong> Cross-tabulation in O(n×m) time, indexing provides O(1) lookup.
+                `;
+
+                showFeedback(chartId, 'd3.cross() & d3.index() demonstration complete', 'success');
+
+            } catch (error) {
+                console.error('Cross-index demonstration error:', error);
+                showFeedback(chartId, 'Error in d3.cross() & d3.index(): ' + error.message, 'error');
+                
+                // Fallback demonstration
+                const fallbackData = [
+                    { label: "Cross: North × Widget", stacks: [{ value: 120, color: "#3498db", label: "$120K cross-tab" }] },
+                    { label: "Cross: South × Gadget", stacks: [{ value: 85, color: "#e74c3c", label: "$85K cross-tab" }] },
+                    { label: "Cross: East × Tool", stacks: [{ value: 95, color: "#f39c12", label: "$95K cross-tab" }] },
+                    { label: "Index: Fast Lookup", stacks: [{ value: 110, color: "#27ae60", label: "$110K indexed" }] }
+                ];
+                
+                chartConfig.data = fallbackData;
+                d3.select(`#${chartId}`).datum(fallbackData).call(chartConfig.chart);
+                
+                document.getElementById('advanced-demo-info').innerHTML = `
+                    <strong>d3.cross() & d3.index() (Fallback):</strong> Demonstrating cross-tabulation and indexing concepts.
+                    <br><strong>Cross Product:</strong> Region × Product combinations for comprehensive analysis.
+                    <br><strong>Indexing:</strong> Fast O(1) lookup performance for large datasets.
+                    <br><strong>Status:</strong> Fallback data displayed due to D3.js version compatibility.
+                `;
+            }
+        };
+
+        // Demo: Temporal Aggregation
+        window.demonstrateTemporalAgg = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (!chartConfig) return;
+
+            // Aggregate by month using D3.js time intervals
+            const monthlyAgg = d3.rollup(
+                advancedSampleData,
+                values => ({
+                    totalRevenue: d3.sum(values, d => d.revenue),
+                    avgRevenue: d3.mean(values, d => d.revenue),
+                    count: values.length
+                }),
+                d => d3.timeMonth(new Date(d.date))
+            );
+
+            // Convert to waterfall format
+            const waterfallData = Array.from(monthlyAgg.entries()).map(([month, summary]) => ({
+                label: d3.timeFormat("%b %Y")(month),
+                stacks: [{
+                    value: Math.round(summary.totalRevenue / 1000),
+                    color: month.getMonth() === 0 ? '#3498db' : '#27ae60',
+                    label: `$${Math.round(summary.totalRevenue / 1000)}K (${summary.count} records)`
+                }]
+            }));
+
+            chartConfig.data = waterfallData;
+            chartConfig.currentDemo = 'temporal';
+            d3.select(`#${chartId}`).datum(waterfallData).call(chartConfig.chart);
+
+            document.getElementById('advanced-demo-info').innerHTML = `
+                <strong>Temporal Aggregation:</strong> Used d3.timeMonth() to group by month, then aggregated revenue.
+                <br><strong>Result:</strong> ${waterfallData.length} monthly periods with total revenue of $${d3.sum(waterfallData, d => d.stacks[0].value)}K.
+                <br><strong>D3.js Time:</strong> Leveraged D3's time interval system for precise temporal grouping.
+            `;
+
+            showFeedback(chartId, 'Temporal aggregation demonstration complete', 'success');
+        };
+
+        // Demo: Revenue Waterfall Helper
+        window.demonstrateRevenueWaterfall = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (!chartConfig) return;
+
+            // Simulate the createRevenueWaterfall helper
+            const revenueWaterfall = d3.flatRollup(
+                advancedSampleData,
+                values => d3.sum(values, d => d.revenue),
+                d => d.region,
+                d => d.product
+            ).map(([region, product, revenue]) => ({
+                label: `${region} → ${product}`,
+                stacks: [{
+                    value: Math.round(revenue / 1000),
+                    color: region === 'North' ? '#3498db' : region === 'South' ? '#e74c3c' : 
+                           region === 'East' ? '#f39c12' : '#27ae60',
+                    label: `$${Math.round(revenue / 1000)}K`
+                }]
+            }));
+
+            chartConfig.data = revenueWaterfall;
+            chartConfig.currentDemo = 'revenue-waterfall';
+            d3.select(`#${chartId}`).datum(revenueWaterfall).call(chartConfig.chart);
+
+            document.getElementById('advanced-demo-info').innerHTML = `
+                <strong>Revenue Waterfall Helper:</strong> Multi-dimensional revenue analysis by Region → Product.
+                <br><strong>Result:</strong> ${revenueWaterfall.length} revenue streams totaling $${d3.sum(revenueWaterfall, d => d.stacks[0].value)}K.
+                <br><strong>Feature:</strong> Automated hierarchical breakdown with intelligent color coding.
+            `;
+
+            showFeedback(chartId, 'Revenue waterfall demonstration complete', 'success');
+        };
+
+        // Demo: Variance Analysis
+        window.demonstrateVarianceWaterfall = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (!chartConfig) return;
+
+            // Create variance analysis: actual vs budget
+            const varianceData = d3.rollup(
+                advancedSampleData,
+                values => ({
+                    actual: d3.sum(values, d => d.actual),
+                    budget: d3.sum(values, d => d.budget)
+                }),
+                d => d.region
+            );
+
+            const waterfallData = Array.from(varianceData.entries()).map(([region, data]) => {
+                const variance = data.actual - data.budget;
+                return {
+                    label: `${region} Variance`,
+                    stacks: [{
+                        value: Math.round(variance / 1000),
+                        color: variance >= 0 ? '#27ae60' : '#e74c3c',
+                        label: `${variance >= 0 ? '+' : ''}$${Math.round(variance / 1000)}K variance`
+                    }]
+                };
+            });
+
+            chartConfig.data = waterfallData;
+            chartConfig.currentDemo = 'variance';
+            d3.select(`#${chartId}`).datum(waterfallData).call(chartConfig.chart);
+
+            document.getElementById('advanced-demo-info').innerHTML = `
+                <strong>Variance Analysis:</strong> Actual vs Budget comparison by region.
+                <br><strong>Result:</strong> ${waterfallData.length} regional variances, total variance: $${d3.sum(waterfallData, d => d.stacks[0].value)}K.
+                <br><strong>Colors:</strong> Green = over budget, Red = under budget performance.
+            `;
+
+            showFeedback(chartId, 'Variance analysis demonstration complete', 'success');
+        };
+
+        // Demo: Period Comparison
+        window.demonstrateComparisonWaterfall = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (!chartConfig) return;
+
+            try {
+                // Simulate two periods of data
+                const currentPeriod = advancedSampleData;
+                const previousPeriod = advancedSampleData.map(d => ({
+                    ...d,
+                    revenue: d.revenue * (0.8 + Math.random() * 0.4) // Simulate different previous values
+                }));
+
+                // First, rollup both periods by region
+                const currentRollup = d3.rollup(
+                    currentPeriod,
+                    values => d3.sum(values, d => d.revenue),
+                    d => d.region
+                );
+
+                const prevRollup = d3.rollup(
+                    previousPeriod,
+                    values => d3.sum(values, d => d.revenue),
+                    d => d.region
+                );
+
+                // Create comparison data
+                const waterfallData = [];
+                for (const [region, currentTotal] of currentRollup) {
+                    const prevTotal = prevRollup.get(region) || 0;
+                    const change = currentTotal - prevTotal;
+                    
+                    waterfallData.push({
+                        label: `${region} Change`,
+                        stacks: [{
+                            value: Math.round(change / 1000),
+                            color: change >= 0 ? '#27ae60' : '#e74c3c',
+                            label: `${change >= 0 ? '+' : ''}$${Math.round(change / 1000)}K change`
+                        }]
+                    });
+                }
+
+                chartConfig.data = waterfallData;
+                chartConfig.currentDemo = 'comparison';
+                d3.select(`#${chartId}`).datum(waterfallData).call(chartConfig.chart);
+
+                document.getElementById('advanced-demo-info').innerHTML = `
+                    <strong>Period Comparison:</strong> Current vs Previous period analysis using d3.rollup() for aggregation.
+                    <br><strong>Result:</strong> ${waterfallData.length} regional changes, net change: $${d3.sum(waterfallData, d => d.stacks[0].value)}K.
+                    <br><strong>Method:</strong> Efficient period-over-period comparison with Map-based lookups.
+                `;
+
+                showFeedback(chartId, 'Period comparison demonstration complete', 'success');
+            } catch (error) {
+                console.error('Period comparison error:', error);
+                showFeedback(chartId, 'Error in period comparison: ' + error.message, 'error');
+                
+                // Fallback simple data
+                const fallbackData = [
+                    { label: "North Change", stacks: [{ value: 15, color: "#27ae60", label: "+$15K change" }] },
+                    { label: "South Change", stacks: [{ value: -8, color: "#e74c3c", label: "-$8K change" }] },
+                    { label: "East Change", stacks: [{ value: 12, color: "#27ae60", label: "+$12K change" }] },
+                    { label: "West Change", stacks: [{ value: 5, color: "#27ae60", label: "+$5K change" }] }
+                ];
+                
+                chartConfig.data = fallbackData;
+                d3.select(`#${chartId}`).datum(fallbackData).call(chartConfig.chart);
+                
+                document.getElementById('advanced-demo-info').innerHTML = `
+                    <strong>Period Comparison (Fallback):</strong> Showing sample period-over-period changes.
+                    <br><strong>Result:</strong> 4 regional changes demonstrated with simplified data.
+                    <br><strong>Status:</strong> Fallback data displayed due to processing error.
+                `;
+            }
+        };
+
+        // Demo: Breakdown Analysis
+        window.demonstrateBreakdownWaterfall = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (!chartConfig) return;
+
+            // Create breakdown waterfall using nested rollup
+            const breakdown = d3.rollup(
+                expenseTransactionData,
+                values => d3.sum(values, d => d.amount),
+                d => d.category,
+                d => d.subcategory
+            );
+
+            const waterfallData = [];
+            for (const [category, subcategories] of breakdown) {
+                const stacks = Array.from(subcategories.entries()).map(([subcategory, amount], index) => ({
+                    value: Math.round(Math.abs(amount) / 1000),
+                    color: ['#e74c3c', '#c0392b', '#a93226'][index % 3],
+                    label: `${subcategory}: $${Math.round(Math.abs(amount) / 1000)}K`
+                }));
+
+                waterfallData.push({
+                    label: category,
+                    stacks: stacks
+                });
+            }
+
+            chartConfig.data = waterfallData;
+            chartConfig.currentDemo = 'breakdown';
+            d3.select(`#${chartId}`).datum(waterfallData).call(chartConfig.chart);
+
+            document.getElementById('advanced-demo-info').innerHTML = `
+                <strong>Breakdown Analysis:</strong> Hierarchical expense breakdown by Category → Subcategory.
+                <br><strong>Result:</strong> ${waterfallData.length} categories with ${d3.sum(waterfallData, d => d.stacks.length)} subcategory breakdowns.
+                <br><strong>Total Expenses:</strong> $${d3.sum(waterfallData, d => d3.sum(d.stacks, s => s.value))}K across all categories.
+            `;
+
+            showFeedback(chartId, 'Breakdown analysis demonstration complete', 'success');
+        };
+
+        // Demo: Financial Reducers
+        window.demonstrateFinancialReducers = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (!chartConfig) return;
+
+            try {
+                // Ensure we have sample data
+                if (!advancedSampleData || advancedSampleData.length === 0) {
+                    generateAdvancedSampleData(chartId);
+                }
+
+                // Simulate financial reducer functions
+                const financialMetrics = d3.rollup(
+                    advancedSampleData,
+                    values => {
+                        const revenues = values.map(d => d.revenue).filter(r => r != null && !isNaN(r));
+                        
+                        // Calculate metrics with proper null handling
+                        const sum = d3.sum(revenues);
+                        const mean = d3.mean(revenues);
+                        const median = d3.median(revenues);
+                        const variance = d3.variance(revenues);
+                        const sortedRevenues = revenues.slice().sort(d3.ascending);
+                        const q75 = d3.quantile(sortedRevenues, 0.75);
+                        
+                        console.log(`${values[0]?.region} metrics:`, { 
+                            count: revenues.length, 
+                            sum, mean, median, variance, q75 
+                        });
+                        
+                        return {
+                            sum: sum || 0,
+                            mean: mean || 0,
+                            median: median || 0,
+                            variance: variance,
+                            q75: q75 || 0,
+                            count: revenues.length
+                        };
+                    },
+                    d => d.region
+                );
+
+                const waterfallData = Array.from(financialMetrics.entries()).map(([region, metrics]) => {
+                    // Safe variance formatting
+                    const varianceText = (metrics.variance != null && !isNaN(metrics.variance)) 
+                        ? `σ²: $${Math.round(metrics.variance / 1000000)}M`
+                        : `σ²: N/A (n=${metrics.count})`;
+                    
+                    return {
+                        label: `${region} Analysis`,
+                        stacks: [{
+                            value: Math.round((metrics.mean || 0) / 1000),
+                            color: '#9b59b6',
+                            label: `Avg: $${Math.round((metrics.mean || 0) / 1000)}K (${varianceText})`
+                        }]
+                    };
+                });
+
+                chartConfig.data = waterfallData;
+                chartConfig.currentDemo = 'financial';
+                d3.select(`#${chartId}`).datum(waterfallData).call(chartConfig.chart);
+
+                // Calculate summary statistics
+                const totalRegions = waterfallData.length;
+                const validVariances = Array.from(financialMetrics.values()).filter(m => m.variance != null && !isNaN(m.variance)).length;
+
+                document.getElementById('advanced-demo-info').innerHTML = `
+                    <strong>Financial Reducers:</strong> Advanced statistical analysis using d3.mean(), d3.median(), d3.variance(), d3.quantile().
+                    <br><strong>Metrics:</strong> Analyzed ${totalRegions} regions, ${validVariances} with valid variance calculations.
+                    <br><strong>Functions:</strong> Sum, mean, median, variance, and 75th percentile calculations with null-safe handling.
+                `;
+
+                showFeedback(chartId, 'Financial reducers demonstration complete', 'success');
+
+            } catch (error) {
+                console.error('Financial reducers error:', error);
+                showFeedback(chartId, 'Error in financial reducers: ' + error.message, 'error');
+                
+                // Fallback data
+                const fallbackData = [
+                    { label: "North Analysis", stacks: [{ value: 95, color: "#9b59b6", label: "Avg: $95K (σ²: $15M)" }] },
+                    { label: "South Analysis", stacks: [{ value: 88, color: "#9b59b6", label: "Avg: $88K (σ²: $12M)" }] },
+                    { label: "East Analysis", stacks: [{ value: 102, color: "#9b59b6", label: "Avg: $102K (σ²: $18M)" }] },
+                    { label: "West Analysis", stacks: [{ value: 78, color: "#9b59b6", label: "Avg: $78K (σ²: $9M)" }] }
+                ];
+                
+                chartConfig.data = fallbackData;
+                d3.select(`#${chartId}`).datum(fallbackData).call(chartConfig.chart);
+                
+                document.getElementById('advanced-demo-info').innerHTML = `
+                    <strong>Financial Reducers (Fallback):</strong> Sample statistical analysis demonstration.
+                    <br><strong>Metrics:</strong> Average revenue with variance calculations per region.
+                    <br><strong>Status:</strong> Fallback data due to processing error.
+                `;
+            }
+        };
+
+        // Demo: Transaction Transform
+        window.demonstrateTransformData = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (!chartConfig) return;
+
+            // Transform transaction data to waterfall format
+            const transformed = d3.rollup(
+                expenseTransactionData,
+                values => d3.sum(values, d => Math.abs(d.amount)),
+                d => d.category
+            );
+
+            const waterfallData = Array.from(transformed.entries()).map(([category, total]) => ({
+                label: category,
+                stacks: [{
+                    value: Math.round(total / 1000),
+                    color: category === 'Marketing' ? '#e74c3c' : 
+                           category === 'Operations' ? '#f39c12' : '#9b59b6',
+                    label: `$${Math.round(total / 1000)}K expenses`
+                }]
+            }));
+
+            chartConfig.data = waterfallData;
+            chartConfig.currentDemo = 'transform';
+            d3.select(`#${chartId}`).datum(waterfallData).call(chartConfig.chart);
+
+            document.getElementById('advanced-demo-info').innerHTML = `
+                <strong>Transaction Transform:</strong> Converted ${expenseTransactionData.length} raw transactions to ${waterfallData.length} category summaries.
+                <br><strong>Total Processed:</strong> $${d3.sum(waterfallData, d => d.stacks[0].value)}K in expenses across all categories.
+                <br><strong>Method:</strong> Automated transformation from flat transaction data to hierarchical waterfall format.
+            `;
+
+            showFeedback(chartId, 'Transaction transform demonstration complete', 'success');
+        };
+
+        // Reset demo
+        window.resetAdvancedDemo = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (!chartConfig) return;
+
+            chartConfig.data = [
+                { label: "Advanced D3.js", stacks: [{ value: 100, color: "#3498db", label: "100%" }] },
+                { label: "Data Processing", stacks: [{ value: 85, color: "#27ae60", label: "85%" }] },
+                { label: "Implementation", stacks: [{ value: 95, color: "#f39c12", label: "95%" }] },
+                { label: "Complete!", stacks: [{ value: 120, color: "#e74c3c", label: "120%" }] }
+            ];
+            chartConfig.currentDemo = 'reset';
+            d3.select(`#${chartId}`).datum(chartConfig.data).call(chartConfig.chart);
+
+            document.getElementById('advanced-demo-info').innerHTML = `
+                <strong>Reset:</strong> Ready for new demonstrations! Click any button above to see advanced D3.js data processing.
+                <br><strong>Available:</strong> d3.group(), d3.rollup(), d3.flatRollup(), d3.cross(), d3.index(), temporal aggregation, and waterfall helpers.
+                <br><strong>Status:</strong> All Phase 1 advanced data processing features implemented and ready to demonstrate.
+            `;
+
+            showFeedback(chartId, 'Demo reset - ready for new demonstrations', 'success');
+        };
+
+        // Generate sample data for advanced demos
+        window.generateAdvancedSampleData = function(chartId) {
+            const chartConfig = charts[chartId];
+            if (!chartConfig) return;
+
+            // Generate realistic sample data
+            const regions = ['North', 'South', 'East', 'West', 'Central'];
+            const products = ['Widget A', 'Widget B', 'Widget C'];
+            const channels = ['Direct', 'Partner', 'Online'];
+            
+            const newData = [];
+            for (let i = 0; i < 12; i++) {
+                const region = regions[Math.floor(Math.random() * regions.length)];
+                const product = products[Math.floor(Math.random() * products.length)];
+                const channel = channels[Math.floor(Math.random() * channels.length)];
+                const revenue = Math.floor(Math.random() * 80000) + 20000;
+                
+                newData.push({
+                    region,
+                    product,
+                    channel,
+                    revenue,
+                    date: `2024-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
+                    actual: revenue,
+                    budget: revenue * (0.9 + Math.random() * 0.2)
+                });
+            }
+
+            // Convert to simple waterfall format for display
+            const waterfallData = newData.slice(0, 8).map((item, index) => ({
+                label: `${item.region}-${item.product}`,
+                stacks: [{
+                    value: Math.round(item.revenue / 1000),
+                    color: d3.schemeCategory10[index % 10],
+                    label: `$${Math.round(item.revenue / 1000)}K`
+                }]
+            }));
+
+            chartConfig.data = waterfallData;
+            d3.select(`#${chartId}`).datum(waterfallData).call(chartConfig.chart);
+
+            document.getElementById('advanced-demo-info').innerHTML = `
+                <strong>Sample Data Generated:</strong> Created ${newData.length} records with regions, products, channels, and revenue.
+                <br><strong>Showing:</strong> ${waterfallData.length} items (sample of generated data).
+                <br><strong>Ready:</strong> Use buttons above to process this data with advanced D3.js functions.
+            `;
+
+            showFeedback(chartId, `Generated ${newData.length} sample records`, 'success');
+        };
         
         // Fallback: Ensure charts are visible even if responsive JS fails
         setTimeout(() => {
@@ -3119,7 +3850,7 @@
 
 
         // Log successful initialization - PURE WATERFALL FOCUS WITH TYPESCRIPT
-        console.log('🌊 MintWaterfall v0.8.1 - TYPESCRIPT WATERFALL CHART SHOWCASE!');
+        console.log('🌊 MintWaterfall v0.8.6 - TYPESCRIPT WATERFALL CHART SHOWCASE!');
         console.log('⚡ TYPESCRIPT MIGRATION: Full type safety, enhanced development experience');
         console.log('💧 CORE WATERFALL FEATURES: Stacked/Waterfall modes, Breakdown analysis, Conditional formatting');
         console.log('🎨 WATERFALL STYLING: Themes, animations, responsive design, accessibility');

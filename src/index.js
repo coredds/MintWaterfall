@@ -4,8 +4,23 @@
 // Core chart functionality
 export { waterfallChart } from "./mintwaterfall-chart.ts";
 
-// Data processing
-export { createDataProcessor } from "./mintwaterfall-data.ts";
+// Data processing - Core
+export { createDataProcessor, dataProcessor } from "./mintwaterfall-data.ts";
+
+// Data processing - Advanced D3.js Operations
+export {
+    // Standalone helper functions
+    createRevenueWaterfall,
+    createTemporalWaterfall,
+    createVarianceWaterfall,
+    groupWaterfallData,
+    createComparisonWaterfall,
+    transformTransactionData,
+    
+    // Financial utilities
+    financialReducers,
+    d3DataUtils
+} from "./mintwaterfall-data.ts";
 
 // Animation system
 export { createAnimationSystem } from "./mintwaterfall-animations.ts";
@@ -32,7 +47,7 @@ export { createExportSystem } from "./mintwaterfall-export.ts";
 export { createZoomSystem } from "./mintwaterfall-zoom.ts";
 
 // Version information
-export const version = "0.8.5";
+export const version = "0.8.6"; // Updated for advanced data processing features
 
 // Default exports for convenience
 import { waterfallChart } from "./mintwaterfall-chart.ts";

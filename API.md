@@ -2,7 +2,20 @@
 
 ## Overview
 
-MintWaterfall is a production-ready, D3.js-compatible waterfall chart component with comprehensive testing (168 test cases, 51% coverage) that supports both stacked and waterfall visualization modes with smooth animations, advanced interactive features, and extensive customization options. Enhanced with D3.js v7 full compatibility including advanced scale systems, brush filtering, and staggered animations.
+MintWaterfall is a production-ready, D3.js-compatible waterfall chart component with comprehensive testing (168 test cases, 51% coverage) that supports both stacked and waterfall visualization modes with smooth animations, advanced interactive features, and extensive customization options. Enhanced with D3.js v7 full compatibility including advanced scale systems, brush filtering, staggered animations, and **comprehensive advanced data processing capabilities**.
+
+## 🆕 **NEW: Advanced Data Processing Features (v0.8.6)**
+
+MintWaterfall now includes comprehensive D3.js data manipulation APIs including `d3.group()`, `d3.rollup()`, `d3.flatRollup()`, `d3.cross()`, and `d3.index()` for enterprise-grade data analysis. These features enable complex multi-dimensional analysis, temporal aggregation, cross-tabulation, and hierarchical data transformations specifically optimized for waterfall chart scenarios.
+
+### **Key New Capabilities:**
+- ✅ **Multi-dimensional Grouping** - Group data across multiple dimensions using D3.js group() API
+- ✅ **Advanced Aggregation** - Rollup data with custom reducers using D3.js rollup() and flatRollup() APIs
+- ✅ **Cross-tabulation** - Create comparison matrices using D3.js cross() API
+- ✅ **Fast Indexing** - O(1) data lookups using D3.js index() API
+- ✅ **Temporal Analysis** - Time-series aggregation with D3.js time intervals
+- ✅ **Waterfall-specific Helpers** - Revenue analysis, variance analysis, breakdown waterfalls
+- ✅ **Financial Reducers** - Specialized aggregation functions for financial data
 
 ## Installation & Setup
 
@@ -62,6 +75,280 @@ const chart = d3.waterfallChart()
 d3.select('#chart')
     .datum(data)
     .call(chart);
+```
+
+## 📊 Advanced Data Processing API
+
+### Overview
+
+MintWaterfall now provides comprehensive D3.js data manipulation capabilities through the enhanced data processing module. These functions enable complex multi-dimensional analysis, temporal aggregation, and specialized waterfall transformations.
+
+### Import Advanced Data Operations
+
+```javascript
+import { 
+    createDataProcessor,
+    createRevenueWaterfall,
+    createTemporalWaterfall,
+    createVarianceWaterfall,
+    groupWaterfallData,
+    createComparisonWaterfall,
+    transformTransactionData,
+    financialReducers,
+    d3DataUtils
+} from 'mintwaterfall';
+
+// Create processor instance
+const processor = createDataProcessor();
+```
+
+### Core D3.js Data Operations
+
+#### Multi-dimensional Grouping
+```javascript
+// Group by single dimension
+const grouped = processor.groupBy(data, d => d.region);
+
+// Group by multiple dimensions (nested)
+const nestedGrouped = processor.groupBy(
+    data, 
+    d => d.region, 
+    d => d.product,
+    d => d.channel
+);
+```
+
+#### Advanced Aggregation
+```javascript
+// Simple rollup
+const rollup = processor.rollupBy(
+    data,
+    values => d3.sum(values, d => d.revenue),
+    d => d.region
+);
+
+// Multi-dimensional rollup
+const nestedRollup = processor.rollupBy(
+    data,
+    values => ({
+        total: d3.sum(values, d => d.revenue),
+        avg: d3.mean(values, d => d.revenue),
+        count: values.length
+    }),
+    d => d.region,
+    d => d.product
+);
+```
+
+#### Flattened Hierarchical Rollup
+```javascript
+// Returns array of [key1, key2, ..., value] tuples
+const flatResult = processor.flatRollupBy(
+    data,
+    values => d3.sum(values, d => d.revenue),
+    d => d.region,
+    d => d.product,
+    d => d.channel
+);
+
+// Result: [["North", "Widget A", "Direct", 100000], ...]
+```
+
+#### Cross-tabulation Analysis
+```javascript
+// Create comparison matrix
+const crossTab = processor.crossTabulate(
+    currentPeriodData,
+    previousPeriodData,
+    (current, previous) => current.value - previous.value
+);
+```
+
+#### Fast Data Indexing
+```javascript
+// Single-level index
+const indexed = processor.indexBy(data, d => d.id);
+
+// Multi-level index
+const nestedIndex = processor.indexBy(
+    data, 
+    d => d.region, 
+    d => d.product
+);
+
+// O(1) lookups: indexed.get("North").get("Widget A")
+```
+
+### Temporal Data Operations
+
+#### Time-series Aggregation
+```javascript
+// Aggregate by time periods
+const monthlyData = processor.aggregateByTime(data, {
+    timeAccessor: d => new Date(d.date),
+    valueAccessor: d => d.revenue,
+    interval: d3.timeMonth,
+    aggregation: 'sum' // 'sum', 'average', 'max', 'min'
+});
+```
+
+#### Temporal Waterfall Creation
+```javascript
+// Create time-based waterfall
+const temporalWaterfall = createTemporalWaterfall(
+    salesData,
+    'date',        // time field
+    'revenue',     // value field
+    'month'        // 'day', 'week', 'month', 'quarter', 'year'
+);
+```
+
+### Waterfall-Specific Data Transformations
+
+#### Multi-dimensional Revenue Waterfall
+```javascript
+// Create hierarchical revenue analysis
+const revenueWaterfall = createRevenueWaterfall(
+    salesData,
+    ['region', 'product', 'channel'],
+    'revenue'
+);
+```
+
+#### Variance Analysis Waterfall
+```javascript
+// Compare actual vs budget
+const varianceWaterfall = createVarianceWaterfall(
+    budgetData,
+    'category',    // category field
+    'actual',      // actual values field
+    'budget'       // budget values field
+);
+```
+
+#### Breakdown Waterfall
+```javascript
+// Create drill-down waterfall
+const breakdownWaterfall = processor.createBreakdownWaterfall(
+    transactionData,
+    'category',      // primary grouping
+    'subcategory',   // breakdown grouping
+    'amount'         // value field
+);
+```
+
+#### Advanced Grouped Waterfall
+```javascript
+// Group with custom functions
+const groupedWaterfall = groupWaterfallData(
+    data,
+    [d => d.region, d => d.quarter],  // grouping functions
+    d => d.revenue,                   // value accessor
+    d => `${d.region} Q${d.quarter}`  // label accessor
+);
+```
+
+#### Period-over-Period Comparison
+```javascript
+// Compare two time periods
+const comparisonWaterfall = createComparisonWaterfall(
+    currentData,
+    previousData,
+    d => d.category,      // category accessor
+    d => d.value          // value accessor
+);
+```
+
+### Transaction Data Processing
+
+#### Transform Raw Transactions
+```javascript
+// Simple category aggregation
+const simpleWaterfall = transformTransactionData(
+    transactions,
+    'category',     // category field
+    undefined,      // no subcategory
+    'amount'        // value field
+);
+
+// Two-level breakdown
+const detailedWaterfall = transformTransactionData(
+    transactions,
+    'category',     // primary category
+    'subcategory',  // breakdown category
+    'amount',       // value field
+    'date'          // optional date field
+);
+```
+
+### Financial Analysis Functions
+
+#### Built-in Financial Reducers
+```javascript
+// Use specialized financial aggregation functions
+const analysis = processor.rollupBy(
+    data,
+    financialReducers.weightedAverage,  // weighted average
+    d => d.portfolio
+);
+
+// Available reducers:
+financialReducers.sum(values)
+financialReducers.average(values)
+financialReducers.weightedAverage(values, 'weightField')
+financialReducers.variance(values)
+financialReducers.percentile(90)(values)  // 90th percentile
+```
+
+### Utility Functions
+
+#### Direct D3.js Access
+```javascript
+// Access D3.js functions directly
+const { group, rollup, cross, index } = d3DataUtils;
+
+// Use D3.js functions directly
+const grouped = d3DataUtils.group(data, d => d.category);
+const total = d3DataUtils.sum(data, d => d.value);
+```
+
+### Real-world Example
+
+```javascript
+// Complex financial analysis workflow
+const salesData = [
+    { region: 'North', product: 'A', revenue: 100000, date: '2024-01-15' },
+    { region: 'South', product: 'B', revenue: 120000, date: '2024-02-10' },
+    // ... more data
+];
+
+// Step 1: Multi-dimensional analysis
+const regionalAnalysis = processor.rollupBy(
+    salesData,
+    values => ({
+        totalRevenue: d3.sum(values, d => d.revenue),
+        avgDealSize: d3.mean(values, d => d.revenue),
+        dealCount: values.length
+    }),
+    d => d.region,
+    d => d.product
+);
+
+// Step 2: Create waterfall visualization
+const waterfallData = Array.from(regionalAnalysis.entries()).map(([region, productMap]) => {
+    const stacks = Array.from(productMap.entries()).map(([product, metrics]) => ({
+        value: metrics.totalRevenue,
+        color: '#3498db',
+        label: `${product}: $${d3.format(',.0f')(metrics.totalRevenue)}`
+    }));
+    
+    return { label: region, stacks };
+});
+
+// Step 3: Apply to chart
+d3.select('#chart')
+    .datum(waterfallData)
+    .call(waterfallChart());
 ```
 
 ## API Reference

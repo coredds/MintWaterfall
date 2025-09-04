@@ -1,5 +1,5 @@
 /*!
- * MintWaterfall v0.8.5
+ * MintWaterfall v0.8.6
  * D3.js-compatible waterfall chart component
  * (c) 2024 David Duarte
  * Released under the MIT License
@@ -3954,6 +3954,243 @@
                 }))
             }));
         }
+        // === ADVANCED D3.JS DATA OPERATIONS ===
+        /**
+         * Advanced multi-dimensional grouping using D3.js group() API
+         * Supports 1-3 levels of nested grouping
+         */
+        function groupBy(data, ...keys) {
+            if (!Array.isArray(data)) {
+                throw new Error("Data must be an array");
+            }
+            if (keys.length === 0) {
+                throw new Error("At least one grouping key must be provided");
+            }
+            if (keys.length === 1) {
+                return d3__namespace.group(data, keys[0]);
+            }
+            else if (keys.length === 2) {
+                return d3__namespace.group(data, keys[0], keys[1]);
+            }
+            else if (keys.length === 3) {
+                return d3__namespace.group(data, keys[0], keys[1], keys[2]);
+            }
+            else {
+                throw new Error("Maximum 3 levels of grouping supported");
+            }
+        }
+        /**
+         * Advanced aggregation using D3.js rollup() API
+         * Supports multi-dimensional rollup with custom reducers
+         */
+        function rollupBy(data, reducer, ...keys) {
+            if (!Array.isArray(data)) {
+                throw new Error("Data must be an array");
+            }
+            if (typeof reducer !== "function") {
+                throw new Error("Reducer must be a function");
+            }
+            if (keys.length === 0) {
+                throw new Error("At least one grouping key must be provided");
+            }
+            if (keys.length === 1) {
+                return d3__namespace.rollup(data, reducer, keys[0]);
+            }
+            else if (keys.length === 2) {
+                return d3__namespace.rollup(data, reducer, keys[0], keys[1]);
+            }
+            else if (keys.length === 3) {
+                return d3__namespace.rollup(data, reducer, keys[0], keys[1], keys[2]);
+            }
+            else {
+                throw new Error("Maximum 3 levels of rollup supported");
+            }
+        }
+        /**
+         * Flatten hierarchical rollup using D3.js flatRollup() API
+         * Returns array of [key1, key2, ..., value] tuples
+         */
+        function flatRollupBy(data, reducer, ...keys) {
+            if (!Array.isArray(data)) {
+                throw new Error("Data must be an array");
+            }
+            if (typeof reducer !== "function") {
+                throw new Error("Reducer must be a function");
+            }
+            if (keys.length === 0) {
+                throw new Error("At least one grouping key must be provided");
+            }
+            return d3__namespace.flatRollup(data, reducer, ...keys);
+        }
+        /**
+         * Cross-tabulation using D3.js cross() API
+         * Creates cartesian product with optional combiner function
+         */
+        function crossTabulate(data1, data2, combiner) {
+            if (!Array.isArray(data1) || !Array.isArray(data2)) {
+                throw new Error("Both data arrays must be arrays");
+            }
+            if (combiner) {
+                return d3__namespace.cross(data1, data2, (a, b) => ({
+                    row: a,
+                    col: b,
+                    value: combiner(a, b)
+                }));
+            }
+            else {
+                return d3__namespace.cross(data1, data2, (a, b) => ({
+                    row: a,
+                    col: b,
+                    value: undefined
+                }));
+            }
+        }
+        /**
+         * Fast data indexing using D3.js index() API
+         * Creates map-based indexes for O(1) lookups
+         */
+        function indexBy(data, ...keys) {
+            if (!Array.isArray(data)) {
+                throw new Error("Data must be an array");
+            }
+            if (keys.length === 0) {
+                throw new Error("At least one indexing key must be provided");
+            }
+            if (keys.length === 1) {
+                return d3__namespace.index(data, keys[0]);
+            }
+            else if (keys.length === 2) {
+                return d3__namespace.index(data, keys[0], keys[1]);
+            }
+            else {
+                throw new Error("Maximum 2 levels of indexing supported");
+            }
+        }
+        /**
+         * Temporal aggregation for time-series waterfall data
+         * Groups data by time intervals and aggregates values
+         */
+        function aggregateByTime(data, options) {
+            const { timeAccessor, valueAccessor, interval, aggregation = 'sum' } = options;
+            if (!Array.isArray(data)) {
+                throw new Error("Data must be an array");
+            }
+            if (typeof timeAccessor !== "function" || typeof valueAccessor !== "function") {
+                throw new Error("Time and value accessors must be functions");
+            }
+            // Group by time interval
+            const grouped = d3__namespace.rollup(data, (values) => {
+                switch (aggregation) {
+                    case 'sum':
+                        return d3__namespace.sum(values, valueAccessor);
+                    case 'average':
+                        return d3__namespace.mean(values, valueAccessor) || 0;
+                    case 'max':
+                        return d3__namespace.max(values, valueAccessor) || 0;
+                    case 'min':
+                        return d3__namespace.min(values, valueAccessor) || 0;
+                    default:
+                        return d3__namespace.sum(values, valueAccessor);
+                }
+            }, (d) => interval(timeAccessor(d)));
+            // Convert to waterfall format
+            return Array.from(grouped.entries()).map(([date, value]) => ({
+                label: d3__namespace.timeFormat("%Y-%m-%d")(date),
+                stacks: [{
+                        value: value,
+                        color: value >= 0 ? "#2ecc71" : "#e74c3c",
+                        label: `${value >= 0 ? "+" : ""}${d3__namespace.format(".2f")(value)}`
+                    }]
+            }));
+        }
+        /**
+         * Create multi-dimensional waterfall from hierarchical data
+         * Groups by multiple keys and creates stacked waterfall segments
+         */
+        function createMultiDimensionalWaterfall(data, groupKeys, valueKey) {
+            if (!Array.isArray(data) || !Array.isArray(groupKeys)) {
+                throw new Error("Data and groupKeys must be arrays");
+            }
+            if (groupKeys.length === 0) {
+                throw new Error("At least one group key must be provided");
+            }
+            // Create accessor functions for the keys
+            const accessors = groupKeys.map(key => (d) => d[key]);
+            // Use flatRollup to get flat aggregated data
+            const aggregated = d3__namespace.flatRollup(data, (values) => d3__namespace.sum(values, (d) => d[valueKey] || 0), ...accessors);
+            // Convert to waterfall format
+            return aggregated.map((item) => {
+                const keys = item.slice(0, -1); // All but last element
+                const value = item[item.length - 1]; // Last element
+                const label = keys.join(" → ");
+                const colors = ["#3498db", "#2ecc71", "#f39c12", "#e74c3c", "#9b59b6"];
+                const colorIndex = Math.abs(keys.join("").split("").reduce((a, b) => a + b.charCodeAt(0), 0)) % colors.length;
+                return {
+                    label,
+                    stacks: [{
+                            value: value,
+                            color: colors[colorIndex],
+                            label: `${value >= 0 ? "+" : ""}${d3__namespace.format(".2f")(value)}`
+                        }]
+                };
+            });
+        }
+        /**
+         * Aggregate existing waterfall data by time periods
+         * Useful for rolling up daily waterfalls into weekly/monthly
+         */
+        function aggregateWaterfallByPeriod(data, timeKey, interval) {
+            validateData(data);
+            // Extract time values and group by interval
+            const timeGrouped = d3__namespace.rollup(data, (items) => {
+                // Aggregate all stacks across items in this time period
+                const allStacks = [];
+                items.forEach(item => allStacks.push(...item.stacks));
+                // Group stacks by color and sum values
+                const stacksByColor = d3__namespace.rollup(allStacks, (stacks) => ({
+                    value: d3__namespace.sum(stacks, s => s.value),
+                    label: stacks[0].label,
+                    color: stacks[0].color
+                }), (s) => s.color);
+                return Array.from(stacksByColor.values());
+            }, (item) => {
+                // Try to parse time from the item (assuming it's in the label or a property)
+                const timeStr = item[timeKey] || item.label;
+                const date = new Date(timeStr);
+                return isNaN(date.getTime()) ? new Date() : interval(date);
+            });
+            // Convert to waterfall format
+            return Array.from(timeGrouped.entries()).map(([date, stacks]) => ({
+                label: d3__namespace.timeFormat("%Y-%m-%d")(date),
+                stacks: stacks
+            }));
+        }
+        /**
+         * Create breakdown waterfall showing primary categories and their breakdowns
+         * Useful for drill-down analysis
+         */
+        function createBreakdownWaterfall(data, primaryKey, breakdownKey, valueKey) {
+            if (!Array.isArray(data)) {
+                throw new Error("Data must be an array");
+            }
+            // First group by primary key, then by breakdown key
+            const nested = d3__namespace.rollup(data, (values) => d3__namespace.sum(values, (d) => d[valueKey] || 0), (d) => d[primaryKey], (d) => d[breakdownKey]);
+            // Convert to waterfall format with stacked breakdowns
+            return Array.from(nested.entries()).map(([primaryValue, breakdowns]) => {
+                const stacks = Array.from(breakdowns.entries()).map(([breakdownValue, value], index) => {
+                    const colors = ["#3498db", "#2ecc71", "#f39c12", "#e74c3c", "#9b59b6", "#1abc9c", "#34495e"];
+                    return {
+                        value: value,
+                        color: colors[index % colors.length],
+                        label: `${breakdownValue}: ${value >= 0 ? "+" : ""}${d3__namespace.format(".2f")(value)}`
+                    };
+                });
+                return {
+                    label: String(primaryValue),
+                    stacks
+                };
+            });
+        }
         // Internal wrapper functions for the standalone functions
         async function loadDataWrapper(source, options = {}) {
             return await loadData(source, options);
@@ -3962,6 +4199,7 @@
             return transformToWaterfallFormat(data, options);
         }
         return {
+            // Original methods
             validateData,
             loadData: loadDataWrapper,
             transformToWaterfallFormat: transformToWaterfallFormatWrapper,
@@ -3976,9 +4214,177 @@
             groupByCategory,
             calculatePercentages,
             interpolateData,
-            generateSampleData
+            generateSampleData,
+            // Advanced D3.js data operations
+            groupBy,
+            rollupBy,
+            flatRollupBy,
+            crossTabulate,
+            indexBy,
+            aggregateByTime,
+            createMultiDimensionalWaterfall,
+            aggregateWaterfallByPeriod,
+            createBreakdownWaterfall
         };
     }
+    // Export a default instance for backward compatibility
+    const dataProcessor = createDataProcessor();
+    // === STANDALONE ADVANCED DATA OPERATION HELPERS ===
+    /**
+     * Create revenue waterfall by grouping sales data by multiple dimensions
+     * Example: Group by Region → Product → Channel
+     */
+    function createRevenueWaterfall(salesData, dimensions, valueField = 'revenue') {
+        return dataProcessor.createMultiDimensionalWaterfall(salesData, dimensions, valueField);
+    }
+    /**
+     * Aggregate financial data by time periods for waterfall analysis
+     * Example: Roll up daily P&L data into monthly waterfall
+     */
+    function createTemporalWaterfall(data, timeField, valueField, interval = 'month') {
+        const timeIntervals = {
+            day: d3__namespace.timeDay,
+            week: d3__namespace.timeWeek,
+            month: d3__namespace.timeMonth,
+            quarter: d3__namespace.timeMonth.every(3),
+            year: d3__namespace.timeYear
+        };
+        return dataProcessor.aggregateByTime(data, {
+            timeAccessor: (d) => new Date(d[timeField]),
+            valueAccessor: (d) => d[valueField] || 0,
+            interval: timeIntervals[interval],
+            aggregation: 'sum'
+        });
+    }
+    /**
+     * Create variance analysis waterfall comparing actuals vs budget
+     * Shows positive/negative variances as waterfall segments
+     */
+    function createVarianceWaterfall(data, categoryField, actualField = 'actual', budgetField = 'budget') {
+        return data.map(item => {
+            const actual = item[actualField] || 0;
+            const budget = item[budgetField] || 0;
+            const variance = actual - budget;
+            return {
+                label: item[categoryField],
+                stacks: [{
+                        value: variance,
+                        color: variance >= 0 ? '#2ecc71' : '#e74c3c',
+                        label: `Variance: ${variance >= 0 ? '+' : ''}${d3__namespace.format('.2f')(variance)}`
+                    }]
+            };
+        });
+    }
+    /**
+     * Advanced data grouping with waterfall-optimized aggregation
+     * Supports nested grouping with automatic color assignment
+     */
+    function groupWaterfallData(data, groupBy, valueAccessor, labelAccessor) {
+        const grouped = dataProcessor.flatRollupBy(data, (values) => d3__namespace.sum(values, valueAccessor), ...groupBy);
+        const colors = ['#3498db', '#2ecc71', '#f39c12', '#e74c3c', '#9b59b6', '#1abc9c', '#34495e', '#95a5a6'];
+        return grouped.map((item, index) => {
+            const keys = item.slice(0, -1); // All but last element
+            const value = item[item.length - 1]; // Last element
+            const label = labelAccessor && data[0]
+                ? keys.map((key, i) => `${Object.keys(data[0])[i]}: ${key}`).join(' | ')
+                : keys.join(' → ');
+            return {
+                label,
+                stacks: [{
+                        value: value,
+                        color: colors[index % colors.length],
+                        label: `${value >= 0 ? '+' : ''}${d3__namespace.format('.2f')(value)}`
+                    }]
+            };
+        });
+    }
+    /**
+     * Cross-tabulate two datasets to create comparison waterfall
+     * Useful for period-over-period analysis
+     */
+    function createComparisonWaterfall(currentPeriod, previousPeriod, categoryAccessor, valueAccessor) {
+        // Index previous period for fast lookup
+        const prevIndex = d3__namespace.index(previousPeriod, categoryAccessor);
+        return currentPeriod.map(currentItem => {
+            const category = categoryAccessor(currentItem);
+            const currentValue = valueAccessor(currentItem);
+            const prevItem = prevIndex.get(category);
+            const prevValue = prevItem ? valueAccessor(prevItem) : 0;
+            const change = currentValue - prevValue;
+            return {
+                label: category,
+                stacks: [{
+                        value: change,
+                        color: change >= 0 ? '#2ecc71' : '#e74c3c',
+                        label: `Change: ${change >= 0 ? '+' : ''}${d3__namespace.format('.2f')(change)}`
+                    }]
+            };
+        });
+    }
+    /**
+     * Transform flat transaction data into hierarchical waterfall
+     * Automatically detects categories and subcategories
+     */
+    function transformTransactionData(transactions, categoryField, subcategoryField, valueField = 'amount', dateField) {
+        if (subcategoryField) {
+            // Two-level breakdown
+            return dataProcessor.createBreakdownWaterfall(transactions, categoryField, subcategoryField, valueField);
+        }
+        else {
+            // Simple category aggregation
+            const aggregated = dataProcessor.rollupBy(transactions, (values) => d3__namespace.sum(values, (d) => d[valueField] || 0), (d) => d[categoryField]);
+            const colors = ['#3498db', '#2ecc71', '#f39c12', '#e74c3c', '#9b59b6'];
+            let colorIndex = 0;
+            return Array.from(aggregated.entries()).map(([category, value]) => ({
+                label: String(category),
+                stacks: [{
+                        value: value,
+                        color: colors[colorIndex++ % colors.length],
+                        label: `${value >= 0 ? '+' : ''}${d3__namespace.format('.2f')(value)}`
+                    }]
+            }));
+        }
+    }
+    /**
+     * Create common financial reducers for rollup operations
+     */
+    const financialReducers = {
+        sum: (values) => d3__namespace.sum(values, (d) => d.value || 0),
+        average: (values) => d3__namespace.mean(values, (d) => d.value || 0) || 0,
+        weightedAverage: (values, weightField = 'weight') => {
+            const totalWeight = d3__namespace.sum(values, (d) => d[weightField] || 0);
+            if (totalWeight === 0)
+                return 0;
+            return d3__namespace.sum(values, (d) => (d.value || 0) * (d[weightField] || 0)) / totalWeight;
+        },
+        variance: (values) => {
+            const mean = d3__namespace.mean(values, (d) => d.value || 0) || 0;
+            return d3__namespace.mean(values, (d) => Math.pow((d.value || 0) - mean, 2)) || 0;
+        },
+        percentile: (p) => (values) => {
+            const sorted = values.map((d) => d.value || 0).sort(d3__namespace.ascending);
+            return d3__namespace.quantile(sorted, p / 100) || 0;
+        }
+    };
+    /**
+     * Export commonly used D3.js data manipulation functions for convenience
+     */
+    const d3DataUtils = {
+        group: d3__namespace.group,
+        rollup: d3__namespace.rollup,
+        flatRollup: d3__namespace.flatRollup,
+        cross: d3__namespace.cross,
+        index: d3__namespace.index,
+        sum: d3__namespace.sum,
+        mean: d3__namespace.mean,
+        median: d3__namespace.median,
+        quantile: d3__namespace.quantile,
+        min: d3__namespace.min,
+        max: d3__namespace.max,
+        extent: d3__namespace.extent,
+        ascending: d3__namespace.ascending,
+        descending: d3__namespace.descending
+    };
 
     // MintWaterfall Animation and Transitions System - TypeScript Version
     // Provides smooth animations and transitions for chart updates with full type safety
@@ -4549,7 +4955,7 @@
         return hierarchicalLayout;
     }
 
-    const version = "0.8.5";
+    const version = "0.8.6";
     if (typeof window !== "undefined" && window.d3) {
         window.d3.waterfallChart = waterfallChart;
     }
@@ -4558,15 +4964,24 @@
     exports.createAccessibilitySystem = createAccessibilitySystem;
     exports.createAnimationSystem = createAnimationSystem;
     exports.createBrushSystem = createBrushSystemFactory;
+    exports.createComparisonWaterfall = createComparisonWaterfall;
     exports.createDataProcessor = createDataProcessor;
     exports.createExportSystem = createExportSystem;
     exports.createHierarchicalLayout = createHierarchicalLayout;
     exports.createPerformanceManager = createPerformanceManager;
+    exports.createRevenueWaterfall = createRevenueWaterfall;
     exports.createScaleSystem = createScaleSystem;
+    exports.createTemporalWaterfall = createTemporalWaterfall;
     exports.createTooltipSystem = createTooltipSystem;
+    exports.createVarianceWaterfall = createVarianceWaterfall;
     exports.createZoomSystem = createZoomSystem;
+    exports.d3DataUtils = d3DataUtils;
+    exports.dataProcessor = dataProcessor;
     exports.default = waterfallChart;
+    exports.financialReducers = financialReducers;
+    exports.groupWaterfallData = groupWaterfallData;
     exports.themes = themes;
+    exports.transformTransactionData = transformTransactionData;
     exports.version = version;
     exports.waterfallChart = waterfallChart;
 

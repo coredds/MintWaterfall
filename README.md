@@ -1,45 +1,39 @@
-# MintWaterfall v0.8.5
+# MintWaterfall v0.8.6
 
 [![CI](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml/badge.svg?branch=main)](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml)
 [![Security Audit](https://github.com/coredds/MintWaterfall/actions/workflows/security.yml/badge.svg)](https://github.com/coredds/MintWaterfall/actions/workflows/security.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.8.5-blue.svg)](https://github.com/coredds/MintWaterfall/releases)
+[![Version](https://img.shields.io/badge/version-0.8.6-blue.svg)](https://github.com/coredds/MintWaterfall/releases)
 [![codecov](https://codecov.io/gh/coredds/MintWaterfall/branch/main/graph/badge.svg)](https://codecov.io/gh/coredds/MintWaterfall)
 
-A production-ready, TypeScript-first waterfall chart component built on D3.js v7. Features comprehensive interactive capabilities including tooltips, themes, zoom, accessibility, and trend analysis with full type safety and enterprise-grade performance.
+A production-ready TypeScript waterfall chart component built on D3.js v7. Provides comprehensive data processing capabilities, interactive features, and enterprise-grade performance with full type safety.
 
 **[Live Demo](https://coredds.github.io/MintWaterfall/mintwaterfall-example.html)**
 
 ## Features
 
-### Core Waterfall Charts
-- **Dual Modes**: Traditional waterfall and stacked visualization
-- **Interactive Elements**: Hover tooltips, click events, zoom and pan
-- **Theming System**: Multiple built-in themes with custom color schemes
-- **Accessibility**: WCAG 2.1 compliance with keyboard navigation and screen reader support
-- **Export Capabilities**: SVG, PNG, JSON, and CSV export formats
+### Core Capabilities
+- **Dual Chart Modes**: Traditional waterfall and stacked visualization
+- **Advanced Data Processing**: Multi-dimensional grouping, temporal aggregation, cross-tabulation
+- **Interactive Elements**: Tooltips, zoom/pan, click events, brush selection
+- **Export Formats**: SVG, PNG, JSON, CSV
+- **Accessibility**: WCAG 2.1 compliant with keyboard navigation
 
-### Advanced Analytics
-- **Trend Analysis**: Linear regression, moving average, and polynomial curve fitting
-- **Data Processing**: Built-in support for grouping, rollup, and cross-tabulation
-- **Conditional Formatting**: Dynamic styling based on value thresholds
-- **Breakdown Analysis**: Hierarchical drill-down with interactive exploration
+### Data Processing
+- **D3.js Integration**: Native support for `d3.group()`, `d3.rollup()`, `d3.cross()`, `d3.index()`
+- **Financial Analysis**: Variance analysis, period comparison, revenue breakdowns
+- **Statistical Functions**: Mean, median, variance, quantiles with null-safe handling
+- **Temporal Operations**: Time-series aggregation with D3.js time intervals
 
 ### TypeScript Architecture
-- **Full Type Safety**: Complete TypeScript definitions with strict type checking
-- **Modular Design**: Clean separation of concerns across 12 specialized modules
-- **D3.js Integration**: Native D3.js v7 compatibility with enhanced type support
-- **Enterprise Ready**: Production-tested with comprehensive test coverage
+- **Type Safety**: Complete TypeScript definitions with strict checking
+- **Modular Design**: 12 specialized modules with clean separation
+- **Performance Optimized**: Efficient algorithms for large datasets
 
-## Quick Start
+## Installation
 
-### Installation
-
-**NPM/Yarn:**
 ```bash
 npm install mintwaterfall
-# or
-yarn add mintwaterfall
 ```
 
 **CDN:**
@@ -54,7 +48,7 @@ import { waterfallChart } from 'mintwaterfall';
 import * as d3 from 'd3';
 ```
 
-### Basic Usage
+## Quick Start
 
 ```javascript
 const data = [
@@ -76,8 +70,6 @@ const chart = waterfallChart()
     .width(800)
     .height(400)
     .showTotal(true)
-    .stacked(false)
-    .enableTooltips(true)
     .theme('default');
 
 d3.select('#chart')
@@ -85,133 +77,122 @@ d3.select('#chart')
     .call(chart);
 ```
 
-## Enterprise Features
+## Advanced Data Processing
 
-### Breakdown Analysis
-
+### Multi-dimensional Analysis
 ```javascript
-const chart = d3.waterfallChart()
-    .breakdown({
-        enabled: true,
-        maxBreakdowns: 5,
-        showOthers: true,
-        sortStrategy: 'value-desc'
-    });
+import { createDataProcessor } from 'mintwaterfall';
 
-const dataWithBreakdown = [{
-    label: "Q1 Revenue",
-    stacks: [{ value: 100000, color: "#3498db" }],
-    breakdown: {
-        data: [
-            { name: "Enterprise", value: 60000, color: "#2c3e50" },
-            { name: "SMB", value: 30000, color: "#34495e" },
-            { name: "Consumer", value: 10000, color: "#7f8c8d" }
-        ]
-    }
-}];
+const processor = createDataProcessor();
+
+// Group by multiple dimensions
+const grouped = processor.groupBy(salesData, d => d.region, d => d.product);
+
+// Aggregate with custom functions
+const aggregated = processor.rollupBy(
+    salesData, 
+    values => d3.sum(values, d => d.revenue),
+    d => d.region
+);
+
+// Temporal aggregation
+const monthlyData = processor.aggregateByTime(salesData, {
+    dateField: 'date',
+    valueField: 'revenue',
+    interval: 'month'
+});
 ```
 
-### Conditional Formatting
-
+### Financial Analysis
 ```javascript
-const chart = d3.waterfallChart()
-    .conditionalFormatting({
-        enabled: true,
-        rules: [
-            { condition: "value > 75000", color: "#27ae60", label: "Excellent" },
-            { condition: "value > 50000", color: "#f39c12", label: "Good" },
-            { condition: "value < 25000", color: "#e74c3c", label: "Poor" }
-        ]
-    });
+import { createVarianceWaterfall, createRevenueWaterfall } from 'mintwaterfall';
+
+// Variance analysis (actual vs budget)
+const varianceChart = createVarianceWaterfall(
+    financialData, 
+    'category', 
+    'actual', 
+    'budget'
+);
+
+// Multi-dimensional revenue breakdown
+const revenueChart = createRevenueWaterfall(
+    salesData,
+    ['region', 'product'],
+    'revenue'
+);
 ```
 
-## Interactive Features
+## Configuration API
 
-### Tooltips and Themes
-
-```javascript
-const chart = waterfallChart()
-    .enableTooltips(true)
-    .tooltipConfig({ theme: 'light' })
-    .theme('corporate');
-
-// Available themes: default, dark, corporate, accessible, colorful
-```
-
-### Zoom and Pan
-
-```javascript
-const chart = waterfallChart()
-    .enableZoom(true)
-    .zoomConfig({
-        scaleExtent: [0.5, 10],
-        translateExtent: [[-100, -100], [width + 100, height + 100]]
-    });
-```
-
-### Trend Lines
-
-```javascript
-const chart = waterfallChart()
-    .showTrendLine(true)
-    .trendLineType('polynomial')
-    .trendLineColor('#e74c3c')
-    .trendLineWidth(3)
-    .trendLineDegree(2);
-
-// Available types: linear, moving-average, polynomial
-```
-
-## API Reference
-
-### Core Configuration
+### Chart Configuration
 ```javascript
 chart
-    .width(800)                    // Chart width
-    .height(400)                   // Chart height  
-    .showTotal(true)               // Show total bar
-    .stacked(false)                // Toggle stacked/waterfall mode
-    .margin({top: 20, right: 30, bottom: 40, left: 50})  // Chart margins
-    .barPadding(0.1)               // Space between bars
+    .width(800)                    // Chart dimensions
+    .height(400)
+    .margin({top: 20, right: 30, bottom: 40, left: 50})
+    .showTotal(true)               // Display total bar
+    .stacked(false)                // Toggle chart mode
+    .barPadding(0.1)               // Bar spacing
     .duration(750)                 // Animation duration
+    .theme('corporate')            // Theme selection
 ```
 
 ### Interactive Features
 ```javascript
 chart
-    .enableTooltips(true)          // Enable hover tooltips
-    .enableZoom(true)              // Enable zoom and pan
-    .enableAccessibility(true)     // Enable accessibility features
-    .theme('corporate')            // Apply theme
-    .showTrendLine(true)           // Enable trend line overlay
-    .trendLineType('linear')       // Set trend line algorithm
+    .enableTooltips(true)          // Hover tooltips
+    .enableZoom(true)              // Zoom and pan
+    .enableAccessibility(true)     // WCAG compliance
+    .showTrendLine(true)           // Trend overlays
+    .brush({                       // Data selection
+        enabled: true,
+        direction: 'x'
+    })
 ```
 
 ### Event Handling
 ```javascript
 chart.on("barClick", (event, d) => {
-    console.log("Clicked:", d.label);
+    console.log("Clicked:", d.label, d.value);
 });
 
-chart.on("barHover", (event, d) => {
-    console.log("Hovered:", d.label);
+chart.on("brushEnd", (selection) => {
+    console.log("Selected range:", selection);
 });
 ```
 
-### Data Format
+## Data Format
+
 ```javascript
-const data = [{
+const waterfallData = [{
     label: "Category Name",
     stacks: [
-        { value: 100, color: "#3498db", label: "100" },
-        { value: -25, color: "#e74c3c", label: "-25" }
-    ],
-    breakdown: {  // Optional for breakdown analysis
-        data: [
-            { name: "Subcategory", value: 50, color: "#2c3e50" }
-        ]
-    }
+        { value: 100, color: "#3498db", label: "Positive" },
+        { value: -25, color: "#e74c3c", label: "Negative" }
+    ]
 }];
+
+// For advanced processing
+const businessData = [
+    { region: 'North', product: 'Widget', revenue: 100000, date: '2024-01-15' },
+    { region: 'South', product: 'Gadget', revenue: 85000, date: '2024-01-20' }
+];
+```
+
+## Themes
+
+Available themes: `default`, `dark`, `corporate`, `accessible`, `colorful`
+
+```javascript
+chart.theme('corporate');
+
+// Custom theme
+chart.themeConfig({
+    background: '#ffffff',
+    colors: ['#3498db', '#2ecc71', '#e74c3c'],
+    text: '#2c3e50'
+});
 ```
 
 ## Development
@@ -223,59 +204,58 @@ cd MintWaterfall
 npm install
 ```
 
-### Scripts
+### Commands
 ```bash
-npm test              # Run test suite (183 tests)
-npm run lint          # ESLint code quality checks
-npm run build         # Build TypeScript and bundle
-npm start             # Development server (port 8080)
+npm test              # Run test suite (208 tests)
+npm run lint          # Code quality checks
+npm run build         # TypeScript compilation and bundling
+npm start             # Development server (localhost:8080)
 ```
 
 ### Build Output
-- `dist/mintwaterfall.esm.js` - ES Module (177KB)
-- `dist/mintwaterfall.umd.js` - UMD Bundle (197KB)
-- `dist/mintwaterfall.min.js` - Minified UMD (64KB)
-- `dist/mintwaterfall.cjs.js` - CommonJS (179KB)
-- `dist/index.d.ts` - TypeScript definitions
+- `dist/mintwaterfall.esm.js` - ES Module (193KB)
+- `dist/mintwaterfall.umd.js` - UMD Bundle (215KB)  
+- `dist/mintwaterfall.min.js` - Minified (70KB)
+- `dist/mintwaterfall.cjs.js` - CommonJS (196KB)
+- Type definitions included
 
-## Browser Support
+### Test Coverage
+- **208 total tests** across 13 test suites
+- **38.3% coverage** for core data processing module
+- **25 integration tests** for critical business logic
+- **Performance benchmarks** for large datasets
 
-**Minimum Requirements**: ES6 Modules, D3.js v7+, SVG Support  
-**Tested Browsers**: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
+## Browser Compatibility
+
+**Requirements**: ES6 Modules, D3.js v7+, SVG support  
+**Tested**: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
+
+## Recent Updates
+
+### v0.8.6 (Current)
+- Advanced D3.js data processing features
+- Multi-dimensional grouping and temporal aggregation
+- Financial analysis functions (variance, revenue breakdown)
+- Enhanced error handling and data validation
+- Improved test coverage (25 new integration tests)
+- Complete TypeScript migration with strict type checking
+
+### v0.8.5
+- Comprehensive test suite (183 tests, 100% pass rate)
+- Performance optimizations for large datasets
+- Enhanced TypeScript support and type definitions
+
+## Contributing
+
+Contributions welcome. Requirements:
+- TypeScript with strict type checking
+- D3.js v7+ compatibility
+- Test coverage for new features
+- Zero linting errors
+- Updated documentation
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
-
-## Contributing
-
-Contributions welcome! Please ensure:
-- TypeScript compatibility with strict type checking
-- D3.js v7+ compatibility maintained
-- Tests included for new features (Jest framework)
-- Zero linting errors (ESLint strict policy)
-- Documentation updated
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
-
-## Changelog
-
-### v0.8.5 (Current)
-- **TypeScript Migration**: Complete TypeScript rewrite with full type safety
-- **Interactive Features**: Working tooltips, themes, zoom, accessibility, and trend lines
-- **Code Cleanup**: Removed unused legacy code, optimized bundle sizes
-- **Test Coverage**: 183 tests passing with comprehensive coverage
-- **Production Ready**: Zero lint errors, clean architecture
-
-### v0.8.0
-- **Enterprise Features**: Breakdown analysis and conditional formatting
-- **Advanced Analytics**: Interactive drill-down with smart grouping
-- **Production Quality**: Comprehensive test coverage
-
-### v0.6.0
-- **Trend Analysis**: Linear, moving average, polynomial overlays
-- **Data Loading**: CSV, JSON, TSV with HTTP URL support
-- **Export Capabilities**: SVG, PNG, JSON, CSV export formats
-- **Accessibility**: WCAG 2.1 compliance with keyboard navigation
-
-For complete version history, see [CHANGELOG.md](CHANGELOG.md).
