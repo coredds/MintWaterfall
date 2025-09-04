@@ -48,9 +48,6 @@
     "build:analyze": "rollup -c --environment ANALYZE",
     "format": "prettier --write \"src/**/*.js\" \"*.js\" \"*.md\"",
     "format:check": "prettier --check \"src/**/*.js\" \"*.js\" \"*.md\"",
-    "prepublishOnly": "npm run test && npm run lint && npm run build",
-    "version": "npm run build && git add dist/",
-    "postversion": "git push && git push --tags"
   },
   "keywords": [
     "d3js",

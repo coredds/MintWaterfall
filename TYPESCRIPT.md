@@ -4,11 +4,6 @@ MintWaterfall provides comprehensive TypeScript definitions for type-safe develo
 
 ## Installation & Setup
 
-### With npm (when published)
-```bash
-npm install mintwaterfall
-```
-
 ### Direct Usage
 ```typescript
 import { waterfallChart, ChartData, WaterfallChart } from 'mintwaterfall';
