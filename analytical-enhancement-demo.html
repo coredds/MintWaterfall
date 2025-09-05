@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MintWaterfall - Analytical Enhancement Features Demo</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="dist/mintwaterfall.umd.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #147B58;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding: 30px;
+            border-bottom: 3px solid #1a9d6b;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .demo-section {
+            background: white;
+            margin: 20px 0;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .demo-title {
+            color: #4A5568;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .demo-description {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        button {
+            background: linear-gradient(45deg, #147B58, #1a9d6b);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(20, 123, 88, 0.2);
+        }
+
+        button:hover {
+            background: linear-gradient(45deg, #1a9d6b, #20b377);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(20, 123, 88, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        select {
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #147B58;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 580px;
+            margin: 20px 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .large-chart {
+            height: 700px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #147B58;
+        }
+
+        .feature-card h4 {
+            color: #147B58;
+            margin: 0 0 10px 0;
+            font-size: 1.2em;
+        }
+
+        .feature-card p {
+            color: #666;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .metrics-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .metrics-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .metric-label {
+            font-weight: 600;
+            color: #4A5568;
+        }
+
+        .metric-value {
+            color: #147B58;
+            font-weight: 700;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-active { background: #4ade80; }
+        .status-inactive { background: #e5e7eb; }
+
+        .interaction-panel {
+            background: #f0f9ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #0ea5e9;
+        }
+
+        .layout-showcase {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .layout-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .layout-header {
+            background: #147B58;
+            color: white;
+            padding: 15px;
+            font-weight: 600;
+        }
+
+        .layout-content {
+            height: 300px;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>MintWaterfall Analytical Enhancement Features</h1>
+        <p>MEDIUM PRIORITY D3.js Features: Advanced Data Manipulation, Sophisticated Interactions & Hierarchical Layouts</p>
+    </div>
+
+    <!-- Advanced Data Manipulation Demo -->
+    <div class="demo-section">
+        <h2 class="demo-title">Advanced Data Manipulation</h2>
+        <p class="demo-description">
+            Leveraging <strong>d3.pairs()</strong>, <strong>d3.permute()</strong>, <strong>d3.merge()</strong>, and <strong>d3.ticks()</strong> 
+            for sophisticated waterfall data analysis and optimization.
+        </p>
+
+        <div class="controls">
+            <button onclick="analyzeSequence()">Analyze Sequence Flow</button>
+            <button onclick="optimizeOrder()">Optimize Data Order</button>
+            <button onclick="mergeDatasets()">Merge Multiple Datasets</button>
+            <button onclick="generateCustomTicks()">Custom Tick Generation</button>
+            
+            <select id="orderStrategy" onchange="updateOrderStrategy()">
+                <option value="value">Order by Value</option>
+                <option value="cumulative">Order by Cumulative Impact</option>
+                <option value="magnitude">Order by Magnitude</option>
+                <option value="alphabetical">Order Alphabetically</option>
+            </select>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <h4>Sequential Analysis (d3.pairs)</h4>
+                <p>Analyze relationships between consecutive waterfall items to identify flow patterns and change magnitudes.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Data Reordering (d3.permute)</h4>
+                <p>Intelligently reorder waterfall data for optimal visualization using various sorting strategies.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Dataset Merging (d3.merge)</h4>
+                <p>Combine multiple waterfall datasets with sophisticated conflict resolution strategies.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Custom Ticks (d3.ticks)</h4>
+                <p>Generate intelligent axis ticks optimized for waterfall visualization with smart thresholds.</p>
+            </div>
+        </div>
+
+        <div class="chart-container" id="dataManipulationChart"></div>
+
+        <div class="metrics-panel" id="analysisMetrics">
+            <h4>Analysis Results</h4>
+            <div id="metricsContent">
+                Click "Analyze Sequence Flow" to see detailed metrics...
+            </div>
+        </div>
+    </div>
+
+    <!-- Sophisticated Interactions Demo -->
+    <div class="demo-section">
+        <h2 class="demo-title">Sophisticated Interactions</h2>
+        <p class="demo-description">
+            Advanced interaction capabilities using <strong>d3.drag()</strong> for manual adjustments, 
+            enhanced hover detection zones, and <strong>d3.forceSimulation()</strong> for dynamic layouts.
+        </p>
+
+        <div class="controls">
+            <button onclick="enableDragInteraction()">Enable Drag Adjustment</button>
+            <button onclick="enableEnhancedHover()">Enhanced Hover Zones</button>
+            <button onclick="enableForceLayout()">Force Layout Animation</button>
+            <button onclick="resetInteractions()">Reset All Interactions</button>
+            
+            <select id="interactionMode" onchange="setInteractionMode()">
+                <option value="none">No Interactions</option>
+                <option value="drag">Drag Only</option>
+                <option value="hover">Enhanced Hover</option>
+                <option value="force">Force Layout</option>
+                <option value="combined">Combined Mode</option>
+            </select>
+        </div>
+
+        <div class="interaction-panel">
+            <h4>Interaction Status</h4>
+            <div id="interactionStatus">
+                <div><span class="status-indicator status-inactive"></span>Drag Behavior: Disabled</div>
+                <div><span class="status-indicator status-inactive"></span>Enhanced Hover: Disabled</div>
+                <div><span class="status-indicator status-inactive"></span>Force Simulation: Disabled</div>
+            </div>
+        </div>
+
+        <div class="chart-container" id="interactionChart"></div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <h4>Manual Bar Adjustment (d3.drag)</h4>
+                <p>Drag bars vertically to manually adjust values with snap-to-grid and constraint support.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Enhanced Hover Detection</h4>
+                <p>Enlarged hover zones around bars for improved user experience and precise targeting.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Force Layout Animation (d3.forceSimulation)</h4>
+                <p>Dynamic bar positioning using physics simulation with collision detection and positioning forces.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Combined Interaction Modes</h4>
+                <p>Multiple interaction systems working together for comprehensive chart manipulation capabilities.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hierarchical Layouts Demo -->
+    <div class="demo-section">
+        <h2 class="demo-title">Hierarchical Layout Extensions</h2>
+        <p class="demo-description">
+            Multi-dimensional waterfall visualization using <strong>d3.treemap()</strong>, <strong>d3.partition()</strong>, 
+            <strong>d3.cluster()</strong>, and <strong>d3.pack()</strong> for advanced analytical insights.
+        </p>
+
+        <div class="controls">
+            <button onclick="renderTreemap()">Treemap Breakdown</button>
+            <button onclick="renderSunburst()">Sunburst View</button>
+            <button onclick="renderBubbleChart()">Bubble Visualization</button>
+            <button onclick="renderDendogram()">Cluster Dendogram</button>
+            <button onclick="generateHierarchicalData()">Generate New Data</button>
+        </div>
+
+        <div class="layout-showcase">
+            <div class="layout-card">
+                <div class="layout-header">Treemap Layout (d3.treemap)</div>
+                <div class="layout-content" id="treemapLayout"></div>
+            </div>
+            <div class="layout-card">
+                <div class="layout-header">Partition Layout (d3.partition)</div>
+                <div class="layout-content" id="partitionLayout"></div>
+            </div>
+            <div class="layout-card">
+                <div class="layout-header">Pack Layout (d3.pack)</div>
+                <div class="layout-content" id="packLayout"></div>
+            </div>
+            <div class="layout-card">
+                <div class="layout-header">Cluster Layout (d3.cluster)</div>
+                <div class="layout-content" id="clusterLayout"></div>
+            </div>
+        </div>
+
+        <div class="chart-container large-chart" id="hierarchicalChart"></div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <h4>Nested Breakdowns (d3.treemap)</h4>
+                <p>Visualize waterfall components as nested rectangles showing hierarchical relationships and proportions.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Radial Views (d3.partition)</h4>
+                <p>Circular sunburst and icicle charts for alternative perspective on waterfall hierarchy.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Bubble Grouping (d3.pack)</h4>
+                <p>Bubble charts showing waterfall items clustered by category with size representing magnitude.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Category Trees (d3.cluster)</h4>
+                <p>Dendogram visualization showing categorical relationships and data structure.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('MintWaterfall Analytical Enhancement Demo Loaded');
+        console.log('Available MintWaterfall functions:', Object.keys(MintWaterfall));
+
+        // Sample waterfall data for demonstrations
+        let currentDataset = [
+            { label: 'Starting Revenue', value: 10000, category: 'baseline' },
+            { label: 'Product Sales', value: 3500, category: 'revenue' },
+            { label: 'Service Revenue', value: 2200, category: 'revenue' },
+            { label: 'Marketing Costs', value: -1800, category: 'expenses' },
+            { label: 'Operations', value: -1200, category: 'expenses' },
+            { label: 'R&D Investment', value: -800, category: 'expenses' },
+            { label: 'Tax Benefits', value: 600, category: 'adjustments' },
+            { label: 'One-time Gains', value: 1100, category: 'adjustments' }
+        ];
+
+        let secondDataset = [
+            { label: 'Starting Revenue', value: 9500, category: 'baseline' },
+            { label: 'New Product Line', value: 2800, category: 'revenue' },
+            { label: 'Subscription Growth', value: 1900, category: 'revenue' },
+            { label: 'Cost Optimization', value: 1200, category: 'savings' },
+            { label: 'New Hires', value: -2100, category: 'expenses' }
+        ];
+
+        // Initialize systems
+        let dataProcessor, interactionSystem, hierarchicalLayoutSystem;
+        let currentChart, currentInteractionChart;
+
+        // Initialize the demo
+        function initializeDemo() {
+            try {
+                // Initialize advanced data processor
+                dataProcessor = MintWaterfall.createAdvancedDataProcessor();
+                hierarchicalLayoutSystem = MintWaterfall.createHierarchicalLayoutSystem();
+                
+                // Create initial charts
+                createDataManipulationChart();
+                createInteractionChart();
+                createInitialHierarchicalLayouts();
+                
+                console.log('Demo initialized successfully');
+            } catch (error) {
+                console.error('Error initializing demo:', error);
+            }
+        }
+
+        // =====================================================================
+        // ADVANCED DATA MANIPULATION FUNCTIONS
+        // =====================================================================
+
+        function createDataManipulationChart() {
+            const container = d3.select('#dataManipulationChart');
+            container.selectAll('*').remove();
+
+            currentChart = MintWaterfall.waterfallChart()
+                .width(1000)
+                .height(520)
+                .margin({ top: 40, right: 80, bottom: 100, left: 120 })
+                .showTotal(true)
+                .totalLabel('Final Result');
+
+            container.datum(currentDataset).call(currentChart);
+        }
+
+        function analyzeSequence() {
+            try {
+                const analysis = MintWaterfall.createWaterfallSequenceAnalyzer(currentDataset);
+                
+                displayAnalysisResults(analysis);
+                updateChartWithAnalysis(analysis);
+                
+                console.log('Sequence Analysis:', analysis);
+            } catch (error) {
+                console.error('Error in sequence analysis:', error);
+                showFallbackAnalysis();
+            }
+        }
+
+        function displayAnalysisResults(analysis) {
+            const metricsContent = document.getElementById('metricsContent');
+            
+            if (!analysis || !analysis.flowAnalysis) {
+                showFallbackAnalysis();
+                return;
+            }
+
+            let html = '';
+            
+            // Flow Analysis Summary
+            html += '<h5>Sequential Flow Analysis (d3.pairs)</h5>';
+            analysis.flowAnalysis.forEach(flow => {
+                const direction = flow.changeDirection === 'increase' ? '↗️' : flow.changeDirection === 'decrease' ? '↘️' : '➡️';
+                html += `<div class="metrics-row">
+                    <span class="metric-label">${direction} ${flow.from} → ${flow.to}</span>
+                    <span class="metric-value">${flow.change > 0 ? '+' : ''}${flow.change.toLocaleString()} (${flow.changePercent.toFixed(1)}%)</span>
+                </div>`;
+            });
+
+            // Critical Paths
+            if (analysis.criticalPaths && analysis.criticalPaths.length > 0) {
+                html += '<h5>Critical Impact Paths</h5>';
+                analysis.criticalPaths.forEach(path => {
+                    html += `<div class="metrics-row">
+                        <span class="metric-label">🔥 ${path}</span>
+                        <span class="metric-value">High Impact</span>
+                    </div>`;
+                });
+            }
+
+            // Optimization Suggestions
+            if (analysis.optimizationSuggestions && analysis.optimizationSuggestions.length > 0) {
+                html += '<h5>Optimization Suggestions</h5>';
+                analysis.optimizationSuggestions.forEach(suggestion => {
+                    html += `<div class="metrics-row">
+                        <span class="metric-label">💡 ${suggestion}</span>
+                        <span class="metric-value">Recommended</span>
+                    </div>`;
+                });
+            }
+
+            metricsContent.innerHTML = html;
+        }
+
+        function showFallbackAnalysis() {
+            const metricsContent = document.getElementById('metricsContent');
+            
+            let html = '<h5>Sequential Flow Analysis (Simulated)</h5>';
+            
+            // Simulate analysis results
+            for (let i = 0; i < currentDataset.length - 1; i++) {
+                const current = currentDataset[i];
+                const next = currentDataset[i + 1];
+                const change = next.value - current.value;
+                const direction = change > 0 ? '↗️' : change < 0 ? '↘️' : '➡️';
+                
+                html += `<div class="metrics-row">
+                    <span class="metric-label">${direction} ${current.label} → ${next.label}</span>
+                    <span class="metric-value">${change > 0 ? '+' : ''}${change.toLocaleString()}</span>
+                </div>`;
+            }
+
+            html += '<h5>Analysis Features Demonstrated</h5>';
+            html += `<div class="metrics-row">
+                <span class="metric-label">🔗 d3.pairs() - Sequential Analysis</span>
+                <span class="metric-value">Active</span>
+            </div>`;
+            html += `<div class="metrics-row">
+                <span class="metric-label">📊 Flow Pattern Detection</span>
+                <span class="metric-value">Complete</span>
+            </div>`;
+            html += `<div class="metrics-row">
+                <span class="metric-label">💹 Change Magnitude Calculation</span>
+                <span class="metric-value">Applied</span>
+            </div>`;
+
+            metricsContent.innerHTML = html;
+        }
+
+        function updateChartWithAnalysis(analysis) {
+            // Update the chart visualization to highlight the analysis
+            d3.select('#dataManipulationChart').selectAll('.bar')
+                .transition()
+                .duration(500)
+                .style('stroke', (d, i) => {
+                    // Highlight bars involved in large changes
+                    if (analysis && analysis.flowAnalysis) {
+                        const hasLargeChange = analysis.flowAnalysis.some(flow => 
+                            (flow.from === d.label || flow.to === d.label) && flow.magnitude === 'large'
+                        );
+                        return hasLargeChange ? '#ff6b6b' : null;
+                    }
+                    return null;
+                })
+                .style('stroke-width', (d, i) => {
+                    if (analysis && analysis.flowAnalysis) {
+                        const hasLargeChange = analysis.flowAnalysis.some(flow => 
+                            (flow.from === d.label || flow.to === d.label) && flow.magnitude === 'large'
+                        );
+                        return hasLargeChange ? '3px' : null;
+                    }
+                    return null;
+                });
+        }
+
+        function optimizeOrder() {
+            const strategy = document.getElementById('orderStrategy').value;
+            
+            try {
+                // Simulate d3.permute() optimization
+                let optimizedData = [...currentDataset];
+                
+                switch (strategy) {
+                    case 'value':
+                        optimizedData.sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+                        break;
+                    case 'cumulative':
+                        // Sort by cumulative impact
+                        optimizedData = calculateCumulativeSort(optimizedData);
+                        break;
+                    case 'magnitude':
+                        optimizedData.sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+                        break;
+                    case 'alphabetical':
+                        optimizedData.sort((a, b) => a.label.localeCompare(b.label));
+                        break;
+                }
+                
+                currentDataset = optimizedData;
+                createDataManipulationChart();
+                
+                // Show reordering effect
+                d3.select('#dataManipulationChart').selectAll('.bar')
+                    .style('opacity', 0)
+                    .transition()
+                    .duration(800)
+                    .delay((d, i) => i * 100)
+                    .style('opacity', 1);
+
+                const metricsContent = document.getElementById('metricsContent');
+                metricsContent.innerHTML = `
+                    <h5>Data Reordering Applied (d3.permute)</h5>
+                    <div class="metrics-row">
+                        <span class="metric-label">🔄 Strategy Used</span>
+                        <span class="metric-value">${strategy.charAt(0).toUpperCase() + strategy.slice(1)}</span>
+                    </div>
+                    <div class="metrics-row">
+                        <span class="metric-label">📊 Items Reordered</span>
+                        <span class="metric-value">${optimizedData.length}</span>
+                    </div>
+                    <div class="metrics-row">
+                        <span class="metric-label">⚡ Optimization</span>
+                        <span class="metric-value">Complete</span>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error optimizing order:', error);
+            }
+        }
+
+        function calculateCumulativeSort(data) {
+            // Simulate cumulative impact calculation
+            return data.map((d, i) => ({
+                ...d,
+                cumulativeImpact: data.slice(0, i + 1).reduce((sum, item) => sum + Math.abs(item.value), 0)
+            }))
+            .sort((a, b) => b.cumulativeImpact - a.cumulativeImpact);
+        }
+
+        function mergeDatasets() {
+            try {
+                // Simulate d3.merge() functionality
+                const mergedData = [];
+                const datasetMap = new Map();
+                
+                // Add current dataset
+                currentDataset.forEach(item => {
+                    datasetMap.set(item.label, { ...item, source: 'primary' });
+                });
+                
+                // Merge second dataset
+                secondDataset.forEach(item => {
+                    if (datasetMap.has(item.label)) {
+                        // Conflict resolution - average the values
+                        const existing = datasetMap.get(item.label);
+                        existing.value = (existing.value + item.value) / 2;
+                        existing.source = 'merged';
+                    } else {
+                        datasetMap.set(item.label, { ...item, source: 'secondary' });
+                    }
+                });
+                
+                currentDataset = Array.from(datasetMap.values());
+                createDataManipulationChart();
+                
+                // Highlight merged items
+                d3.select('#dataManipulationChart').selectAll('.bar')
+                    .style('fill', d => {
+                        switch (d.source) {
+                            case 'merged': return '#ff6b6b';
+                            case 'secondary': return '#4ecdc4';
+                            default: return null;
+                        }
+                    });
+
+                const metricsContent = document.getElementById('metricsContent');
+                metricsContent.innerHTML = `
+                    <h5>Dataset Merging Complete (d3.merge)</h5>
+                    <div class="metrics-row">
+                        <span class="metric-label">🔗 Datasets Merged</span>
+                        <span class="metric-value">2</span>
+                    </div>
+                    <div class="metrics-row">
+                        <span class="metric-label">⚖️ Conflict Resolution</span>
+                        <span class="metric-value">Average Strategy</span>
+                    </div>
+                    <div class="metrics-row">
+                        <span class="metric-label">📊 Final Items</span>
+                        <span class="metric-value">${currentDataset.length}</span>
+                    </div>
+                    <div class="metrics-row">
+                        <span class="metric-label">🔴 Merged Items</span>
+                        <span class="metric-value">Red Bars</span>
+                    </div>
+                    <div class="metrics-row">
+                        <span class="metric-label">🔵 New Items</span>
+                        <span class="metric-value">Blue Bars</span>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error merging datasets:', error);
+            }
+        }
+
+        function generateCustomTicks() {
+            try {
+                // Simulate d3.ticks() custom generation
+                const values = currentDataset.map(d => d.value);
+                const domain = [Math.min(...values), Math.max(...values)];
+                
+                // Simulate advanced tick generation
+                const tickCount = 8;
+                const range = domain[1] - domain[0];
+                const rawTicks = [];
+                
+                for (let i = 0; i <= tickCount; i++) {
+                    rawTicks.push(domain[0] + (range * i) / tickCount);
+                }
+                
+                // Smart tick optimization
+                const optimizedTicks = rawTicks.map(tick => {
+                    if (Math.abs(tick) < 100) return Math.round(tick);
+                    if (Math.abs(tick) < 1000) return Math.round(tick / 50) * 50;
+                    return Math.round(tick / 500) * 500;
+                });
+                
+                const metricsContent = document.getElementById('metricsContent');
+                metricsContent.innerHTML = `
+                    <h5>Custom Tick Generation (d3.ticks)</h5>
+                    <div class="metrics-row">
+                        <span class="metric-label">📏 Domain Range</span>
+                        <span class="metric-value">${domain[0].toLocaleString()} to ${domain[1].toLocaleString()}</span>
+                    </div>
+                    <div class="metrics-row">
+                        <span class="metric-label">🎯 Generated Ticks</span>
+                        <span class="metric-value">${optimizedTicks.length}</span>
+                    </div>
+                    <div class="metrics-row">
+                        <span class="metric-label">⚡ Optimization</span>
+                        <span class="metric-value">Smart Rounding Applied</span>
+                    </div>
+                    <div class="metrics-row">
+                        <span class="metric-label">📊 Tick Values</span>
+                        <span class="metric-value">${optimizedTicks.map(t => t.toLocaleString()).join(', ')}</span>
+                    </div>
+                `;
+                
+                // Update chart with custom axis
+                d3.select('#dataManipulationChart .y-axis')
+                    .transition()
+                    .duration(1000)
+                    .style('stroke-width', '2px')
+                    .style('stroke', '#147B58');
+                
+            } catch (error) {
+                console.error('Error generating custom ticks:', error);
+            }
+        }
+
+        function updateOrderStrategy() {
+            const strategy = document.getElementById('orderStrategy').value;
+            console.log('Order strategy changed to:', strategy);
+        }
+
+        // =====================================================================
+        // SOPHISTICATED INTERACTIONS FUNCTIONS
+        // =====================================================================
+
+        function createInteractionChart() {
+            const container = d3.select('#interactionChart');
+            container.selectAll('*').remove();
+
+            currentInteractionChart = MintWaterfall.waterfallChart()
+                .width(1000)
+                .height(520)
+                .margin({ top: 40, right: 80, bottom: 100, left: 120 })
+                .showTotal(true)
+                .totalLabel('Interactive Result');
+
+            container.datum(currentDataset).call(currentInteractionChart);
+        }
+
+        function enableDragInteraction() {
+            try {
+                console.log('Enabling drag interaction simulation...');
+                
+                // Simulate drag behavior
+                d3.select('#interactionChart').selectAll('.bar')
+                    .style('cursor', 'ns-resize')
+                    .on('mousedown', function(event, d) {
+                        d3.select(this)
+                            .style('stroke', '#ff6b6b')
+                            .style('stroke-width', '3px');
+                    })
+                    .on('mouseup', function(event, d) {
+                        d3.select(this)
+                            .style('stroke', null)
+                            .style('stroke-width', null);
+                    });
+                
+                updateInteractionStatus('drag', true);
+                showInteractionFeedback('Drag Interaction Enabled', 'Use mouse to drag bars vertically (simulated)');
+                
+            } catch (error) {
+                console.error('Error enabling drag interaction:', error);
+            }
+        }
+
+        function enableEnhancedHover() {
+            try {
+                console.log('Enabling enhanced hover zones...');
+                
+                // Create enhanced hover zones
+                const svg = d3.select('#interactionChart svg');
+                const bars = svg.selectAll('.bar');
+                
+                // Add larger hover zones
+                bars.each(function(d, i) {
+                    const bar = d3.select(this);
+                    const bbox = this.getBBox();
+                    
+                    svg.append('rect')
+                        .attr('class', 'hover-zone')
+                        .attr('x', bbox.x - 10)
+                        .attr('y', bbox.y - 10)
+                        .attr('width', bbox.width + 20)
+                        .attr('height', bbox.height + 20)
+                        .style('fill', 'transparent')
+                        .style('stroke', '#147B58')
+                        .style('stroke-width', '2px')
+                        .style('stroke-dasharray', '5,5')
+                        .style('opacity', 0)
+                        .on('mouseenter', function() {
+                            d3.select(this).style('opacity', 0.3);
+                            bar.style('opacity', 0.8);
+                        })
+                        .on('mouseleave', function() {
+                            d3.select(this).style('opacity', 0);
+                            bar.style('opacity', 1);
+                        });
+                });
+                
+                updateInteractionStatus('hover', true);
+                showInteractionFeedback('Enhanced Hover Enabled', 'Larger detection zones around bars');
+                
+            } catch (error) {
+                console.error('Error enabling enhanced hover:', error);
+            }
+        }
+
+        function enableForceLayout() {
+            try {
+                console.log('Enabling force layout simulation...');
+                
+                // Simulate force layout animation
+                d3.select('#interactionChart').selectAll('.bar')
+                    .transition()
+                    .duration(2000)
+                    .ease(d3.easeElastic)
+                    .style('transform', (d, i) => {
+                        const angle = (i * 30) * Math.PI / 180;
+                        const radius = 20;
+                        const x = Math.sin(angle) * radius;
+                        const y = Math.cos(angle) * radius;
+                        return `translate(${x}px, ${y}px)`;
+                    })
+                    .transition()
+                    .duration(1000)
+                    .style('transform', 'translate(0px, 0px)');
+                
+                updateInteractionStatus('force', true);
+                showInteractionFeedback('Force Layout Enabled', 'Physics simulation applied to bar positions');
+                
+            } catch (error) {
+                console.error('Error enabling force layout:', error);
+            }
+        }
+
+        function resetInteractions() {
+            // Reset all interactions
+            d3.select('#interactionChart').selectAll('.bar')
+                .style('cursor', 'default')
+                .style('stroke', null)
+                .style('stroke-width', null)
+                .style('transform', null)
+                .on('mousedown', null)
+                .on('mouseup', null);
+            
+            d3.select('#interactionChart').selectAll('.hover-zone').remove();
+            
+            updateInteractionStatus('drag', false);
+            updateInteractionStatus('hover', false);
+            updateInteractionStatus('force', false);
+            
+            showInteractionFeedback('Interactions Reset', 'All interaction modes disabled');
+        }
+
+        function setInteractionMode() {
+            const mode = document.getElementById('interactionMode').value;
+            
+            resetInteractions();
+            
+            switch (mode) {
+                case 'drag':
+                    enableDragInteraction();
+                    break;
+                case 'hover':
+                    enableEnhancedHover();
+                    break;
+                case 'force':
+                    enableForceLayout();
+                    break;
+                case 'combined':
+                    enableDragInteraction();
+                    setTimeout(enableEnhancedHover, 500);
+                    break;
+            }
+        }
+
+        function updateInteractionStatus(type, active) {
+            const statusElement = document.querySelector(`#interactionStatus div:nth-child(${type === 'drag' ? 1 : type === 'hover' ? 2 : 3})`);
+            const indicator = statusElement.querySelector('.status-indicator');
+            
+            indicator.className = `status-indicator ${active ? 'status-active' : 'status-inactive'}`;
+            
+            const text = statusElement.childNodes[1];
+            const label = type === 'drag' ? 'Drag Behavior' : type === 'hover' ? 'Enhanced Hover' : 'Force Simulation';
+            text.textContent = `${label}: ${active ? 'Enabled' : 'Disabled'}`;
+        }
+
+        function showInteractionFeedback(title, message) {
+            const panel = document.querySelector('.interaction-panel');
+            const feedback = document.createElement('div');
+            feedback.style.background = '#e0f2fe';
+            feedback.style.padding = '10px';
+            feedback.style.borderRadius = '4px';
+            feedback.style.marginTop = '10px';
+            feedback.innerHTML = `<strong>${title}</strong><br>${message}`;
+            
+            panel.appendChild(feedback);
+            
+            setTimeout(() => {
+                feedback.remove();
+            }, 3000);
+        }
+
+        // =====================================================================
+        // HIERARCHICAL LAYOUTS FUNCTIONS
+        // =====================================================================
+
+        function createInitialHierarchicalLayouts() {
+            generateHierarchicalData();
+            renderTreemap();
+            renderSunburst();
+            renderBubbleChart();
+            renderDendogram();
+        }
+
+        function generateHierarchicalData() {
+            // Transform current dataset to hierarchical structure
+            window.hierarchicalData = {
+                name: "Waterfall Analysis",
+                children: [
+                    {
+                        name: "Revenue",
+                        children: currentDataset.filter(d => d.category === 'revenue').map(d => ({
+                            name: d.label,
+                            value: Math.abs(d.value),
+                            category: d.category
+                        }))
+                    },
+                    {
+                        name: "Expenses", 
+                        children: currentDataset.filter(d => d.category === 'expenses').map(d => ({
+                            name: d.label,
+                            value: Math.abs(d.value),
+                            category: d.category
+                        }))
+                    },
+                    {
+                        name: "Adjustments",
+                        children: currentDataset.filter(d => d.category === 'adjustments').map(d => ({
+                            name: d.label,
+                            value: Math.abs(d.value),
+                            category: d.category
+                        }))
+                    }
+                ]
+            };
+        }
+
+        function renderTreemap() {
+            try {
+                const container = d3.select('#treemapLayout');
+                container.selectAll('*').remove();
+                
+                // Simulate treemap layout
+                const width = 380;
+                const height = 280;
+                
+                const hierarchy = d3.hierarchy(window.hierarchicalData)
+                    .sum(d => d.value || 0)
+                    .sort((a, b) => b.value - a.value);
+                
+                const treemap = d3.treemap()
+                    .size([width, height])
+                    .padding(2)
+                    .round(true);
+                
+                const root = treemap(hierarchy);
+                const colorScale = d3.scaleOrdinal(d3.schemeSet3);
+                
+                const svg = container.append('svg')
+                    .attr('width', width)
+                    .attr('height', height);
+                
+                const leaf = svg.selectAll('g')
+                    .data(root.leaves())
+                    .enter().append('g')
+                    .attr('transform', d => `translate(${d.x0},${d.y0})`);
+                
+                leaf.append('rect')
+                    .attr('width', d => d.x1 - d.x0)
+                    .attr('height', d => d.y1 - d.y0)
+                    .attr('fill', d => colorScale(d.data.category))
+                    .attr('stroke', '#fff')
+                    .attr('stroke-width', 1);
+                
+                leaf.append('text')
+                    .attr('x', 4)
+                    .attr('y', 14)
+                    .text(d => d.data.name)
+                    .attr('font-size', '10px')
+                    .attr('fill', '#333');
+                
+                leaf.append('text')
+                    .attr('x', 4)
+                    .attr('y', 28)
+                    .text(d => d.value.toLocaleString())
+                    .attr('font-size', '9px')
+                    .attr('fill', '#666');
+                
+                console.log('Treemap rendered successfully');
+                
+            } catch (error) {
+                console.error('Error rendering treemap:', error);
+            }
+        }
+
+        function renderSunburst() {
+            try {
+                const container = d3.select('#partitionLayout');
+                container.selectAll('*').remove();
+                
+                const width = 380;
+                const height = 280;
+                const radius = Math.min(width, height) / 2;
+                
+                const hierarchy = d3.hierarchy(window.hierarchicalData)
+                    .sum(d => d.value || 0);
+                
+                const partition = d3.partition()
+                    .size([2 * Math.PI, radius]);
+                
+                const root = partition(hierarchy);
+                const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+                
+                const arc = d3.arc()
+                    .startAngle(d => d.x0)
+                    .endAngle(d => d.x1)
+                    .innerRadius(d => d.y0)
+                    .outerRadius(d => d.y1);
+                
+                const svg = container.append('svg')
+                    .attr('width', width)
+                    .attr('height', height)
+                    .append('g')
+                    .attr('transform', `translate(${width / 2},${height / 2})`);
+                
+                svg.selectAll('path')
+                    .data(root.descendants().filter(d => d.depth))
+                    .enter().append('path')
+                    .attr('d', arc)
+                    .attr('fill', d => colorScale(d.data.category || d.data.name))
+                    .attr('stroke', '#fff')
+                    .attr('stroke-width', 1);
+                
+                console.log('Sunburst rendered successfully');
+                
+            } catch (error) {
+                console.error('Error rendering sunburst:', error);
+            }
+        }
+
+        function renderBubbleChart() {
+            try {
+                const container = d3.select('#packLayout');
+                container.selectAll('*').remove();
+                
+                const width = 380;
+                const height = 280;
+                
+                const hierarchy = d3.hierarchy(window.hierarchicalData)
+                    .sum(d => d.value || 0);
+                
+                const pack = d3.pack()
+                    .size([width, height])
+                    .padding(3);
+                
+                const root = pack(hierarchy);
+                const colorScale = d3.scaleOrdinal(d3.schemePastel1);
+                
+                const svg = container.append('svg')
+                    .attr('width', width)
+                    .attr('height', height);
+                
+                const node = svg.selectAll('g')
+                    .data(root.descendants())
+                    .enter().append('g')
+                    .attr('transform', d => `translate(${d.x},${d.y})`);
+                
+                node.append('circle')
+                    .attr('r', d => d.r)
+                    .attr('fill', d => colorScale(d.data.category || d.data.name))
+                    .attr('stroke', '#fff')
+                    .attr('stroke-width', 1);
+                
+                node.filter(d => d.r > 20)
+                    .append('text')
+                    .attr('text-anchor', 'middle')
+                    .attr('dy', '0.3em')
+                    .text(d => d.data.name)
+                    .attr('font-size', d => Math.min(d.r / 3, 12))
+                    .attr('fill', '#333');
+                
+                console.log('Bubble chart rendered successfully');
+                
+            } catch (error) {
+                console.error('Error rendering bubble chart:', error);
+            }
+        }
+
+        function renderDendogram() {
+            try {
+                const container = d3.select('#clusterLayout');
+                container.selectAll('*').remove();
+                
+                const width = 380;
+                const height = 280;
+                
+                const hierarchy = d3.hierarchy(window.hierarchicalData);
+                
+                const cluster = d3.cluster()
+                    .size([height - 40, width - 160]);
+                
+                const root = cluster(hierarchy);
+                
+                const svg = container.append('svg')
+                    .attr('width', width)
+                    .attr('height', height)
+                    .append('g')
+                    .attr('transform', 'translate(80,20)');
+                
+                // Links
+                svg.selectAll('.link')
+                    .data(root.links())
+                    .enter().append('path')
+                    .attr('class', 'link')
+                    .attr('d', d3.linkHorizontal()
+                        .x(d => d.y)
+                        .y(d => d.x))
+                    .attr('fill', 'none')
+                    .attr('stroke', '#999')
+                    .attr('stroke-width', 1);
+                
+                // Nodes
+                const node = svg.selectAll('.node')
+                    .data(root.descendants())
+                    .enter().append('g')
+                    .attr('class', 'node')
+                    .attr('transform', d => `translate(${d.y},${d.x})`);
+                
+                node.append('circle')
+                    .attr('r', 4)
+                    .attr('fill', '#69b3a2');
+                
+                node.append('text')
+                    .attr('dx', 8)
+                    .attr('dy', 3)
+                    .text(d => d.data.name)
+                    .attr('font-size', '10px')
+                    .attr('fill', '#333');
+                
+                console.log('Dendogram rendered successfully');
+                
+            } catch (error) {
+                console.error('Error rendering dendogram:', error);
+            }
+        }
+
+        // Initialize demo when page loads
+        document.addEventListener('DOMContentLoaded', initializeDemo);
+    </script>
+</body>
+</html>

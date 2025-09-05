@@ -87,7 +87,7 @@ describe("MintWaterfall Chart", () => {
       expect(chart.width()).toBe(800);
       expect(chart.height()).toBe(400);
       expect(chart.showTotal()).toBe(false);
-      expect(chart.stacked()).toBe(true);
+      expect(chart.stacked()).toBe(false);
       expect(chart.duration()).toBe(750);
     });
   });

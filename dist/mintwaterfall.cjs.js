@@ -2426,6 +2426,446 @@ function createPerformanceManager() {
     return performanceManager;
 }
 
+// MintWaterfall Enhanced Theme System - TypeScript Version
+// Provides predefined themes, advanced D3.js color schemes, and interpolation with full type safety
+const themes = {
+    default: {
+        name: "Default",
+        background: "#ffffff",
+        gridColor: "#e0e0e0",
+        axisColor: "#666666",
+        textColor: "#333333",
+        totalColor: "#95A5A6",
+        colors: ["#3498db", "#2ecc71", "#e74c3c", "#f39c12", "#9b59b6", "#1abc9c", "#e67e22", "#f1c40f"],
+        // NEW: Advanced color features
+        sequentialScale: {
+            type: 'sequential',
+            interpolator: d3__namespace.interpolateBlues
+        },
+        divergingScale: {
+            type: 'diverging',
+            interpolator: d3__namespace.interpolateRdYlBu
+        },
+        conditionalFormatting: {
+            positive: "#2ecc71",
+            negative: "#e74c3c",
+            neutral: "#95a5a6"
+        }
+    },
+    dark: {
+        name: "Dark",
+        background: "#2c3e50",
+        gridColor: "#34495e",
+        axisColor: "#bdc3c7",
+        textColor: "#ecf0f1",
+        totalColor: "#95a5a6",
+        colors: ["#3498db", "#2ecc71", "#e74c3c", "#f39c12", "#9b59b6", "#1abc9c", "#e67e22", "#f1c40f"],
+        sequentialScale: {
+            type: 'sequential',
+            interpolator: d3__namespace.interpolateViridis
+        },
+        divergingScale: {
+            type: 'diverging',
+            interpolator: d3__namespace.interpolatePiYG
+        },
+        conditionalFormatting: {
+            positive: "#2ecc71",
+            negative: "#e74c3c",
+            neutral: "#95a5a6"
+        }
+    },
+    corporate: {
+        name: "Corporate",
+        background: "#ffffff",
+        gridColor: "#e8e8e8",
+        axisColor: "#555555",
+        textColor: "#333333",
+        totalColor: "#7f8c8d",
+        colors: ["#2c3e50", "#34495e", "#7f8c8d", "#95a5a6", "#bdc3c7", "#ecf0f1"],
+        sequentialScale: {
+            type: 'sequential',
+            interpolator: d3__namespace.interpolateGreys
+        },
+        divergingScale: {
+            type: 'diverging',
+            interpolator: d3__namespace.interpolateRdBu
+        },
+        conditionalFormatting: {
+            positive: "#27ae60",
+            negative: "#c0392b",
+            neutral: "#7f8c8d"
+        }
+    },
+    accessible: {
+        name: "Accessible",
+        background: "#ffffff",
+        gridColor: "#cccccc",
+        axisColor: "#000000",
+        textColor: "#000000",
+        totalColor: "#666666",
+        // High contrast, colorblind-friendly palette
+        colors: ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f"],
+        sequentialScale: {
+            type: 'sequential',
+            interpolator: (t) => d3__namespace.interpolateHsl("#ffffff", "#000000")(t)
+        },
+        divergingScale: {
+            type: 'diverging',
+            interpolator: d3__namespace.interpolateRdBu
+        },
+        conditionalFormatting: {
+            positive: "#1f77b4", // High contrast blue
+            negative: "#d62728", // High contrast red
+            neutral: "#666666"
+        }
+    },
+    colorful: {
+        name: "Colorful",
+        background: "#ffffff",
+        gridColor: "#f0f0f0",
+        axisColor: "#666666",
+        textColor: "#333333",
+        totalColor: "#34495e",
+        colors: ["#ff6b6b", "#4ecdc4", "#45b7d1", "#f9ca24", "#f0932b", "#eb4d4b", "#6c5ce7", "#a29bfe"],
+        sequentialScale: {
+            type: 'sequential',
+            interpolator: d3__namespace.interpolateRainbow
+        },
+        divergingScale: {
+            type: 'diverging',
+            interpolator: d3__namespace.interpolateSpectral
+        },
+        conditionalFormatting: {
+            positive: "#4ecdc4",
+            negative: "#ff6b6b",
+            neutral: "#f9ca24"
+        }
+    }
+};
+function applyTheme(chart, themeName = "default") {
+    const theme = themes[themeName] || themes.default;
+    // Apply theme colors to chart configuration
+    chart.totalColor(theme.totalColor);
+    return theme;
+}
+// ============================================================================
+// ADVANCED COLOR SCALE FUNCTIONS
+// ============================================================================
+/**
+ * Create a sequential color scale for continuous data visualization
+ * Perfect for heat-map style conditional formatting in waterfall charts
+ */
+function createSequentialScale(domain, themeName = "default") {
+    const theme = themes[themeName] || themes.default;
+    const interpolator = theme.sequentialScale?.interpolator || d3__namespace.interpolateBlues;
+    return d3__namespace.scaleSequential(interpolator)
+        .domain(domain);
+}
+/**
+ * Create a diverging color scale for data with a meaningful center point (e.g., zero)
+ * Perfect for positive/negative value emphasis in waterfall charts
+ */
+function createDivergingScale(domain, themeName = "default") {
+    const theme = themes[themeName] || themes.default;
+    const interpolator = theme.divergingScale?.interpolator || d3__namespace.interpolateRdYlBu;
+    return d3__namespace.scaleDiverging(interpolator)
+        .domain(domain);
+}
+/**
+ * Get conditional formatting color based on value
+ * Returns appropriate color for positive, negative, or neutral values
+ */
+function getConditionalColor(value, themeName = "default", neutralThreshold = 0) {
+    const theme = themes[themeName] || themes.default;
+    const formatting = theme.conditionalFormatting || {
+        positive: "#2ecc71",
+        negative: "#e74c3c",
+        neutral: "#95a5a6"
+    };
+    if (Math.abs(value) <= Math.abs(neutralThreshold)) {
+        return formatting.neutral;
+    }
+    return value > neutralThreshold ? formatting.positive : formatting.negative;
+}
+/**
+ * Create a color scale for waterfall data with automatic domain detection
+ * Automatically chooses between sequential or diverging based on data characteristics
+ */
+function createWaterfallColorScale(data, themeName = "default", scaleType = 'auto') {
+    const values = data.map(d => d.value);
+    const extent = d3__namespace.extent(values);
+    const hasPositiveAndNegative = extent[0] < 0 && extent[1] > 0;
+    // Auto-detect scale type
+    if (scaleType === 'auto') {
+        scaleType = hasPositiveAndNegative ? 'diverging' : 'sequential';
+    }
+    if (scaleType === 'diverging' && hasPositiveAndNegative) {
+        const maxAbs = Math.max(Math.abs(extent[0]), Math.abs(extent[1]));
+        return createDivergingScale([-maxAbs, 0, maxAbs], themeName);
+    }
+    else {
+        return createSequentialScale(extent, themeName);
+    }
+}
+/**
+ * Apply color interpolation to a value within a range
+ * Useful for creating smooth color transitions in large datasets
+ */
+function interpolateThemeColor(value, domain, themeName = "default", scaleType = 'sequential') {
+    const theme = themes[themeName] || themes.default;
+    if (scaleType === 'diverging') {
+        const maxAbs = Math.max(Math.abs(domain[0]), Math.abs(domain[1]));
+        const interpolator = theme.divergingScale?.interpolator || d3__namespace.interpolateRdYlBu;
+        const normalizedValue = value / maxAbs; // Normalize to [-1, 1]
+        return interpolator((normalizedValue + 1) / 2); // Convert to [0, 1] for interpolator
+    }
+    else {
+        const interpolator = theme.sequentialScale?.interpolator || d3__namespace.interpolateBlues;
+        const normalizedValue = (value - domain[0]) / (domain[1] - domain[0]);
+        return interpolator(Math.max(0, Math.min(1, normalizedValue)));
+    }
+}
+/**
+ * Get enhanced color palette with interpolated values
+ * Creates a smooth color progression for data visualization
+ */
+function getEnhancedColorPalette(steps = 10, themeName = "default", scaleType = 'sequential') {
+    const theme = themes[themeName] || themes.default;
+    const interpolator = scaleType === 'diverging'
+        ? (theme.divergingScale?.interpolator || d3__namespace.interpolateRdYlBu)
+        : (theme.sequentialScale?.interpolator || d3__namespace.interpolateBlues);
+    return Array.from({ length: steps }, (_, i) => {
+        const t = i / (steps - 1);
+        return interpolator(t);
+    });
+}
+
+// MintWaterfall Enhanced Shape Generators - TypeScript Version
+// Provides advanced D3.js shape generators for waterfall chart enhancements
+// ============================================================================
+// SHAPE GENERATOR IMPLEMENTATION
+// ============================================================================
+function createShapeGenerators() {
+    // Available curve types for enhanced visualization
+    const curveTypes = {
+        linear: d3__namespace.curveLinear,
+        basis: d3__namespace.curveBasis,
+        cardinal: d3__namespace.curveCardinal,
+        catmullRom: d3__namespace.curveCatmullRom,
+        monotoneX: d3__namespace.curveMonotoneX,
+        monotoneY: d3__namespace.curveMonotoneY,
+        natural: d3__namespace.curveNatural,
+        step: d3__namespace.curveStep,
+        stepBefore: d3__namespace.curveStepBefore,
+        stepAfter: d3__namespace.curveStepAfter,
+        bumpX: d3__namespace.curveBumpX,
+        bumpY: d3__namespace.curveBumpY
+    };
+    // Available symbol types for data point markers
+    const symbolTypes = {
+        circle: d3__namespace.symbolCircle,
+        square: d3__namespace.symbolSquare,
+        triangle: d3__namespace.symbolTriangle,
+        diamond: d3__namespace.symbolDiamond,
+        star: d3__namespace.symbolStar,
+        cross: d3__namespace.symbolCross,
+        wye: d3__namespace.symbolWye
+    };
+    // ========================================================================
+    // AREA GENERATORS
+    // ========================================================================
+    /**
+     * Create confidence band area for uncertainty visualization
+     * Perfect for showing confidence intervals around waterfall projections
+     */
+    function createConfidenceBand(data, config = {}) {
+        const { curve = d3__namespace.curveMonotoneX, opacity = 0.3, fillColor = "#95a5a6" } = config;
+        const areaGenerator = d3__namespace.area()
+            .x(d => d.x)
+            .y0(d => d.yLower)
+            .y1(d => d.yUpper)
+            .curve(curve);
+        return areaGenerator(data) || "";
+    }
+    /**
+     * Create envelope area between two data series
+     * Useful for showing range between scenarios in waterfall analysis
+     */
+    function createEnvelopeArea(data, config = {}) {
+        const { curve = d3__namespace.curveMonotoneX } = config;
+        const areaGenerator = d3__namespace.area()
+            .x(d => d.x)
+            .y0(d => d.y0)
+            .y1(d => d.y1)
+            .curve(curve);
+        return areaGenerator(data) || "";
+    }
+    // ========================================================================
+    // SYMBOL GENERATORS
+    // ========================================================================
+    /**
+     * Create data point markers for highlighting key values
+     * Perfect for marking important milestones in waterfall progression
+     */
+    function createDataPointMarkers(data, config = {}) {
+        const { size = 64, fillColor = "#3498db", strokeColor = "#ffffff", strokeWidth = 2 } = config;
+        return data.map(point => {
+            const symbolType = symbolTypes[point.type] || d3__namespace.symbolCircle;
+            const symbolSize = point.size || size;
+            const symbolGenerator = d3__namespace.symbol()
+                .type(symbolType)
+                .size(symbolSize);
+            return {
+                path: symbolGenerator() || "",
+                transform: `translate(${point.x}, ${point.y})`,
+                config: {
+                    ...config,
+                    fillColor: point.color || fillColor,
+                    strokeColor,
+                    strokeWidth
+                }
+            };
+        });
+    }
+    /**
+     * Create custom symbol path
+     * Allows for creating unique markers for specific data points
+     */
+    function createCustomSymbol(type, size = 64) {
+        const symbolType = symbolTypes[type] || d3__namespace.symbolCircle;
+        const symbolGenerator = d3__namespace.symbol()
+            .type(symbolType)
+            .size(size);
+        return symbolGenerator() || "";
+    }
+    // ========================================================================
+    // ENHANCED TREND LINES
+    // ========================================================================
+    /**
+     * Create smooth trend line with enhanced curve support
+     * Provides better visual flow for waterfall trend analysis
+     */
+    function createSmoothTrendLine(data, config = {}) {
+        const { curve = d3__namespace.curveMonotoneX, strokeColor = "#e74c3c", strokeWidth = 2, opacity = 0.8 } = config;
+        const lineGenerator = d3__namespace.line()
+            .x(d => d.x)
+            .y(d => d.y)
+            .curve(curve);
+        return lineGenerator(data) || "";
+    }
+    /**
+     * Create multiple trend lines for comparison analysis
+     * Useful for comparing different scenarios or time periods
+     */
+    function createMultipleTrendLines(datasets) {
+        return datasets.map(dataset => {
+            return createSmoothTrendLine(dataset.data, dataset.config);
+        });
+    }
+    // ========================================================================
+    // UTILITY FUNCTIONS
+    // ========================================================================
+    function getCurveTypes() {
+        return { ...curveTypes };
+    }
+    function getSymbolTypes() {
+        return { ...symbolTypes };
+    }
+    // ========================================================================
+    // RETURN API
+    // ========================================================================
+    return {
+        // Area generators
+        createConfidenceBand,
+        createEnvelopeArea,
+        // Symbol generators
+        createDataPointMarkers,
+        createCustomSymbol,
+        // Enhanced trend lines
+        createSmoothTrendLine,
+        createMultipleTrendLines,
+        // Utility functions
+        getCurveTypes,
+        getSymbolTypes
+    };
+}
+// ============================================================================
+// ADVANCED WATERFALL-SPECIFIC SHAPE UTILITIES
+// ============================================================================
+/**
+ * Create confidence bands specifically for waterfall financial projections
+ * Combines multiple projection scenarios into visual uncertainty bands
+ */
+function createWaterfallConfidenceBands(baselineData, scenarios, xScale, yScale) {
+    const shapeGenerator = createShapeGenerators();
+    // Calculate cumulative values for each scenario
+    let baselineCumulative = 0;
+    let optimisticCumulative = 0;
+    let pessimisticCumulative = 0;
+    const confidenceData = baselineData.map((item, i) => {
+        baselineCumulative += item.value;
+        optimisticCumulative += scenarios.optimistic[i]?.value || item.value;
+        pessimisticCumulative += scenarios.pessimistic[i]?.value || item.value;
+        const x = (xScale(item.label) || 0) + xScale.bandwidth() / 2;
+        return {
+            x,
+            y: yScale(baselineCumulative),
+            yUpper: yScale(optimisticCumulative),
+            yLower: yScale(pessimisticCumulative),
+            label: item.label
+        };
+    });
+    // Create trend lines for each scenario
+    const optimisticTrendData = confidenceData.map(d => ({ x: d.x, y: d.yUpper }));
+    const pessimisticTrendData = confidenceData.map(d => ({ x: d.x, y: d.yLower }));
+    return {
+        confidencePath: shapeGenerator.createConfidenceBand(confidenceData, {
+            fillColor: "rgba(52, 152, 219, 0.2)",
+            curve: d3__namespace.curveMonotoneX
+        }),
+        optimisticPath: shapeGenerator.createSmoothTrendLine(optimisticTrendData, {
+            strokeColor: "#27ae60",
+            strokeWidth: 2,
+            strokeDasharray: "5,5",
+            curve: d3__namespace.curveMonotoneX
+        }),
+        pessimisticPath: shapeGenerator.createSmoothTrendLine(pessimisticTrendData, {
+            strokeColor: "#e74c3c",
+            strokeWidth: 2,
+            strokeDasharray: "5,5",
+            curve: d3__namespace.curveMonotoneX
+        })
+    };
+}
+/**
+ * Create key milestone markers for waterfall charts
+ * Highlights important data points like targets, thresholds, or significant events
+ */
+function createWaterfallMilestones(milestones, xScale, yScale) {
+    const shapeGenerator = createShapeGenerators();
+    const markerData = milestones.map(milestone => {
+        const typeMapping = {
+            target: { type: 'star', color: '#f39c12', size: 100 },
+            threshold: { type: 'diamond', color: '#9b59b6', size: 80 },
+            alert: { type: 'triangle', color: '#e74c3c', size: 90 },
+            achievement: { type: 'circle', color: '#27ae60', size: 85 }
+        };
+        const styling = typeMapping[milestone.type] || typeMapping.target;
+        return {
+            x: (xScale(milestone.label) || 0) + xScale.bandwidth() / 2,
+            y: yScale(milestone.value),
+            type: styling.type,
+            size: styling.size,
+            color: styling.color,
+            label: milestone.description || milestone.label
+        };
+    });
+    return shapeGenerator.createDataPointMarkers(markerData, {
+        strokeColor: "#ffffff",
+        strokeWidth: 2
+    });
+}
+
 // MintWaterfall - D3.js compatible waterfall chart component (TypeScript)
 // Usage: d3.waterfallChart().width(800).height(400).showTotal(true)(selection)
 // Utility function to get bar width from any scale type
@@ -2433,7 +2873,7 @@ function getBarWidth(scale, barCount, totalWidth) {
     if (scale.bandwidth) {
         // Band scale has bandwidth method - use it directly
         const bandwidth = scale.bandwidth();
-        console.log('Using band scale bandwidth:', bandwidth);
+        // Using band scale bandwidth
         return bandwidth;
     }
     else {
@@ -2441,7 +2881,7 @@ function getBarWidth(scale, barCount, totalWidth) {
         const padding = 0.1;
         const availableWidth = totalWidth * (1 - padding);
         const calculatedWidth = availableWidth / barCount;
-        console.log('Calculated width for continuous scale:', calculatedWidth);
+        // Calculated width for continuous scale
         return calculatedWidth;
     }
 }
@@ -2463,7 +2903,7 @@ function waterfallChart() {
     let showTotal = false;
     let totalLabel = "Total";
     let totalColor = "#95A5A6";
-    let stacked = true;
+    let stacked = false;
     let barPadding = 0.05;
     let duration = 750;
     let ease = d3__namespace.easeQuadInOut;
@@ -2475,6 +2915,26 @@ function waterfallChart() {
     let staggeredAnimations = false;
     let staggerDelay = 100;
     let scaleType = "auto"; // 'auto', 'linear', 'time', 'ordinal'
+    // NEW: Advanced color and shape features
+    let advancedColorConfig = {
+        enabled: false,
+        scaleType: 'auto',
+        themeName: 'default',
+        neutralThreshold: 0
+    };
+    let confidenceBandConfig = {
+        enabled: false,
+        opacity: 0.3,
+        showTrendLines: true
+    };
+    let milestoneConfig = {
+        enabled: false,
+        milestones: []
+    };
+    // Note: Advanced analytical enhancement feature variables removed
+    // Features are available via exported utility functions
+    // Note: Hierarchical layout variables removed
+    // Features are available via exported utility functions
     // Trend line features
     let showTrendLine = false;
     let trendLineColor = "#e74c3c";
@@ -2504,6 +2964,30 @@ function waterfallChart() {
     const tooltipSystem = createTooltipSystem();
     createZoomSystem();
     const performanceManager = createPerformanceManager();
+    // Note: Advanced analytical enhancement system instances removed
+    // Systems are available via exported utility functions
+    // Helper function for advanced color determination
+    function getAdvancedBarColor(value, defaultColor, allData) {
+        if (!advancedColorConfig.enabled) {
+            return defaultColor;
+        }
+        const themeName = advancedColorConfig.themeName || 'default';
+        switch (advancedColorConfig.scaleType) {
+            case 'conditional':
+                return getConditionalColor(value, themeName, advancedColorConfig.neutralThreshold);
+            case 'sequential':
+            case 'diverging':
+            case 'auto':
+                if (advancedColorConfig.customColorScale) {
+                    return advancedColorConfig.customColorScale(value);
+                }
+                // Create appropriate color scale based on data
+                const colorScale = createWaterfallColorScale(allData.map(d => ({ value: d.barTotal })), themeName, advancedColorConfig.scaleType);
+                return colorScale(value);
+            default:
+                return defaultColor;
+        }
+    }
     // Performance configuration
     let enablePerformanceOptimization = false;
     let performanceDashboard = false;
@@ -2531,8 +3015,22 @@ function waterfallChart() {
                 console.error("MintWaterfall: Invalid data structure. Each item must have a 'label' string and 'stacks' array with 'value' numbers and 'color' strings.");
                 return;
             }
-            const svg = d3__namespace.select(this);
-            // Get actual SVG dimensions
+            // Handle both div containers and existing SVG elements
+            const element = d3__namespace.select(this);
+            let svg;
+            if (this.tagName === 'svg') {
+                // Already an SVG element
+                svg = element;
+            }
+            else {
+                // Container element (div) - create or select SVG
+                svg = element.selectAll('svg').data([0]);
+                const svgEnter = svg.enter().append('svg');
+                svg = svgEnter.merge(svg);
+                // Set SVG dimensions
+                svg.attr('width', width).attr('height', height);
+            }
+            // Get actual SVG dimensions from attributes if available
             const svgNode = svg.node();
             if (svgNode) {
                 const svgWidth = svgNode.getAttribute('width');
@@ -2542,7 +3040,7 @@ function waterfallChart() {
                 if (svgHeight)
                     height = parseInt(svgHeight, 10);
             }
-            console.log('Chart dimensions:', { width, height });
+            // Chart dimensions set
             const container = svg.selectAll(".waterfall-container").data([data]);
             // Store reference for zoom system
             const svgContainer = svg;
@@ -2578,7 +3076,7 @@ function waterfallChart() {
                 let processedData;
                 if (dataHash === lastDataHash && cachedProcessedData) {
                     processedData = cachedProcessedData;
-                    console.log("MintWaterfall: Using cached processed data");
+                    // Using cached processed data
                 }
                 else {
                     // Prepare data with cumulative calculations
@@ -2595,12 +3093,7 @@ function waterfallChart() {
                     lastDataHash = dataHash;
                     cachedProcessedData = processedData;
                 }
-                console.log("🔧 processedData in chart:", processedData.map(d => ({
-                    label: d.label,
-                    barTotal: d.barTotal,
-                    cumulativeTotal: d.cumulativeTotal,
-                    stackCount: d.stacks?.length
-                })));
+                // Process data for chart rendering
                 // Calculate intelligent margins based on data
                 const intelligentMargins = calculateIntelligentMargins(processedData, margin);
                 // Set up scales using enhanced scale system
@@ -2637,18 +3130,8 @@ function waterfallChart() {
                     .attr("y", Math.max(0, intelligentMargins.top - labelSpace)) // Extend upward for labels
                     .attr("width", width - intelligentMargins.left - intelligentMargins.right)
                     .attr("height", height - intelligentMargins.top - intelligentMargins.bottom + labelSpace);
-                console.log('🔧 Clipping path set:', {
-                    x: intelligentMargins.left,
-                    y: Math.max(0, intelligentMargins.top - labelSpace),
-                    width: width - intelligentMargins.left - intelligentMargins.right,
-                    height: height - intelligentMargins.top - intelligentMargins.bottom + labelSpace
-                });
-                console.log('Scale setup:', {
-                    domain: xScale.domain(),
-                    range: xScale.range(),
-                    intelligentMargins,
-                    bandwidth: xScale.bandwidth ? xScale.bandwidth() : 'N/A'
-                });
+                // Clipping path configured
+                // Scale configuration complete
                 // Enhanced Y scale using d3.extent and nice()
                 const yValues = processedData.map(d => d.cumulativeTotal);
                 // For waterfall charts, ensure proper baseline handling
@@ -2680,6 +3163,9 @@ function waterfallChart() {
                 drawConnectors(chartGroup, processedData, xScale, yScale);
                 // Create/update trend line (handles both show and hide cases)
                 drawTrendLine(chartGroup, processedData, xScale, yScale);
+                // NEW: Draw advanced features
+                drawConfidenceBands(chartGroup, processedData, xScale, yScale);
+                drawMilestones(chartGroup, processedData, xScale, yScale);
                 // Add brush functionality if enabled
                 if (enableBrush) {
                     addBrushSelection(containerUpdate, processedData, xScale, yScale);
@@ -2793,13 +3279,7 @@ function waterfallChart() {
             bottom: baseMargin.bottom + extraBottomMargin + (hasNegativeValues ? safetyBuffer : 10),
             left: baseMargin.left
         };
-        console.log('🔧 Intelligent margins calculated:', {
-            original: baseMargin,
-            calculated: intelligentMargin,
-            highestLabelPosition,
-            spaceNeededFromTop,
-            extraTopMarginNeeded
-        });
+        // Intelligent margins calculated
         return intelligentMargin;
     }
     function prepareData(data) {
@@ -2954,7 +3434,7 @@ function waterfallChart() {
             drawStackedBars(barGroupsUpdate, xScale, yScale, intelligentMargins);
         }
         else {
-            drawWaterfallBars(barGroupsUpdate, xScale, yScale, intelligentMargins);
+            drawWaterfallBars(barGroupsUpdate, xScale, yScale, intelligentMargins, processedData);
         }
         // Add value labels
         drawValueLabels(barGroupsUpdate, xScale, yScale, intelligentMargins);
@@ -3033,14 +3513,17 @@ function waterfallChart() {
                 .remove();
         });
     }
-    function drawWaterfallBars(barGroups, xScale, yScale, intelligentMargins) {
+    function drawWaterfallBars(barGroups, xScale, yScale, intelligentMargins, allData = []) {
         barGroups.each(function (d) {
             const group = d3__namespace.select(this);
             // Get bar width - use scale bandwidth if available, otherwise calculate using intelligent margins
             const barWidth = xScale.bandwidth ? xScale.bandwidth() : getBarWidth(xScale, barGroups.size(), width - intelligentMargins.left - intelligentMargins.right);
+            // Determine bar color using advanced color features
+            const defaultColor = d.stacks.length === 1 ? d.stacks[0].color : "#3498db";
+            const advancedColor = getAdvancedBarColor(d.barTotal, defaultColor, allData);
             const barData = [{
                     value: d.barTotal,
-                    color: d.stacks.length === 1 ? d.stacks[0].color : "#3498db", // Default blue if multiple stacks
+                    color: advancedColor,
                     y: d.isTotal ?
                         Math.min(yScale(0), yScale(d.cumulativeTotal)) : // Total bar: position correctly regardless of scale direction
                         yScale(Math.max(d.prevCumulativeTotal, d.cumulativeTotal)),
@@ -3077,11 +3560,11 @@ function waterfallChart() {
     }
     function drawValueLabels(barGroups, xScale, yScale, intelligentMargins) {
         // Always show value labels on bars - this is independent of the total bar setting
-        console.log('🏷️ Drawing value labels, barGroups size:', barGroups.size());
+        // Drawing value labels
         barGroups.each(function (d) {
             const group = d3__namespace.select(this);
             const barWidth = getBarWidth(xScale, barGroups.size(), width - intelligentMargins.left - intelligentMargins.right);
-            console.log('🏷️ Processing label for:', d.label, 'barTotal:', d.barTotal, 'cumulativeTotal:', d.cumulativeTotal);
+            // Processing label for bar
             const labelData = [{
                     value: d.barTotal,
                     formattedValue: formatNumber(d.barTotal),
@@ -3105,13 +3588,7 @@ function waterfallChart() {
                 const barTop = yScale(labelD.parent.cumulativeTotal);
                 const padding = 8;
                 const finalY = barTop - padding;
-                console.log('🏷️ Label positioning:', {
-                    label: labelD.parent.label,
-                    cumulativeTotal: labelD.parent.cumulativeTotal,
-                    barTop: barTop,
-                    finalY: finalY,
-                    formattedValue: labelD.formattedValue
-                });
+                // Label positioning calculated
                 return finalY;
             })
                 .attr("x", barWidth / 2)
@@ -3125,17 +3602,7 @@ function waterfallChart() {
                 .attr("clip-path", "none") // Remove any clipping from labels themselves
                 .text((labelD) => labelD.formattedValue)
                 .each(function (labelD) {
-                // Debug: Log each created label element
-                const element = d3__namespace.select(this);
-                console.log('🏷️ Label element created:', {
-                    text: labelD.formattedValue,
-                    x: element.attr("x"),
-                    y: element.attr("y"),
-                    opacity: element.style("opacity"),
-                    fill: element.style("fill"),
-                    fontSize: element.style("font-size"),
-                    element: this
-                });
+                // Label element created
             });
             totalLabels.exit()
                 .transition()
@@ -3627,11 +4094,142 @@ function waterfallChart() {
         // Always return the chart instance for method chaining
         return chart;
     };
+    // NEW: Advanced color and shape feature methods
+    chart.advancedColors = function (_) {
+        return arguments.length ? (advancedColorConfig = { ...advancedColorConfig, ..._ }, chart) : advancedColorConfig;
+    };
+    chart.enableAdvancedColors = function (_) {
+        return arguments.length ? (advancedColorConfig.enabled = _, chart) : advancedColorConfig.enabled;
+    };
+    chart.colorScaleType = function (_) {
+        return arguments.length ? (advancedColorConfig.scaleType = _, chart) : advancedColorConfig.scaleType;
+    };
+    chart.confidenceBands = function (_) {
+        return arguments.length ? (confidenceBandConfig = { ...confidenceBandConfig, ..._ }, chart) : confidenceBandConfig;
+    };
+    chart.enableConfidenceBands = function (_) {
+        return arguments.length ? (confidenceBandConfig.enabled = _, chart) : confidenceBandConfig.enabled;
+    };
+    chart.milestones = function (_) {
+        return arguments.length ? (milestoneConfig = { ...milestoneConfig, ..._ }, chart) : milestoneConfig;
+    };
+    chart.enableMilestones = function (_) {
+        return arguments.length ? (milestoneConfig.enabled = _, chart) : milestoneConfig.enabled;
+    };
+    chart.addMilestone = function (milestone) {
+        milestoneConfig.milestones.push(milestone);
+        return chart;
+    };
     // Event handling methods
     chart.on = function () {
         const value = listeners.on.apply(listeners, Array.from(arguments));
         return value === listeners ? chart : value;
     };
+    // NEW: Advanced feature rendering functions
+    function drawConfidenceBands(container, processedData, xScale, yScale) {
+        if (!confidenceBandConfig.enabled || !confidenceBandConfig.scenarios)
+            return;
+        // Create confidence bands group
+        const confidenceGroup = container.selectAll(".confidence-bands-group").data([0]);
+        const confidenceGroupEnter = confidenceGroup.enter()
+            .append("g")
+            .attr("class", "confidence-bands-group");
+        const confidenceGroupUpdate = confidenceGroupEnter.merge(confidenceGroup);
+        // Generate confidence band data using the waterfall-specific utility
+        const confidenceBandData = createWaterfallConfidenceBands(processedData.map(d => ({ label: d.label, value: d.barTotal })), confidenceBandConfig.scenarios, xScale, yScale);
+        // Render confidence band
+        const confidencePath = confidenceGroupUpdate.selectAll(".confidence-band").data([confidenceBandData.confidencePath]);
+        const confidencePathEnter = confidencePath.enter()
+            .append("path")
+            .attr("class", "confidence-band")
+            .attr("fill", `rgba(52, 152, 219, ${confidenceBandConfig.opacity || 0.3})`)
+            .attr("stroke", "none")
+            .style("opacity", 0);
+        confidencePathEnter.merge(confidencePath)
+            .transition()
+            .duration(duration)
+            .ease(ease)
+            .attr("d", confidenceBandData.confidencePath)
+            .style("opacity", 1);
+        // Render trend lines if enabled
+        if (confidenceBandConfig.showTrendLines) {
+            // Optimistic trend line
+            const optimisticPath = confidenceGroupUpdate.selectAll(".optimistic-trend").data([confidenceBandData.optimisticPath]);
+            const optimisticPathEnter = optimisticPath.enter()
+                .append("path")
+                .attr("class", "optimistic-trend")
+                .attr("fill", "none")
+                .attr("stroke", "#27ae60")
+                .attr("stroke-width", 2)
+                .attr("stroke-dasharray", "5,5")
+                .style("opacity", 0);
+            optimisticPathEnter.merge(optimisticPath)
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .attr("d", confidenceBandData.optimisticPath)
+                .style("opacity", 0.8);
+            // Pessimistic trend line
+            const pessimisticPath = confidenceGroupUpdate.selectAll(".pessimistic-trend").data([confidenceBandData.pessimisticPath]);
+            const pessimisticPathEnter = pessimisticPath.enter()
+                .append("path")
+                .attr("class", "pessimistic-trend")
+                .attr("fill", "none")
+                .attr("stroke", "#e74c3c")
+                .attr("stroke-width", 2)
+                .attr("stroke-dasharray", "5,5")
+                .style("opacity", 0);
+            pessimisticPathEnter.merge(pessimisticPath)
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .attr("d", confidenceBandData.pessimisticPath)
+                .style("opacity", 0.8);
+        }
+        // Remove old elements
+        confidencePath.exit()
+            .transition()
+            .duration(duration)
+            .style("opacity", 0)
+            .remove();
+    }
+    function drawMilestones(container, processedData, xScale, yScale) {
+        if (!milestoneConfig.enabled || milestoneConfig.milestones.length === 0)
+            return;
+        // Create milestones group
+        const milestonesGroup = container.selectAll(".milestones-group").data([0]);
+        const milestonesGroupEnter = milestonesGroup.enter()
+            .append("g")
+            .attr("class", "milestones-group");
+        const milestonesGroupUpdate = milestonesGroupEnter.merge(milestonesGroup);
+        // Generate milestone markers using the waterfall-specific utility
+        const milestoneMarkers = createWaterfallMilestones(milestoneConfig.milestones, xScale, yScale);
+        // Render milestone markers
+        const markers = milestonesGroupUpdate.selectAll(".milestone-marker").data(milestoneMarkers);
+        const markersEnter = markers.enter()
+            .append("path")
+            .attr("class", "milestone-marker")
+            .attr("transform", (d) => d.transform)
+            .attr("d", (d) => d.path)
+            .attr("fill", (d) => d.config.fillColor || "#f39c12")
+            .attr("stroke", (d) => d.config.strokeColor || "#ffffff")
+            .attr("stroke-width", (d) => d.config.strokeWidth || 2)
+            .style("opacity", 0);
+        markersEnter.merge(markers)
+            .transition()
+            .duration(duration)
+            .ease(ease)
+            .attr("transform", (d) => d.transform)
+            .attr("d", (d) => d.path)
+            .attr("fill", (d) => d.config.fillColor || "#f39c12")
+            .style("opacity", 1);
+        // Remove old markers
+        markers.exit()
+            .transition()
+            .duration(duration)
+            .style("opacity", 0)
+            .remove();
+    }
     return chart;
 }
 
@@ -4699,61 +5297,2278 @@ function createAnimationSystem() {
     return animationSystem;
 }
 
-// MintWaterfall Theme System - TypeScript Version
-// Provides predefined themes and color schemes with full type safety
-const themes = {
-    default: {
-        name: "Default",
-        background: "#ffffff",
-        gridColor: "#e0e0e0",
-        axisColor: "#666666",
-        textColor: "#333333",
-        totalColor: "#95A5A6",
-        colors: ["#3498db", "#2ecc71", "#e74c3c", "#f39c12", "#9b59b6", "#1abc9c", "#e67e22", "#f1c40f"]
-    },
-    dark: {
-        name: "Dark",
-        background: "#2c3e50",
-        gridColor: "#34495e",
-        axisColor: "#bdc3c7",
-        textColor: "#ecf0f1",
-        totalColor: "#95a5a6",
-        colors: ["#3498db", "#2ecc71", "#e74c3c", "#f39c12", "#9b59b6", "#1abc9c", "#e67e22", "#f1c40f"]
-    },
-    corporate: {
-        name: "Corporate",
-        background: "#ffffff",
-        gridColor: "#e8e8e8",
-        axisColor: "#555555",
-        textColor: "#333333",
-        totalColor: "#7f8c8d",
-        colors: ["#2c3e50", "#34495e", "#7f8c8d", "#95a5a6", "#bdc3c7", "#ecf0f1"]
-    },
-    accessible: {
-        name: "Accessible",
-        background: "#ffffff",
-        gridColor: "#cccccc",
-        axisColor: "#000000",
-        textColor: "#000000",
-        totalColor: "#666666",
-        // High contrast, colorblind-friendly palette
-        colors: ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f"]
-    },
-    colorful: {
-        name: "Colorful",
-        background: "#ffffff",
-        gridColor: "#f0f0f0",
-        axisColor: "#666666",
-        textColor: "#333333",
-        totalColor: "#34495e",
-        colors: ["#ff6b6b", "#4ecdc4", "#45b7d1", "#f9ca24", "#f0932b", "#eb4d4b", "#6c5ce7", "#a29bfe"]
+// MintWaterfall Advanced Statistical Analysis - TypeScript Version
+// Provides comprehensive statistical analysis features for waterfall chart data
+// ============================================================================
+// STATISTICAL SYSTEM IMPLEMENTATION
+// ============================================================================
+function createStatisticalSystem() {
+    // ========================================================================
+    // CORE STATISTICAL FUNCTIONS
+    // ========================================================================
+    /**
+     * Calculate comprehensive statistical summary
+     * Enhanced with D3.js statistical functions
+     */
+    function calculateSummary(data) {
+        // Filter out null/undefined values
+        const cleanData = data.filter(d => d != null && !isNaN(d)).sort(d3__namespace.ascending);
+        if (cleanData.length === 0) {
+            throw new Error('No valid data points for statistical analysis');
+        }
+        const count = cleanData.length;
+        const sum = d3__namespace.sum(cleanData);
+        const mean = d3__namespace.mean(cleanData) || 0;
+        const median = d3__namespace.median(cleanData) || 0;
+        const variance = d3__namespace.variance(cleanData) || 0;
+        const standardDeviation = d3__namespace.deviation(cleanData) || 0;
+        const min = d3__namespace.min(cleanData) || 0;
+        const max = d3__namespace.max(cleanData) || 0;
+        const range = max - min;
+        // Calculate quartiles
+        const q1 = d3__namespace.quantile(cleanData, 0.25) || 0;
+        const q2 = median;
+        const q3 = d3__namespace.quantile(cleanData, 0.75) || 0;
+        const iqr = q3 - q1;
+        // Calculate percentiles
+        const percentiles = {
+            p5: d3__namespace.quantile(cleanData, 0.05) || 0,
+            p10: d3__namespace.quantile(cleanData, 0.10) || 0,
+            p25: q1,
+            p75: q3,
+            p90: d3__namespace.quantile(cleanData, 0.90) || 0,
+            p95: d3__namespace.quantile(cleanData, 0.95) || 0
+        };
+        return {
+            count,
+            sum,
+            mean,
+            median,
+            variance,
+            standardDeviation,
+            min,
+            max,
+            range,
+            quartiles: { q1, q2, q3, iqr },
+            percentiles
+        };
     }
-};
-function applyTheme(chart, themeName = "default") {
-    const theme = themes[themeName] || themes.default;
-    // Apply theme colors to chart configuration
-    chart.totalColor(theme.totalColor);
-    return theme;
+    /**
+     * Detect outliers using IQR method and modified Z-score
+     * Enhanced with severity classification
+     */
+    function detectOutliers(data, labels = []) {
+        const summary = calculateSummary(data);
+        const { q1, q3, iqr } = summary.quartiles;
+        // IQR method boundaries
+        const lowerBound = q1 - 1.5 * iqr;
+        const upperBound = q3 + 1.5 * iqr;
+        const extremeLowerBound = q1 - 3 * iqr;
+        const extremeUpperBound = q3 + 3 * iqr;
+        const outliers = [];
+        const cleanData = [];
+        data.forEach((value, index) => {
+            if (value == null || isNaN(value))
+                return;
+            const isOutlier = value < lowerBound || value > upperBound;
+            const isExtreme = value < extremeLowerBound || value > extremeUpperBound;
+            if (isOutlier) {
+                outliers.push({
+                    value,
+                    index,
+                    label: labels[index],
+                    severity: isExtreme ? 'extreme' : 'mild',
+                    type: value < lowerBound ? 'lower' : 'upper'
+                });
+            }
+            else {
+                cleanData.push({
+                    value,
+                    index,
+                    label: labels[index]
+                });
+            }
+        });
+        const mildOutliers = outliers.filter(o => o.severity === 'mild').length;
+        const extremeOutliers = outliers.filter(o => o.severity === 'extreme').length;
+        return {
+            outliers,
+            cleanData,
+            summary: {
+                totalOutliers: outliers.length,
+                mildOutliers,
+                extremeOutliers,
+                outlierPercentage: (outliers.length / data.length) * 100
+            }
+        };
+    }
+    /**
+     * Assess overall data quality
+     * Provides actionable recommendations for data improvement
+     */
+    function assessDataQuality(data, options = {}) {
+        const { expectedRange, allowedTypes = ['number'], nullTolerance = 0.05, // 5% null tolerance
+        duplicateTolerance = 0.1 // 10% duplicate tolerance
+         } = options;
+        const totalCount = data.length;
+        let nullCount = 0;
+        let typeValidCount = 0;
+        let rangeValidCount = 0;
+        const duplicates = new Set();
+        const seen = new Set();
+        // Analyze each data point
+        data.forEach(item => {
+            // Check for null/undefined
+            if (item == null) {
+                nullCount++;
+                return;
+            }
+            // Check data type
+            const itemType = typeof item;
+            if (allowedTypes.includes(itemType)) {
+                typeValidCount++;
+            }
+            // Check range (for numbers)
+            if (typeof item === 'number' && expectedRange) {
+                if (item >= expectedRange[0] && item <= expectedRange[1]) {
+                    rangeValidCount++;
+                }
+            }
+            else if (!expectedRange) {
+                rangeValidCount++; // No range constraint
+            }
+            // Check duplicates
+            const itemStr = JSON.stringify(item);
+            if (seen.has(itemStr)) {
+                duplicates.add(itemStr);
+            }
+            else {
+                seen.add(itemStr);
+            }
+        });
+        // Calculate quality metrics
+        const completeness = ((totalCount - nullCount) / totalCount) * 100;
+        const validity = (typeValidCount / totalCount) * 100;
+        const accuracy = (rangeValidCount / totalCount) * 100;
+        // Consistency (coefficient of variation for numeric data)
+        const numericData = data.filter(d => typeof d === 'number' && !isNaN(d));
+        const cv = numericData.length > 0 ?
+            (d3__namespace.deviation(numericData) || 0) / (d3__namespace.mean(numericData) || 1) : 0;
+        const consistency = Math.max(0, 100 - (cv * 100)); // Invert CV for consistency score
+        // Outlier analysis for numeric data
+        const anomalies = numericData.length > 0 ?
+            detectOutliers(numericData) :
+            { outliers: [], cleanData: [], summary: { totalOutliers: 0, mildOutliers: 0, extremeOutliers: 0, outlierPercentage: 0 } };
+        // Generate recommendations
+        const recommendations = [];
+        if (completeness < (1 - nullTolerance) * 100) {
+            recommendations.push(`Improve data completeness: ${nullCount} missing values detected`);
+        }
+        if (validity < 95) {
+            recommendations.push(`Validate data types: ${totalCount - typeValidCount} invalid types found`);
+        }
+        if (accuracy < 90 && expectedRange) {
+            recommendations.push(`Check data accuracy: ${totalCount - rangeValidCount} values outside expected range`);
+        }
+        if (duplicates.size > duplicateTolerance * totalCount) {
+            recommendations.push(`Remove duplicates: ${duplicates.size} duplicate values detected`);
+        }
+        if (anomalies.summary.outlierPercentage > 5) {
+            recommendations.push(`Investigate outliers: ${anomalies.summary.totalOutliers} outliers detected (${anomalies.summary.outlierPercentage.toFixed(1)}%)`);
+        }
+        return {
+            completeness,
+            consistency,
+            accuracy,
+            validity,
+            duplicates: duplicates.size,
+            anomalies,
+            recommendations
+        };
+    }
+    // ========================================================================
+    // ADVANCED ANALYSIS FUNCTIONS
+    // ========================================================================
+    /**
+     * Analyze variance contributions in waterfall data
+     * Identifies key drivers of variability
+     */
+    function analyzeVariance(data) {
+        const values = data.map(d => d.value);
+        const totalVariance = d3__namespace.variance(values) || 0;
+        // Separate positive and negative contributions
+        const positiveValues = values.filter(v => v > 0);
+        const negativeValues = values.filter(v => v < 0);
+        const positiveVariance = positiveValues.length > 0 ? (d3__namespace.variance(positiveValues) || 0) : 0;
+        const negativeVariance = negativeValues.length > 0 ? (d3__namespace.variance(negativeValues) || 0) : 0;
+        // Calculate individual contributions
+        const mean = d3__namespace.mean(values) || 0;
+        const varianceContributions = data.map(item => {
+            const variance = Math.pow(item.value - mean, 2);
+            const contribution = totalVariance > 0 ? (variance / totalVariance) * 100 : 0;
+            return {
+                label: item.label,
+                value: item.value,
+                variance,
+                contribution
+            };
+        });
+        // Identify significant factors (top contributors)
+        const sortedContributions = [...varianceContributions].sort((a, b) => b.contribution - a.contribution);
+        const significantFactors = sortedContributions.slice(0, Math.min(5, sortedContributions.length)).map(item => ({
+            label: item.label,
+            impact: item.contribution > 20 ? 'high' :
+                item.contribution > 10 ? 'medium' : 'low',
+            variance: item.variance
+        }));
+        return {
+            totalVariance,
+            positiveVariance,
+            negativeVariance,
+            varianceContributions,
+            significantFactors
+        };
+    }
+    /**
+     * Analyze trend patterns in time series data
+     * Provides statistical trend analysis with confidence intervals
+     */
+    function analyzeTrend(data) {
+        if (data.length < 2) {
+            throw new Error('At least 2 data points required for trend analysis');
+        }
+        const xValues = data.map(d => d.x);
+        const yValues = data.map(d => d.y);
+        // Calculate linear regression
+        const xMean = d3__namespace.mean(xValues) || 0;
+        const yMean = d3__namespace.mean(yValues) || 0;
+        let numerator = 0;
+        let denominator = 0;
+        for (let i = 0; i < data.length; i++) {
+            const xDiff = xValues[i] - xMean;
+            const yDiff = yValues[i] - yMean;
+            numerator += xDiff * yDiff;
+            denominator += xDiff * xDiff;
+        }
+        const slope = denominator !== 0 ? numerator / denominator : 0;
+        // Calculate correlation coefficient
+        const xStd = d3__namespace.deviation(xValues) || 0;
+        const yStd = d3__namespace.deviation(yValues) || 0;
+        const correlation = (xStd * yStd) !== 0 ? numerator / (Math.sqrt(denominator) * yStd * Math.sqrt(data.length - 1)) : 0;
+        // Determine trend characteristics
+        const direction = slope > 0.01 ? 'increasing' : slope < -0.01 ? 'decreasing' : 'stable';
+        const strength = Math.abs(correlation) > 0.7 ? 'strong' :
+            Math.abs(correlation) > 0.3 ? 'moderate' : 'weak';
+        const confidence = Math.abs(correlation) * 100;
+        // Generate projections (simple linear extrapolation)
+        const lastX = Math.max(...xValues);
+        const projectedValues = Array.from({ length: 3 }, (_, i) => {
+            const period = lastX + (i + 1);
+            const value = yMean + slope * (period - xMean);
+            const standardError = Math.sqrt(d3__namespace.variance(yValues) || 0) / Math.sqrt(data.length);
+            return {
+                period,
+                value,
+                confidence: {
+                    lower: value - (1.96 * standardError),
+                    upper: value + (1.96 * standardError)
+                }
+            };
+        });
+        return {
+            slope,
+            correlation,
+            direction,
+            strength,
+            confidence,
+            projectedValues
+        };
+    }
+    // ========================================================================
+    // DATA SEARCH AND OPTIMIZATION
+    // ========================================================================
+    /**
+     * Create efficient bisector for data searching
+     * Uses D3.js bisector for O(log n) lookups
+     */
+    function createBisector(accessor) {
+        return d3__namespace.bisector(accessor);
+    }
+    /**
+     * Create fast search function for sorted data
+     * Returns the closest data point to a given value
+     */
+    function createSearch(data, accessor) {
+        const bisector = createBisector(accessor);
+        const sortedData = [...data].sort((a, b) => d3__namespace.ascending(accessor(a), accessor(b)));
+        return (value) => {
+            const index = bisector.left(sortedData, value);
+            if (index === 0)
+                return sortedData[0];
+            if (index >= sortedData.length)
+                return sortedData[sortedData.length - 1];
+            // Return the closest value
+            const leftItem = sortedData[index - 1];
+            const rightItem = sortedData[index];
+            const leftDistance = Math.abs(accessor(leftItem) - value);
+            const rightDistance = Math.abs(accessor(rightItem) - value);
+            return leftDistance <= rightDistance ? leftItem : rightItem;
+        };
+    }
+    // ========================================================================
+    // UTILITY FUNCTIONS
+    // ========================================================================
+    /**
+     * Calculate moving average with configurable window
+     */
+    function calculateMovingAverage(data, window) {
+        if (window <= 0 || window > data.length) {
+            throw new Error('Invalid window size for moving average');
+        }
+        const result = [];
+        for (let i = 0; i <= data.length - window; i++) {
+            const windowData = data.slice(i, i + window);
+            const average = d3__namespace.mean(windowData) || 0;
+            result.push(average);
+        }
+        return result;
+    }
+    /**
+     * Calculate exponential smoothing
+     */
+    function calculateExponentialSmoothing(data, alpha) {
+        if (alpha < 0 || alpha > 1) {
+            throw new Error('Alpha must be between 0 and 1');
+        }
+        const result = [];
+        let smoothed = data[0];
+        result.push(smoothed);
+        for (let i = 1; i < data.length; i++) {
+            smoothed = alpha * data[i] + (1 - alpha) * smoothed;
+            result.push(smoothed);
+        }
+        return result;
+    }
+    /**
+     * Detect seasonality in time series data
+     */
+    function detectSeasonality(data, period) {
+        if (data.length < period * 2) {
+            return false; // Need at least 2 full periods
+        }
+        // Calculate autocorrelation at the specified period
+        const mean = d3__namespace.mean(data) || 0;
+        let numerator = 0;
+        let denominator = 0;
+        for (let i = 0; i < data.length - period; i++) {
+            numerator += (data[i] - mean) * (data[i + period] - mean);
+        }
+        for (let i = 0; i < data.length; i++) {
+            denominator += Math.pow(data[i] - mean, 2);
+        }
+        const autocorrelation = denominator !== 0 ? numerator / denominator : 0;
+        // Consider seasonal if autocorrelation is above threshold
+        return Math.abs(autocorrelation) > 0.3;
+    }
+    // ========================================================================
+    // RETURN API
+    // ========================================================================
+    return {
+        // Core statistical functions
+        calculateSummary,
+        detectOutliers,
+        assessDataQuality,
+        // Advanced analysis
+        analyzeVariance,
+        analyzeTrend,
+        // Data search and optimization
+        createBisector,
+        createSearch,
+        // Utility functions
+        calculateMovingAverage,
+        calculateExponentialSmoothing,
+        detectSeasonality
+    };
+}
+// ============================================================================
+// WATERFALL-SPECIFIC STATISTICAL UTILITIES
+// ============================================================================
+/**
+ * Analyze waterfall chart statistical patterns
+ * Provides insights specific to waterfall financial data
+ */
+function analyzeWaterfallStatistics(data, options = {}) {
+    const stats = createStatisticalSystem();
+    const values = data.map(d => d.value);
+    // Calculate core statistics
+    const summary = stats.calculateSummary(values);
+    const variance = stats.analyzeVariance(data);
+    const quality = stats.assessDataQuality(values, {
+        expectedRange: options.currency ? [-1e6, 1000000] : undefined
+    });
+    // Generate business insights
+    const insights = [];
+    if (variance.significantFactors.length > 0) {
+        const topFactor = variance.significantFactors[0];
+        insights.push(`${topFactor.label} is the primary driver of variance (${topFactor.impact} impact)`);
+    }
+    if (summary.standardDeviation > Math.abs(summary.mean)) {
+        insights.push('High volatility detected - consider risk management strategies');
+    }
+    const positiveCount = values.filter(v => v > 0).length;
+    const negativeCount = values.filter(v => v < 0).length;
+    const ratio = positiveCount / negativeCount;
+    if (ratio > 2) {
+        insights.push('Predominantly positive contributors - strong growth pattern');
+    }
+    else if (ratio < 0.5) {
+        insights.push('Predominantly negative contributors - potential cost management focus needed');
+    }
+    if (quality.anomalies.summary.outlierPercentage > 10) {
+        insights.push(`${quality.anomalies.summary.totalOutliers} outliers detected - data validation recommended`);
+    }
+    return {
+        summary,
+        variance,
+        quality,
+        insights
+    };
+}
+
+// MintWaterfall Advanced Performance Optimization - TypeScript Version
+// Provides high-performance features for handling large datasets with D3.js optimization
+// ============================================================================
+// SPATIAL INDEXING IMPLEMENTATION
+// ============================================================================
+function createSpatialIndexImpl() {
+    let quadTree = d3__namespace.quadtree()
+        .x(d => d.x)
+        .y(d => d.y);
+    function search(x, y, radius = 10) {
+        const results = [];
+        quadTree.visit((node, x1, y1, x2, y2) => {
+            if (!node.length) {
+                // Leaf node
+                const leaf = node;
+                if (leaf.data) {
+                    const distance = Math.sqrt(Math.pow(leaf.data.x - x, 2) + Math.pow(leaf.data.y - y, 2));
+                    if (distance <= radius) {
+                        results.push(leaf.data);
+                    }
+                }
+            }
+            // Continue search if bounds intersect with search radius
+            return x1 > x + radius || y1 > y + radius || x2 < x - radius || y2 < y - radius;
+        });
+        return results;
+    }
+    function findNearest(x, y) {
+        return quadTree.find(x, y);
+    }
+    function add(node) {
+        quadTree.add(node);
+    }
+    function remove(node) {
+        quadTree.remove(node);
+    }
+    function clear() {
+        quadTree = d3__namespace.quadtree()
+            .x(d => d.x)
+            .y(d => d.y);
+    }
+    function size() {
+        let count = 0;
+        quadTree.visit(() => {
+            count++;
+            return false;
+        });
+        return count;
+    }
+    return {
+        quadTree,
+        search,
+        findNearest,
+        add,
+        remove,
+        clear,
+        size
+    };
+}
+// ============================================================================
+// VIRTUAL SCROLLING IMPLEMENTATION
+// ============================================================================
+function createVirtualScrollManagerImpl(config) {
+    let currentConfig = { ...config };
+    let lastRenderTime = 0;
+    let frameCount = 0;
+    let frameRate = 60;
+    function getVisibleRange(scrollTop) {
+        const visibleStart = Math.floor(scrollTop / currentConfig.itemHeight);
+        const visibleEnd = Math.ceil((scrollTop + currentConfig.containerHeight) / currentConfig.itemHeight);
+        // Add overscan
+        const start = Math.max(0, visibleStart - currentConfig.overscan);
+        const end = visibleEnd + currentConfig.overscan;
+        return { start, end };
+    }
+    function getVirtualizedData(data, scrollTop) {
+        const startTime = performance.now();
+        // Check if virtualization should be active
+        const virtualizationActive = data.length >= currentConfig.threshold;
+        if (!virtualizationActive) {
+            const endTime = performance.now();
+            return {
+                visibleData: data,
+                offsetY: 0,
+                totalHeight: data.length * currentConfig.itemHeight,
+                metrics: {
+                    renderTime: endTime - startTime,
+                    dataProcessingTime: endTime - startTime,
+                    memoryUsage: getMemoryUsage(),
+                    frameRate,
+                    itemsRendered: data.length,
+                    totalItems: data.length,
+                    virtualizationActive: false
+                }
+            };
+        }
+        const { start, end } = getVisibleRange(scrollTop);
+        const visibleData = data.slice(start, Math.min(end, data.length));
+        const offsetY = start * currentConfig.itemHeight;
+        const totalHeight = data.length * currentConfig.itemHeight;
+        const endTime = performance.now();
+        // Update frame rate calculation
+        frameCount++;
+        if (frameCount % 60 === 0) {
+            const now = performance.now();
+            if (lastRenderTime > 0) {
+                frameRate = 60000 / (now - lastRenderTime);
+            }
+            lastRenderTime = now;
+        }
+        return {
+            visibleData,
+            offsetY,
+            totalHeight,
+            metrics: {
+                renderTime: endTime - startTime,
+                dataProcessingTime: endTime - startTime,
+                memoryUsage: getMemoryUsage(),
+                frameRate,
+                itemsRendered: visibleData.length,
+                totalItems: data.length,
+                virtualizationActive: true
+            }
+        };
+    }
+    function updateConfig(newConfig) {
+        currentConfig = { ...currentConfig, ...newConfig };
+    }
+    function destroy() {
+        // Cleanup if needed
+    }
+    return {
+        getVisibleRange,
+        getVirtualizedData,
+        updateConfig,
+        destroy
+    };
+}
+// ============================================================================
+// CANVAS RENDERING IMPLEMENTATION
+// ============================================================================
+function createCanvasRendererImpl(container) {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    container.appendChild(canvas);
+    function render(data, scales) {
+        const { xScale, yScale } = scales;
+        // Clear canvas
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        // Set drawing properties for better performance
+        context.save();
+        // Render data points efficiently
+        data.forEach((item, index) => {
+            const x = xScale(item.label) || 0;
+            const y = yScale(item.value) || 0;
+            const width = xScale.bandwidth ? xScale.bandwidth() : 20;
+            const height = Math.abs(yScale(0) - y);
+            // Use fillRect for better performance than path operations
+            context.fillStyle = item.color || '#3498db';
+            context.fillRect(x, Math.min(y, yScale(0)), width, height);
+            // Add border if needed
+            context.strokeStyle = '#ffffff';
+            context.lineWidth = 1;
+            context.strokeRect(x, Math.min(y, yScale(0)), width, height);
+        });
+        context.restore();
+    }
+    function clear() {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    function getCanvas() {
+        return canvas;
+    }
+    function setDimensions(width, height) {
+        canvas.width = width;
+        canvas.height = height;
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+    }
+    function enableHighDPI() {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        canvas.style.width = `${rect.width}px`;
+        canvas.style.height = `${rect.height}px`;
+        context.scale(dpr, dpr);
+    }
+    return {
+        render,
+        clear,
+        getCanvas,
+        setDimensions,
+        enableHighDPI
+    };
+}
+// ============================================================================
+// PERFORMANCE MONITORING IMPLEMENTATION
+// ============================================================================
+function createPerformanceMonitorImpl() {
+    const timings = new Map();
+    const completed = new Map();
+    let frameCount = 0;
+    let frameStartTime = performance.now();
+    function startTiming(label) {
+        timings.set(label, performance.now());
+    }
+    function endTiming(label) {
+        const startTime = timings.get(label);
+        if (!startTime) {
+            console.warn(`No start time found for timing label: ${label}`);
+            return 0;
+        }
+        const duration = performance.now() - startTime;
+        // Store completed timing
+        if (!completed.has(label)) {
+            completed.set(label, []);
+        }
+        completed.get(label).push(duration);
+        // Keep only last 100 measurements
+        const measurements = completed.get(label);
+        if (measurements.length > 100) {
+            measurements.shift();
+        }
+        timings.delete(label);
+        return duration;
+    }
+    function getMetrics() {
+        const renderTimes = completed.get('render') || [];
+        const processingTimes = completed.get('dataProcessing') || [];
+        return {
+            renderTime: renderTimes.length > 0 ? d3__namespace.mean(renderTimes) || 0 : 0,
+            dataProcessingTime: processingTimes.length > 0 ? d3__namespace.mean(processingTimes) || 0 : 0,
+            memoryUsage: getMemoryUsage(),
+            frameRate: frameCount > 0 ? 1000 / ((performance.now() - frameStartTime) / frameCount) : 0,
+            itemsRendered: 0, // To be set by caller
+            totalItems: 0, // To be set by caller
+            virtualizationActive: false // To be set by caller
+        };
+    }
+    function trackFrameRate() {
+        frameCount++;
+        if (frameCount === 1) {
+            frameStartTime = performance.now();
+        }
+    }
+    function generateReport() {
+        const metrics = getMetrics();
+        return `
+Performance Report:
+- Average Render Time: ${metrics.renderTime.toFixed(2)}ms
+- Average Processing Time: ${metrics.dataProcessingTime.toFixed(2)}ms
+- Memory Usage: ${metrics.memoryUsage.toFixed(2)}MB
+- Frame Rate: ${metrics.frameRate.toFixed(1)}fps
+- Items Rendered: ${metrics.itemsRendered}/${metrics.totalItems}
+- Virtualization: ${metrics.virtualizationActive ? 'Active' : 'Inactive'}
+        `.trim();
+    }
+    return {
+        startTiming,
+        endTiming,
+        getMetrics,
+        getMemoryUsage,
+        trackFrameRate,
+        generateReport
+    };
+}
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+function getMemoryUsage() {
+    if ('memory' in performance) {
+        const memory = performance.memory;
+        return memory.usedJSHeapSize / (1024 * 1024); // Convert to MB
+    }
+    return 0; // Memory API not available
+}
+// ============================================================================
+// DATA OPTIMIZATION FUNCTIONS
+// ============================================================================
+function optimizeDataForRenderingImpl(data, maxItems = 1000) {
+    if (data.length <= maxItems) {
+        return data;
+    }
+    // Use uniform sampling to reduce data points while maintaining distribution
+    const step = Math.ceil(data.length / maxItems);
+    const optimized = [];
+    for (let i = 0; i < data.length; i += step) {
+        optimized.push(data[i]);
+    }
+    return optimized;
+}
+function createDataSamplerImpl(strategy) {
+    switch (strategy) {
+        case 'uniform':
+            return (data, count) => {
+                if (count >= data.length)
+                    return data;
+                const step = data.length / count;
+                const result = [];
+                for (let i = 0; i < count; i++) {
+                    const index = Math.floor(i * step);
+                    result.push(data[index]);
+                }
+                return result;
+            };
+        case 'random':
+            return (data, count) => {
+                if (count >= data.length)
+                    return data;
+                const shuffled = [...data].sort(() => 0.5 - Math.random());
+                return shuffled.slice(0, count);
+            };
+        case 'importance':
+            return (data, count) => {
+                if (count >= data.length)
+                    return data;
+                // For importance sampling, we'd need a way to assess importance
+                // For now, take first and last items plus uniform sampling in between
+                const result = [data[0]]; // Always include first
+                if (count > 2) {
+                    const middle = createDataSamplerImpl('uniform')(data.slice(1, -1), count - 2);
+                    result.push(...middle);
+                }
+                if (count > 1) {
+                    result.push(data[data.length - 1]); // Always include last
+                }
+                return result;
+            };
+        default:
+            throw new Error(`Unknown sampling strategy: ${strategy}`);
+    }
+}
+// ============================================================================
+// MAIN SYSTEM IMPLEMENTATION
+// ============================================================================
+function createAdvancedPerformanceSystem() {
+    return {
+        createSpatialIndex: createSpatialIndexImpl,
+        createVirtualScrollManager: createVirtualScrollManagerImpl,
+        createCanvasRenderer: createCanvasRendererImpl,
+        createPerformanceMonitor: createPerformanceMonitorImpl,
+        optimizeDataForRendering: optimizeDataForRenderingImpl,
+        createDataSampler: createDataSamplerImpl
+    };
+}
+// ============================================================================
+// WATERFALL-SPECIFIC PERFORMANCE UTILITIES
+// ============================================================================
+/**
+ * Create optimized spatial index for waterfall chart interactions
+ * Enables O(log n) hover detection for large datasets
+ */
+function createWaterfallSpatialIndex(data, xScale, yScale) {
+    const spatialIndex = createSpatialIndexImpl();
+    data.forEach((item, index) => {
+        const x = (xScale(item.label) || 0) + (xScale.bandwidth ? xScale.bandwidth() / 2 : 0);
+        const y = yScale(item.value) || 0;
+        spatialIndex.add({
+            x,
+            y,
+            data: item,
+            index
+        });
+    });
+    return spatialIndex;
+}
+/**
+ * Create high-performance virtual waterfall renderer
+ * Handles thousands of data points with smooth scrolling
+ */
+function createVirtualWaterfallRenderer(container, config) {
+    const system = createAdvancedPerformanceSystem();
+    const virtualScrollManager = system.createVirtualScrollManager(config);
+    const performanceMonitor = system.createPerformanceMonitor();
+    function render(data, scrollTop) {
+        performanceMonitor.startTiming('render');
+        virtualScrollManager.getVirtualizedData(data, scrollTop);
+        // Here you would render only the visible data
+        // This is a simplified version - in practice, you'd integrate with D3.js rendering
+        performanceMonitor.endTiming('render');
+        performanceMonitor.trackFrameRate();
+    }
+    return {
+        virtualScrollManager,
+        performanceMonitor,
+        render
+    };
+}
+
+// MintWaterfall Advanced Data Manipulation Utilities
+// Enhanced D3.js data manipulation capabilities for comprehensive waterfall analysis
+// ============================================================================
+// ADVANCED DATA PROCESSOR IMPLEMENTATION
+// ============================================================================
+function createAdvancedDataProcessor() {
+    // ========================================================================
+    // SEQUENCE ANALYSIS (d3.pairs)
+    // ========================================================================
+    /**
+     * Analyze sequential relationships in waterfall data
+     * Uses d3.pairs() to understand flow between consecutive items
+     */
+    function analyzeSequence(data) {
+        if (!Array.isArray(data) || data.length < 2) {
+            return [];
+        }
+        // Extract values for analysis
+        data.map(d => {
+            if (typeof d === 'number')
+                return d;
+            if (d.value !== undefined)
+                return d.value;
+            if (d.stacks && Array.isArray(d.stacks)) {
+                return d.stacks.reduce((sum, stack) => sum + (stack.value || 0), 0);
+            }
+            return 0;
+        });
+        // Use d3.pairs() for sequential analysis
+        const sequences = d3__namespace.pairs(data, (a, b) => {
+            const aValue = extractValue(a);
+            const bValue = extractValue(b);
+            const change = bValue - aValue;
+            const changePercent = aValue !== 0 ? (change / Math.abs(aValue)) * 100 : 0;
+            // Determine change direction
+            let changeDirection;
+            if (Math.abs(change) < 0.01)
+                changeDirection = 'neutral';
+            else if (change > 0)
+                changeDirection = 'increase';
+            else
+                changeDirection = 'decrease';
+            // Determine magnitude
+            const absChangePercent = Math.abs(changePercent);
+            let magnitude;
+            if (absChangePercent < 5)
+                magnitude = 'small';
+            else if (absChangePercent < 20)
+                magnitude = 'medium';
+            else
+                magnitude = 'large';
+            return {
+                from: getLabel(a),
+                to: getLabel(b),
+                change,
+                changePercent,
+                changeDirection,
+                magnitude
+            };
+        });
+        return sequences;
+    }
+    // ========================================================================
+    // DATA REORDERING (d3.permute)
+    // ========================================================================
+    /**
+     * Optimize data ordering for better waterfall visualization
+     * Uses d3.permute() with intelligent sorting strategies
+     */
+    function optimizeDataOrder(data, options) {
+        if (!Array.isArray(data) || data.length === 0) {
+            return data;
+        }
+        const { field, direction, strategy, groupBy } = options;
+        // Create sorting indices based on strategy
+        let indices;
+        switch (strategy) {
+            case 'value':
+                indices = d3__namespace.range(data.length).sort((i, j) => {
+                    const aValue = extractValue(data[i]);
+                    const bValue = extractValue(data[j]);
+                    return direction === 'ascending' ?
+                        d3__namespace.ascending(aValue, bValue) :
+                        d3__namespace.descending(aValue, bValue);
+                });
+                break;
+            case 'cumulative':
+                // Sort by cumulative impact on waterfall
+                const cumulativeValues = calculateCumulativeValues(data);
+                indices = d3__namespace.range(data.length).sort((i, j) => {
+                    return direction === 'ascending' ?
+                        d3__namespace.ascending(cumulativeValues[i], cumulativeValues[j]) :
+                        d3__namespace.descending(cumulativeValues[i], cumulativeValues[j]);
+                });
+                break;
+            case 'magnitude':
+                indices = d3__namespace.range(data.length).sort((i, j) => {
+                    const aMagnitude = Math.abs(extractValue(data[i]));
+                    const bMagnitude = Math.abs(extractValue(data[j]));
+                    return direction === 'ascending' ?
+                        d3__namespace.ascending(aMagnitude, bMagnitude) :
+                        d3__namespace.descending(aMagnitude, bMagnitude);
+                });
+                break;
+            case 'alphabetical':
+                indices = d3__namespace.range(data.length).sort((i, j) => {
+                    const aLabel = getLabel(data[i]);
+                    const bLabel = getLabel(data[j]);
+                    return direction === 'ascending' ?
+                        d3__namespace.ascending(aLabel, bLabel) :
+                        d3__namespace.descending(aLabel, bLabel);
+                });
+                break;
+            default:
+                return data; // No reordering
+        }
+        // Use d3.permute() to reorder data
+        return d3__namespace.permute(data, indices);
+    }
+    // ========================================================================
+    // DATASET MERGING (d3.merge)
+    // ========================================================================
+    /**
+     * Merge multiple datasets with sophisticated conflict resolution
+     * Uses d3.merge() with custom merge strategies
+     */
+    function mergeDatasets(datasets, options) {
+        if (!Array.isArray(datasets) || datasets.length === 0) {
+            return [];
+        }
+        const { mergeStrategy, conflictResolution, keyField, valueField } = options;
+        // Use d3.merge() to combine all datasets
+        const flatData = d3__namespace.merge(datasets);
+        // Group by key field for conflict resolution
+        const grouped = d3__namespace.group(flatData, (d) => d[keyField] || getLabel(d));
+        // Resolve conflicts and merge
+        const mergedData = [];
+        for (const [key, items] of grouped) {
+            if (items.length === 1) {
+                mergedData.push(items[0]);
+                continue;
+            }
+            // Handle conflicts with multiple items
+            let mergedItem;
+            switch (mergeStrategy) {
+                case 'combine':
+                    mergedItem = combineItems(items, valueField);
+                    break;
+                case 'override':
+                    mergedItem = resolveConflict(items, conflictResolution);
+                    break;
+                case 'average':
+                    mergedItem = averageItems(items, valueField);
+                    break;
+                case 'sum':
+                    mergedItem = sumItems(items, valueField);
+                    break;
+                default:
+                    mergedItem = items[0];
+            }
+            mergedData.push(mergedItem);
+        }
+        return mergedData;
+    }
+    // ========================================================================
+    // CUSTOM TICK GENERATION (d3.ticks)
+    // ========================================================================
+    /**
+     * Generate custom axis ticks with advanced options
+     * Uses d3.ticks() with intelligent tick selection
+     */
+    function generateCustomTicks(domain, options) {
+        const { count = 10, step, nice = true, threshold = 0, includeZero = true } = options;
+        let [min, max] = domain;
+        // Apply nice scaling if requested
+        if (nice) {
+            const scale = d3__namespace.scaleLinear().domain([min, max]).nice();
+            [min, max] = scale.domain();
+        }
+        // Generate base ticks using d3.ticks()
+        let ticks;
+        if (step !== undefined) {
+            // Use custom step
+            ticks = d3__namespace.ticks(min, max, Math.abs(max - min) / step);
+        }
+        else {
+            // Use count-based generation
+            ticks = d3__namespace.ticks(min, max, count);
+        }
+        // Apply threshold filtering
+        if (threshold > 0) {
+            ticks = ticks.filter(tick => Math.abs(tick) >= threshold);
+        }
+        // Ensure zero is included if requested
+        if (includeZero && !ticks.includes(0) && min <= 0 && max >= 0) {
+            ticks.push(0);
+            ticks.sort(d3__namespace.ascending);
+        }
+        return ticks;
+    }
+    // ========================================================================
+    // UTILITY FUNCTIONS
+    // ========================================================================
+    function createDataPairs(data, accessor) {
+        if (accessor) {
+            return d3__namespace.pairs(data, (a, b) => ({ a: accessor(a), b: accessor(b) }));
+        }
+        return d3__namespace.pairs(data);
+    }
+    function permuteByIndices(data, indices) {
+        return d3__namespace.permute(data, indices);
+    }
+    function mergeSimilarItems(data, similarityThreshold) {
+        // Group similar items and merge them
+        const groups = [];
+        const used = new Set();
+        for (let i = 0; i < data.length; i++) {
+            if (used.has(i))
+                continue;
+            const group = [data[i]];
+            used.add(i);
+            for (let j = i + 1; j < data.length; j++) {
+                if (used.has(j))
+                    continue;
+                const similarity = calculateSimilarity(data[i], data[j]);
+                if (similarity >= similarityThreshold) {
+                    group.push(data[j]);
+                    used.add(j);
+                }
+            }
+            groups.push(group);
+        }
+        // Merge groups using d3.merge()
+        return groups.map(group => {
+            if (group.length === 1)
+                return group[0];
+            return mergeGroupItems(group);
+        });
+    }
+    function validateSequentialData(data) {
+        const errors = [];
+        if (!Array.isArray(data)) {
+            errors.push("Data must be an array");
+            return { isValid: false, errors };
+        }
+        if (data.length < 2) {
+            errors.push("Data must have at least 2 items for sequence analysis");
+        }
+        // Check for valid values
+        const invalidItems = data.filter((d, i) => {
+            const value = extractValue(d);
+            return isNaN(value) || !isFinite(value);
+        });
+        if (invalidItems.length > 0) {
+            errors.push(`Found ${invalidItems.length} items with invalid values`);
+        }
+        // Check for duplicate labels
+        const labels = data.map(getLabel);
+        const uniqueLabels = new Set(labels);
+        if (labels.length !== uniqueLabels.size) {
+            errors.push("Duplicate labels detected - may cause confusion in sequence analysis");
+        }
+        return { isValid: errors.length === 0, errors };
+    }
+    function detectDataAnomalies(data) {
+        const values = data.map(extractValue);
+        const mean = d3__namespace.mean(values) || 0;
+        const deviation = d3__namespace.deviation(values) || 0;
+        const threshold = 2 * deviation; // 2-sigma rule
+        return data.filter((d, i) => {
+            const value = values[i];
+            return Math.abs(value - mean) > threshold;
+        });
+    }
+    function suggestDataOptimizations(data) {
+        const suggestions = [];
+        // Analyze data characteristics
+        const values = data.map(extractValue);
+        const sequences = analyzeSequence(data);
+        // Check for optimization opportunities
+        if (values.some(v => v === 0)) {
+            suggestions.push("Consider removing or combining zero-value items");
+        }
+        const smallChanges = sequences.filter(s => s.magnitude === 'small').length;
+        if (smallChanges > data.length * 0.3) {
+            suggestions.push("Many small changes detected - consider grouping similar items");
+        }
+        const alternatingPattern = hasAlternatingPattern(values);
+        if (alternatingPattern) {
+            suggestions.push("Alternating positive/negative pattern detected - consider reordering by magnitude");
+        }
+        if (data.length > 20) {
+            suggestions.push("Large dataset - consider using hierarchical grouping or filtering");
+        }
+        return suggestions;
+    }
+    // ========================================================================
+    // HELPER FUNCTIONS
+    // ========================================================================
+    function extractValue(item) {
+        if (typeof item === 'number')
+            return item;
+        if (item.value !== undefined)
+            return item.value;
+        if (item.stacks && Array.isArray(item.stacks)) {
+            return item.stacks.reduce((sum, stack) => sum + (stack.value || 0), 0);
+        }
+        return 0;
+    }
+    function getLabel(item) {
+        if (typeof item === 'string')
+            return item;
+        if (item.label !== undefined)
+            return item.label;
+        if (item.name !== undefined)
+            return item.name;
+        return 'Unnamed';
+    }
+    function calculateCumulativeValues(data) {
+        const values = data.map(extractValue);
+        const cumulative = [];
+        let running = 0;
+        for (const value of values) {
+            running += value;
+            cumulative.push(running);
+        }
+        return cumulative;
+    }
+    function combineItems(items, valueField) {
+        const combined = { ...items[0] };
+        const totalValue = items.reduce((sum, item) => sum + extractValue(item), 0);
+        if (combined.value !== undefined)
+            combined.value = totalValue;
+        if (combined[valueField] !== undefined)
+            combined[valueField] = totalValue;
+        // Combine stacks if present
+        if (combined.stacks) {
+            combined.stacks = items.flatMap(item => item.stacks || []);
+        }
+        return combined;
+    }
+    function resolveConflict(items, strategy) {
+        switch (strategy) {
+            case 'first': return items[0];
+            case 'last': return items[items.length - 1];
+            case 'max': return items.reduce((max, item) => extractValue(item) > extractValue(max) ? item : max);
+            case 'min': return items.reduce((min, item) => extractValue(item) < extractValue(min) ? item : min);
+            default: return items[0];
+        }
+    }
+    function averageItems(items, valueField) {
+        const averaged = { ...items[0] };
+        const avgValue = d3__namespace.mean(items, extractValue) || 0;
+        if (averaged.value !== undefined)
+            averaged.value = avgValue;
+        if (averaged[valueField] !== undefined)
+            averaged[valueField] = avgValue;
+        return averaged;
+    }
+    function sumItems(items, valueField) {
+        const summed = { ...items[0] };
+        const totalValue = d3__namespace.sum(items, extractValue);
+        if (summed.value !== undefined)
+            summed.value = totalValue;
+        if (summed[valueField] !== undefined)
+            summed[valueField] = totalValue;
+        return summed;
+    }
+    function calculateSimilarity(a, b) {
+        const valueA = extractValue(a);
+        const valueB = extractValue(b);
+        const labelA = getLabel(a);
+        const labelB = getLabel(b);
+        // Simple similarity based on value proximity and label similarity
+        const valueSim = 1 - Math.abs(valueA - valueB) / (Math.abs(valueA) + Math.abs(valueB) + 1);
+        const labelSim = labelA === labelB ? 1 : 0;
+        return (valueSim + labelSim) / 2;
+    }
+    function mergeGroupItems(group) {
+        return combineItems(group, 'value');
+    }
+    function hasAlternatingPattern(values) {
+        if (values.length < 3)
+            return false;
+        let alternating = 0;
+        for (let i = 1; i < values.length - 1; i++) {
+            const prev = values[i - 1];
+            const curr = values[i];
+            const next = values[i + 1];
+            if ((prev > 0 && curr < 0 && next > 0) || (prev < 0 && curr > 0 && next < 0)) {
+                alternating++;
+            }
+        }
+        return alternating > values.length * 0.3;
+    }
+    // ========================================================================
+    // RETURN PROCESSOR INTERFACE
+    // ========================================================================
+    return {
+        analyzeSequence,
+        optimizeDataOrder,
+        mergeDatasets,
+        generateCustomTicks,
+        createDataPairs,
+        permuteByIndices,
+        mergeSimilarItems,
+        validateSequentialData,
+        detectDataAnomalies,
+        suggestDataOptimizations
+    };
+}
+// ============================================================================
+// SPECIALIZED WATERFALL UTILITIES
+// ============================================================================
+/**
+ * Create sequence analysis specifically for waterfall data
+ */
+function createWaterfallSequenceAnalyzer(data) {
+    const processor = createAdvancedDataProcessor();
+    const flowAnalysis = processor.analyzeSequence(data);
+    // Calculate cumulative flow
+    const cumulativeFlow = [];
+    let cumulative = 0;
+    data.forEach((item, index) => {
+        const value = extractValue(item);
+        cumulative += value;
+        cumulativeFlow.push({
+            step: index,
+            cumulative,
+            change: value
+        });
+    });
+    // Identify critical paths (large impact changes)
+    const criticalPaths = flowAnalysis
+        .filter(seq => seq.magnitude === 'large')
+        .map(seq => `${seq.from} → ${seq.to}`);
+    // Generate optimization suggestions
+    const optimizationSuggestions = processor.suggestDataOptimizations(data);
+    return {
+        flowAnalysis,
+        cumulativeFlow,
+        criticalPaths,
+        optimizationSuggestions
+    };
+    function extractValue(item) {
+        if (typeof item === 'number')
+            return item;
+        if (item.value !== undefined)
+            return item.value;
+        if (item.stacks && Array.isArray(item.stacks)) {
+            return item.stacks.reduce((sum, stack) => sum + (stack.value || 0), 0);
+        }
+        return 0;
+    }
+}
+/**
+ * Create optimized tick generator for waterfall charts
+ */
+function createWaterfallTickGenerator(domain, dataPoints) {
+    const processor = createAdvancedDataProcessor();
+    // Generate base ticks
+    const ticks = processor.generateCustomTicks(domain, {
+        count: 8,
+        nice: true,
+        includeZero: true,
+        threshold: Math.abs(domain[1] - domain[0]) / 100
+    });
+    // Generate labels
+    const labels = ticks.map(tick => {
+        if (tick === 0)
+            return '0';
+        if (Math.abs(tick) >= 1000000)
+            return `${(tick / 1000000).toFixed(1)}M`;
+        if (Math.abs(tick) >= 1000)
+            return `${(tick / 1000).toFixed(1)}K`;
+        return tick.toFixed(0);
+    });
+    // Identify key markers (data points that align with ticks)
+    const keyMarkers = ticks.filter(tick => {
+        return dataPoints.some(d => Math.abs(extractValue(d) - tick) < Math.abs(domain[1] - domain[0]) / 50);
+    });
+    return { ticks, labels, keyMarkers };
+    function extractValue(item) {
+        if (typeof item === 'number')
+            return item;
+        if (item.value !== undefined)
+            return item.value;
+        if (item.stacks && Array.isArray(item.stacks)) {
+            return item.stacks.reduce((sum, stack) => sum + (stack.value || 0), 0);
+        }
+        return 0;
+    }
+}
+
+// MintWaterfall Advanced Interactions
+// Sophisticated D3.js interaction capabilities for enhanced waterfall analysis
+// ============================================================================
+// ADVANCED INTERACTION SYSTEM IMPLEMENTATION
+// ============================================================================
+function createAdvancedInteractionSystem(container, xScale, yScale) {
+    // Internal state
+    let dragBehavior = null;
+    let enhancedHoverEnabled = false;
+    let forceSimulation = null;
+    let currentData = [];
+    let eventListeners = new Map();
+    // ========================================================================
+    // DRAG FUNCTIONALITY (d3.drag)
+    // ========================================================================
+    function enableDrag(config) {
+        if (!config.enabled) {
+            disableDrag();
+            return;
+        }
+        // Create drag behavior
+        dragBehavior = d3__namespace.drag()
+            .on('start', (event, d) => {
+            // Visual feedback on drag start
+            d3__namespace.select(event.sourceEvent.target)
+                .raise()
+                .attr('stroke', '#ff6b6b')
+                .attr('stroke-width', 2);
+            if (config.onDragStart) {
+                config.onDragStart(event, d);
+            }
+            trigger('dragStart', { event, data: d });
+        })
+            .on('drag', (event, d) => {
+            const bar = d3__namespace.select(event.sourceEvent.target);
+            let newValue = d.value || 0;
+            // Handle axis constraints
+            if (config.axis === 'vertical' || config.axis === 'both') {
+                const newY = event.y;
+                newValue = yScale.invert(newY);
+                // Apply constraints
+                if (config.constraints) {
+                    const { minValue, maxValue, snapToGrid, gridSize } = config.constraints;
+                    if (minValue !== undefined)
+                        newValue = Math.max(minValue, newValue);
+                    if (maxValue !== undefined)
+                        newValue = Math.min(maxValue, newValue);
+                    if (snapToGrid && gridSize) {
+                        newValue = Math.round(newValue / gridSize) * gridSize;
+                    }
+                }
+                // Update visual position
+                const barHeight = Math.abs(yScale(0) - yScale(newValue));
+                const barY = newValue >= 0 ? yScale(newValue) : yScale(0);
+                bar.attr('y', barY)
+                    .attr('height', barHeight);
+                // Update data
+                d.value = newValue;
+                if (d.stacks && d.stacks.length > 0) {
+                    d.stacks[0].value = newValue;
+                }
+            }
+            // Handle horizontal movement (for reordering)
+            if (config.axis === 'horizontal' || config.axis === 'both') {
+                const newX = event.x;
+                // Implementation for horizontal dragging/reordering
+                const barWidth = parseFloat(bar.attr('width') || '0');
+                bar.attr('transform', `translate(${newX - barWidth / 2}, 0)`);
+            }
+            if (config.onDrag) {
+                config.onDrag(event, d);
+            }
+            trigger('drag', { event, data: d, newValue });
+        })
+            .on('end', (event, d) => {
+            // Remove visual feedback
+            d3__namespace.select(event.sourceEvent.target)
+                .attr('stroke', null)
+                .attr('stroke-width', null);
+            if (config.onDragEnd) {
+                config.onDragEnd(event, d);
+            }
+            trigger('dragEnd', { event, data: d });
+        });
+        // Apply drag behavior to all bars
+        container.selectAll('.bar')
+            .call(dragBehavior);
+        trigger('dragEnabled', config);
+    }
+    function disableDrag() {
+        if (dragBehavior) {
+            container.selectAll('.bar')
+                .on('.drag', null);
+            dragBehavior = null;
+            trigger('dragDisabled');
+        }
+    }
+    function updateDragConstraints(constraints) {
+        // Constraints are checked during drag events
+        trigger('dragConstraintsUpdated', constraints);
+    }
+    // ========================================================================
+    // ENHANCED HOVER DETECTION (Simplified approach)
+    // ========================================================================
+    function enableEnhancedHover(config) {
+        if (!config.enabled || currentData.length === 0) {
+            disableEnhancedHover();
+            return;
+        }
+        enhancedHoverEnabled = true;
+        // Create enhanced hover zones around bars
+        const hoverGroup = container.selectAll('.enhanced-hover-group')
+            .data([0]);
+        const hoverGroupEnter = hoverGroup.enter()
+            .append('g')
+            .attr('class', 'enhanced-hover-group');
+        const hoverGroupMerged = hoverGroupEnter.merge(hoverGroup);
+        // Add enhanced hover zones
+        const zones = hoverGroupMerged.selectAll('.hover-zone')
+            .data(currentData);
+        zones.enter()
+            .append('rect')
+            .attr('class', 'hover-zone')
+            .merge(zones)
+            .attr('x', d => getBarCenterX(d) - getBarWidth() * 0.75)
+            .attr('y', d => Math.min(getBarCenterY(d), yScale(0)) - 10)
+            .attr('width', d => getBarWidth() * 1.5)
+            .attr('height', d => Math.abs(yScale(0) - getBarCenterY(d)) + 20)
+            .style('fill', 'transparent')
+            .style('pointer-events', 'all')
+            .on('mouseenter', function (event, d) {
+            highlightBar(d);
+            if (config.onCellEnter) {
+                config.onCellEnter(event, d);
+            }
+            trigger('enhancedHoverEnter', { event, data: d });
+        })
+            .on('mouseleave', function (event, d) {
+            unhighlightBar(d);
+            if (config.onCellLeave) {
+                config.onCellLeave(event, d);
+            }
+            trigger('enhancedHoverLeave', { event, data: d });
+        })
+            .on('click', function (event, d) {
+            if (config.onCellClick) {
+                config.onCellClick(event, d);
+            }
+            trigger('enhancedHoverClick', { event, data: d });
+        });
+        zones.exit().remove();
+        trigger('enhancedHoverEnabled', config);
+    }
+    function disableEnhancedHover() {
+        container.selectAll('.enhanced-hover-group').remove();
+        enhancedHoverEnabled = false;
+        trigger('enhancedHoverDisabled');
+    }
+    function updateHoverExtent(extent) {
+        if (enhancedHoverEnabled) {
+            // Re-enable with current data
+            const currentConfig = { enabled: true, extent };
+            enableEnhancedHover(currentConfig);
+        }
+    }
+    // ========================================================================
+    // FORCE SIMULATION FOR DYNAMIC LAYOUTS (d3.forceSimulation)
+    // ========================================================================
+    function startForceSimulation(config) {
+        if (!config.enabled || currentData.length === 0) {
+            return d3__namespace.forceSimulation([]);
+        }
+        // Stop any existing simulation
+        stopForceSimulation();
+        // Create new simulation
+        forceSimulation = d3__namespace.forceSimulation(currentData);
+        // Add forces based on configuration
+        if (config.forces.collision) {
+            forceSimulation.force('collision', d3__namespace.forceCollide()
+                .radius(d => getBarWidth() / 2 + 5)
+                .strength(config.strength.collision || 0.7));
+        }
+        if (config.forces.centering) {
+            const centerX = (xScale.range()[0] + xScale.range()[1]) / 2;
+            const centerY = (yScale.range()[0] + yScale.range()[1]) / 2;
+            forceSimulation.force('center', d3__namespace.forceCenter(centerX, centerY)
+                .strength(config.strength.centering || 0.1));
+        }
+        if (config.forces.positioning) {
+            forceSimulation.force('x', d3__namespace.forceX(d => getBarCenterX(d))
+                .strength(config.strength.positioning || 0.5));
+            forceSimulation.force('y', d3__namespace.forceY(d => getBarCenterY(d))
+                .strength(config.strength.positioning || 0.5));
+        }
+        if (config.forces.links && currentData.length > 1) {
+            // Create links between consecutive bars
+            const links = currentData.slice(1).map((d, i) => ({
+                source: currentData[i],
+                target: d
+            }));
+            forceSimulation.force('link', d3__namespace.forceLink(links)
+                .distance(50)
+                .strength(config.strength.links || 0.3));
+        }
+        // Set up tick handler
+        forceSimulation.on('tick', () => {
+            updateBarPositions();
+            if (config.onTick && forceSimulation) {
+                config.onTick(forceSimulation);
+            }
+            trigger('forceTick', forceSimulation);
+        });
+        // Set up end handler
+        forceSimulation.on('end', () => {
+            if (config.onEnd && forceSimulation) {
+                config.onEnd(forceSimulation);
+            }
+            trigger('forceEnd', forceSimulation);
+        });
+        // Set alpha decay for animation duration
+        if (config.duration) {
+            const targetAlpha = 0.001;
+            const decay = 1 - Math.pow(targetAlpha, 1 / config.duration);
+            forceSimulation.alphaDecay(decay);
+        }
+        trigger('forceSimulationStarted', config);
+        return forceSimulation;
+    }
+    function stopForceSimulation() {
+        if (forceSimulation) {
+            forceSimulation.stop();
+            forceSimulation = null;
+            trigger('forceSimulationStopped');
+        }
+    }
+    function updateForces(forces) {
+        if (forceSimulation) {
+            // Update or remove forces based on configuration
+            if (!forces.collision)
+                forceSimulation.force('collision', null);
+            if (!forces.centering)
+                forceSimulation.force('center', null);
+            if (!forces.positioning) {
+                forceSimulation.force('x', null);
+                forceSimulation.force('y', null);
+            }
+            if (!forces.links)
+                forceSimulation.force('link', null);
+            forceSimulation.alpha(1).restart();
+            trigger('forcesUpdated', forces);
+        }
+    }
+    // ========================================================================
+    // INTERACTION MODE MANAGEMENT
+    // ========================================================================
+    function setInteractionMode(mode) {
+        // Disable all interactions first
+        disableDrag();
+        disableEnhancedHover();
+        stopForceSimulation();
+        const xRange = xScale.range() || [0, 800];
+        const yRange = yScale.range() || [400, 0];
+        switch (mode) {
+            case 'drag':
+                enableDrag({
+                    enabled: true,
+                    axis: 'vertical',
+                    constraints: { snapToGrid: true, gridSize: 10 }
+                });
+                break;
+            case 'voronoi':
+                enableEnhancedHover({
+                    enabled: true,
+                    extent: [[0, 0], [xRange[1], yRange[0]]]
+                });
+                break;
+            case 'force':
+                startForceSimulation({
+                    enabled: true,
+                    forces: { collision: true, positioning: true },
+                    strength: { collision: 0.7, positioning: 0.5 },
+                    duration: 1000
+                });
+                break;
+            case 'combined':
+                enableEnhancedHover({
+                    enabled: true,
+                    extent: [[0, 0], [xRange[1], yRange[0]]]
+                });
+                enableDrag({
+                    enabled: true,
+                    axis: 'vertical'
+                });
+                break;
+        }
+        trigger('interactionModeChanged', mode);
+    }
+    function getActiveInteractions() {
+        const active = [];
+        if (dragBehavior)
+            active.push('drag');
+        if (enhancedHoverEnabled)
+            active.push('hover');
+        if (forceSimulation)
+            active.push('force');
+        return active;
+    }
+    // ========================================================================
+    // EVENT MANAGEMENT
+    // ========================================================================
+    function on(event, callback) {
+        eventListeners.set(event, callback);
+    }
+    function off(event) {
+        eventListeners.delete(event);
+    }
+    function trigger(event, data) {
+        const callback = eventListeners.get(event);
+        if (callback) {
+            callback(data);
+        }
+    }
+    // ========================================================================
+    // UTILITY FUNCTIONS
+    // ========================================================================
+    function getBarCenterX(d) {
+        const scale = xScale; // Type assertion for compatibility
+        if (scale.bandwidth) {
+            // Band scale
+            return (scale(d.label) || 0) + scale.bandwidth() / 2;
+        }
+        else {
+            // Linear scale - assume equal spacing
+            return scale(parseFloat(d.label) || 0);
+        }
+    }
+    function getBarCenterY(d) {
+        const value = d.value || (d.stacks && d.stacks[0] ? d.stacks[0].value : 0);
+        return yScale(value / 2);
+    }
+    function getBarWidth(d) {
+        const scale = xScale; // Type assertion for compatibility
+        if (scale.bandwidth) {
+            return scale.bandwidth();
+        }
+        return 40; // Default width for linear scales
+    }
+    function highlightBar(data) {
+        container.selectAll('.bar')
+            .filter((d) => d === data)
+            .transition()
+            .duration(150)
+            .attr('opacity', 0.8)
+            .attr('stroke', '#ff6b6b')
+            .attr('stroke-width', 2);
+    }
+    function unhighlightBar(data) {
+        container.selectAll('.bar')
+            .filter((d) => d === data)
+            .transition()
+            .duration(150)
+            .attr('opacity', 1)
+            .attr('stroke', null)
+            .attr('stroke-width', null);
+    }
+    function updateBarPositions() {
+        if (!forceSimulation)
+            return;
+        container.selectAll('.bar')
+            .data(currentData)
+            .attr('transform', (d) => {
+            const x = d.x || getBarCenterX(d);
+            const y = d.y || getBarCenterY(d);
+            return `translate(${x - getBarWidth() / 2}, ${y})`;
+        });
+    }
+    return {
+        enableDrag,
+        disableDrag,
+        updateDragConstraints,
+        enableEnhancedHover,
+        disableEnhancedHover,
+        updateHoverExtent,
+        startForceSimulation,
+        stopForceSimulation,
+        updateForces,
+        setInteractionMode,
+        getActiveInteractions,
+        on,
+        off,
+        trigger
+    };
+}
+// ============================================================================
+// SPECIALIZED WATERFALL INTERACTION UTILITIES
+// ============================================================================
+/**
+ * Create drag behavior specifically optimized for waterfall charts
+ */
+function createWaterfallDragBehavior(onValueChange, constraints) {
+    return {
+        enabled: true,
+        axis: 'vertical',
+        constraints: {
+            minValue: constraints?.min,
+            maxValue: constraints?.max,
+            snapToGrid: true,
+            gridSize: 100 // Snap to hundreds
+        },
+        onDrag: (event, data) => {
+            if (onValueChange) {
+                onValueChange(data, data.value);
+            }
+        }
+    };
+}
+/**
+ * Create voronoi configuration optimized for waterfall hover detection
+ */
+function createWaterfallVoronoiConfig(chartWidth, chartHeight, margin) {
+    return {
+        enabled: true,
+        extent: [
+            [margin.left, margin.top],
+            [chartWidth - margin.right, chartHeight - margin.bottom]
+        ],
+        showCells: false,
+        cellOpacity: 0.1
+    };
+}
+/**
+ * Create force simulation for animated waterfall reordering
+ */
+function createWaterfallForceConfig(animationDuration = 1000) {
+    return {
+        enabled: true,
+        forces: {
+            collision: true,
+            positioning: true,
+            centering: false,
+            links: false
+        },
+        strength: {
+            collision: 0.8,
+            positioning: 0.6
+        },
+        duration: animationDuration
+    };
+}
+
+// MintWaterfall Hierarchical Layout Extensions
+// Advanced D3.js hierarchical layouts for multi-dimensional waterfall analysis
+// ============================================================================
+// HIERARCHICAL LAYOUT SYSTEM IMPLEMENTATION
+// ============================================================================
+function createHierarchicalLayoutSystem() {
+    // ========================================================================
+    // TREEMAP LAYOUT (d3.treemap)
+    // ========================================================================
+    function createTreemapLayout(data, config) {
+        // Create hierarchy
+        const root = d3__namespace.hierarchy(data)
+            .sum(d => d.value || 0)
+            .sort((a, b) => (b.value || 0) - (a.value || 0));
+        // Create treemap layout
+        const treemap = d3__namespace.treemap()
+            .size([config.width, config.height])
+            .padding(config.padding)
+            .tile(config.tile)
+            .round(config.round);
+        return treemap(root);
+    }
+    function renderTreemap(container, layout, config) {
+        const colorScale = config.colorScale || d3__namespace.scaleOrdinal(d3__namespace.schemeCategory10);
+        // Create treemap group
+        const treemapGroup = container.selectAll('.treemap-group')
+            .data([0]);
+        const treemapGroupEnter = treemapGroup.enter()
+            .append('g')
+            .attr('class', 'treemap-group');
+        const treemapGroupMerged = treemapGroupEnter.merge(treemapGroup);
+        // Get leaf nodes for rendering
+        const leaves = layout.leaves();
+        // Create rectangles for leaf nodes
+        const cells = treemapGroupMerged.selectAll('.treemap-cell')
+            .data(leaves, (d) => d.data.name);
+        const cellsEnter = cells.enter()
+            .append('g')
+            .attr('class', 'treemap-cell');
+        // Add rectangles
+        cellsEnter.append('rect')
+            .attr('class', 'treemap-rect');
+        // Add labels
+        cellsEnter.append('text')
+            .attr('class', 'treemap-label');
+        // Add value labels
+        cellsEnter.append('text')
+            .attr('class', 'treemap-value');
+        const cellsMerged = cellsEnter.merge(cells);
+        // Update rectangles
+        cellsMerged.select('.treemap-rect')
+            .transition()
+            .duration(750)
+            .attr('x', d => d.x0)
+            .attr('y', d => d.y0)
+            .attr('width', d => d.x1 - d.x0)
+            .attr('height', d => d.y1 - d.y0)
+            .attr('fill', d => colorScale(d.data.category || d.data.name))
+            .attr('stroke', '#fff')
+            .attr('stroke-width', 1)
+            .attr('opacity', 0.8);
+        // Update labels
+        cellsMerged.select('.treemap-label')
+            .attr('x', d => (d.x0 + d.x1) / 2)
+            .attr('y', d => (d.y0 + d.y1) / 2 - 8)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', d => Math.min(12, (d.x1 - d.x0) / 8))
+            .attr('fill', '#333')
+            .text(d => d.data.name);
+        // Update value labels
+        cellsMerged.select('.treemap-value')
+            .attr('x', d => (d.x0 + d.x1) / 2)
+            .attr('y', d => (d.y0 + d.y1) / 2 + 8)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', d => Math.min(10, (d.x1 - d.x0) / 10))
+            .attr('fill', '#666')
+            .text(d => formatValue(d.value || 0));
+        // Add interaction
+        cellsMerged
+            .style('cursor', 'pointer')
+            .on('click', (event, d) => {
+            if (config.onNodeClick) {
+                config.onNodeClick(d);
+            }
+        })
+            .on('mouseenter', (event, d) => {
+            d3__namespace.select(event.currentTarget).select('.treemap-rect')
+                .attr('opacity', 1)
+                .attr('stroke-width', 2);
+            if (config.onNodeHover) {
+                config.onNodeHover(d);
+            }
+        })
+            .on('mouseleave', (event, d) => {
+            d3__namespace.select(event.currentTarget).select('.treemap-rect')
+                .attr('opacity', 0.8)
+                .attr('stroke-width', 1);
+        });
+        cells.exit()
+            .transition()
+            .duration(300)
+            .attr('opacity', 0)
+            .remove();
+    }
+    // ========================================================================
+    // PARTITION LAYOUT (d3.partition)
+    // ========================================================================
+    function createPartitionLayout(data, config) {
+        // Create hierarchy
+        const root = d3__namespace.hierarchy(data)
+            .sum(d => d.value || 0)
+            .sort((a, b) => (b.value || 0) - (a.value || 0));
+        // Create partition layout
+        const partition = d3__namespace.partition()
+            .size([2 * Math.PI, Math.min(config.width, config.height) / 2]);
+        return partition(root);
+    }
+    function renderPartition(container, layout, config) {
+        const colorScale = config.colorScale || d3__namespace.scaleOrdinal(d3__namespace.schemeCategory10);
+        const radius = Math.min(config.width, config.height) / 2;
+        const innerRadius = config.innerRadius || 0;
+        // Create partition group
+        const partitionGroup = container.selectAll('.partition-group')
+            .data([0]);
+        const partitionGroupEnter = partitionGroup.enter()
+            .append('g')
+            .attr('class', 'partition-group')
+            .attr('transform', `translate(${config.width / 2}, ${config.height / 2})`);
+        const partitionGroupMerged = partitionGroupEnter.merge(partitionGroup);
+        if (config.type === 'sunburst') {
+            renderSunburst(partitionGroupMerged, layout, colorScale, radius, innerRadius, config);
+        }
+        else {
+            renderIcicle(partitionGroupMerged, layout, colorScale, config);
+        }
+    }
+    function renderSunburst(container, layout, colorScale, radius, innerRadius, config) {
+        const arc = d3__namespace.arc()
+            .startAngle(d => d.x0)
+            .endAngle(d => d.x1)
+            .innerRadius(d => Math.sqrt(d.y0) * radius / Math.sqrt(layout.y1))
+            .outerRadius(d => Math.sqrt(d.y1) * radius / Math.sqrt(layout.y1));
+        const descendants = layout.descendants().filter(d => d.depth > 0);
+        const paths = container.selectAll('.partition-arc')
+            .data(descendants, (d) => d.data.name);
+        const pathsEnter = paths.enter()
+            .append('path')
+            .attr('class', 'partition-arc')
+            .attr('fill', d => colorScale(d.data.category || d.data.name))
+            .attr('stroke', '#fff')
+            .attr('stroke-width', 1)
+            .style('cursor', 'pointer');
+        pathsEnter.merge(paths)
+            .transition()
+            .duration(750)
+            .attr('d', arc);
+        // Add interaction
+        pathsEnter.merge(paths)
+            .on('click', (event, d) => {
+            if (config.onNodeClick) {
+                config.onNodeClick(d);
+            }
+        });
+        paths.exit()
+            .transition()
+            .duration(300)
+            .attr('opacity', 0)
+            .remove();
+    }
+    function renderIcicle(container, layout, colorScale, config) {
+        const descendants = layout.descendants();
+        const rects = container.selectAll('.partition-rect')
+            .data(descendants, (d) => d.data.name);
+        const rectsEnter = rects.enter()
+            .append('rect')
+            .attr('class', 'partition-rect')
+            .attr('fill', d => colorScale(d.data.category || d.data.name))
+            .attr('stroke', '#fff')
+            .attr('stroke-width', 1)
+            .style('cursor', 'pointer');
+        rectsEnter.merge(rects)
+            .transition()
+            .duration(750)
+            .attr('x', d => d.y0)
+            .attr('y', d => d.x0)
+            .attr('width', d => d.y1 - d.y0)
+            .attr('height', d => d.x1 - d.x0);
+        // Add interaction
+        rectsEnter.merge(rects)
+            .on('click', (event, d) => {
+            if (config.onNodeClick) {
+                config.onNodeClick(d);
+            }
+        });
+        rects.exit()
+            .transition()
+            .duration(300)
+            .attr('opacity', 0)
+            .remove();
+    }
+    // ========================================================================
+    // CLUSTER LAYOUT (d3.cluster)
+    // ========================================================================
+    function createClusterLayout(data, config) {
+        // Create hierarchy
+        const root = d3__namespace.hierarchy(data);
+        // Create cluster layout
+        const cluster = d3__namespace.cluster()
+            .size([config.width, config.height])
+            .nodeSize(config.nodeSize);
+        if (config.separation) {
+            cluster.separation(config.separation);
+        }
+        return cluster(root);
+    }
+    function renderCluster(container, layout, config) {
+        // Create cluster group
+        const clusterGroup = container.selectAll('.cluster-group')
+            .data([0]);
+        const clusterGroupEnter = clusterGroup.enter()
+            .append('g')
+            .attr('class', 'cluster-group');
+        const clusterGroupMerged = clusterGroupEnter.merge(clusterGroup);
+        const descendants = layout.descendants();
+        const links = layout.links();
+        // Render links
+        const linkSelection = clusterGroupMerged.selectAll('.cluster-link')
+            .data(links, (d) => `${d.source.data.name}-${d.target.data.name}`);
+        linkSelection.enter()
+            .append('path')
+            .attr('class', 'cluster-link')
+            .attr('fill', 'none')
+            .attr('stroke', config.linkColor || '#999')
+            .attr('stroke-width', 1)
+            .merge(linkSelection)
+            .transition()
+            .duration(750)
+            .attr('d', d3__namespace.linkHorizontal()
+            .x(d => d.y || 0)
+            .y(d => d.x || 0));
+        linkSelection.exit().remove();
+        // Render nodes
+        const nodeSelection = clusterGroupMerged.selectAll('.cluster-node')
+            .data(descendants, (d) => d.data.name);
+        const nodeEnter = nodeSelection.enter()
+            .append('g')
+            .attr('class', 'cluster-node');
+        nodeEnter.append('circle')
+            .attr('r', 5)
+            .attr('fill', config.nodeColor || '#69b3a2');
+        nodeEnter.append('text')
+            .attr('dy', 3)
+            .attr('x', 8)
+            .style('font-size', '12px')
+            .text(d => d.data.name);
+        const nodeMerged = nodeEnter.merge(nodeSelection);
+        nodeMerged
+            .transition()
+            .duration(750)
+            .attr('transform', d => `translate(${d.y},${d.x})`);
+        nodeSelection.exit()
+            .transition()
+            .duration(300)
+            .attr('opacity', 0)
+            .remove();
+    }
+    // ========================================================================
+    // PACK LAYOUT (d3.pack)
+    // ========================================================================
+    function createPackLayout(data, config) {
+        // Create hierarchy
+        const root = d3__namespace.hierarchy(data)
+            .sum(config.sizeAccessor || (d => d.value || 0))
+            .sort((a, b) => (b.value || 0) - (a.value || 0));
+        // Create pack layout
+        const pack = d3__namespace.pack()
+            .size([config.width, config.height])
+            .padding(config.padding);
+        return pack(root);
+    }
+    function renderPack(container, layout, config) {
+        const colorScale = config.colorScale || d3__namespace.scaleOrdinal(d3__namespace.schemeCategory10);
+        // Create pack group
+        const packGroup = container.selectAll('.pack-group')
+            .data([0]);
+        const packGroupEnter = packGroup.enter()
+            .append('g')
+            .attr('class', 'pack-group');
+        const packGroupMerged = packGroupEnter.merge(packGroup);
+        const descendants = layout.descendants().filter(d => d.depth > 0);
+        // Create circles for nodes
+        const nodes = packGroupMerged.selectAll('.pack-node')
+            .data(descendants, (d) => d.data.name);
+        const nodesEnter = nodes.enter()
+            .append('g')
+            .attr('class', 'pack-node');
+        // Add circles
+        nodesEnter.append('circle')
+            .attr('class', 'pack-circle')
+            .style('cursor', 'pointer');
+        // Add labels
+        nodesEnter.append('text')
+            .attr('class', 'pack-label')
+            .attr('text-anchor', 'middle')
+            .attr('dy', '0.3em')
+            .style('font-size', '10px')
+            .style('fill', '#333')
+            .style('pointer-events', 'none');
+        const nodesMerged = nodesEnter.merge(nodes);
+        // Update positions and attributes
+        nodesMerged
+            .transition()
+            .duration(750)
+            .attr('transform', d => `translate(${d.x},${d.y})`);
+        nodesMerged.select('.pack-circle')
+            .transition()
+            .duration(750)
+            .attr('r', d => d.r)
+            .attr('fill', d => colorScale(d.data.category || d.data.name))
+            .attr('stroke', '#fff')
+            .attr('stroke-width', 1)
+            .attr('opacity', 0.7);
+        nodesMerged.select('.pack-label')
+            .text(d => d.r > 15 ? d.data.name : '')
+            .attr('font-size', d => Math.min(d.r / 3, 12));
+        // Add interaction
+        nodesMerged
+            .on('click', (event, d) => {
+            if (config.onNodeClick) {
+                config.onNodeClick(d);
+            }
+        })
+            .on('mouseenter', (event, d) => {
+            d3__namespace.select(event.currentTarget).select('.pack-circle')
+                .attr('opacity', 1)
+                .attr('stroke-width', 2);
+        })
+            .on('mouseleave', (event, d) => {
+            d3__namespace.select(event.currentTarget).select('.pack-circle')
+                .attr('opacity', 0.7)
+                .attr('stroke-width', 1);
+        });
+        nodes.exit()
+            .transition()
+            .duration(300)
+            .attr('opacity', 0)
+            .remove();
+    }
+    // ========================================================================
+    // UTILITY FUNCTIONS
+    // ========================================================================
+    function transformWaterfallToHierarchy(waterfallData) {
+        // Group data by categories if available
+        const grouped = d3__namespace.group(waterfallData, d => d.category || 'Default');
+        const children = [];
+        for (const [category, items] of grouped) {
+            const categoryNode = {
+                name: category,
+                value: d3__namespace.sum(items, d => Math.abs(extractValue(d))),
+                category,
+                children: items.map(item => ({
+                    name: getLabel(item),
+                    value: Math.abs(extractValue(item)),
+                    category,
+                    metadata: item
+                }))
+            };
+            children.push(categoryNode);
+        }
+        return {
+            name: 'Root',
+            children,
+            value: d3__namespace.sum(children, d => d.value || 0)
+        };
+    }
+    function createDrillDownNavigation(data) {
+        const navigation = [];
+        function traverse(node, path = []) {
+            const currentPath = [...path, node.name];
+            navigation.push({
+                path: currentPath,
+                name: node.name,
+                value: node.value,
+                level: currentPath.length - 1,
+                hasChildren: !!(node.children && node.children.length > 0)
+            });
+            if (node.children) {
+                node.children.forEach(child => traverse(child, currentPath));
+            }
+        }
+        traverse(data);
+        return navigation;
+    }
+    function calculateHierarchicalMetrics(node) {
+        return {
+            depth: node.depth,
+            height: node.height,
+            value: node.value,
+            leafCount: node.leaves().length,
+            descendants: node.descendants().length,
+            ancestors: node.ancestors().length,
+            totalValue: node.descendants().reduce((sum, d) => sum + (d.value || 0), 0),
+            averageValue: node.value && node.leaves().length ? node.value / node.leaves().length : 0
+        };
+    }
+    // Helper functions
+    function extractValue(item) {
+        if (typeof item === 'number')
+            return item;
+        if (item.value !== undefined)
+            return item.value;
+        if (item.stacks && Array.isArray(item.stacks)) {
+            return item.stacks.reduce((sum, stack) => sum + (stack.value || 0), 0);
+        }
+        return 0;
+    }
+    function getLabel(item) {
+        if (typeof item === 'string')
+            return item;
+        if (item.label !== undefined)
+            return item.label;
+        if (item.name !== undefined)
+            return item.name;
+        return 'Unnamed';
+    }
+    function formatValue(value) {
+        if (Math.abs(value) >= 1000000)
+            return `${(value / 1000000).toFixed(1)}M`;
+        if (Math.abs(value) >= 1000)
+            return `${(value / 1000).toFixed(1)}K`;
+        return value.toFixed(0);
+    }
+    // ========================================================================
+    // RETURN LAYOUT SYSTEM INTERFACE
+    // ========================================================================
+    return {
+        createTreemapLayout,
+        renderTreemap,
+        createPartitionLayout,
+        renderPartition,
+        createClusterLayout,
+        renderCluster,
+        createPackLayout,
+        renderPack,
+        transformWaterfallToHierarchy,
+        createDrillDownNavigation,
+        calculateHierarchicalMetrics
+    };
+}
+// ============================================================================
+// SPECIALIZED WATERFALL HIERARCHICAL UTILITIES
+// ============================================================================
+/**
+ * Create hierarchical waterfall breakdown using treemap
+ */
+function createWaterfallTreemap(data, container, width, height) {
+    const layoutSystem = createHierarchicalLayoutSystem();
+    const hierarchicalData = layoutSystem.transformWaterfallToHierarchy(data);
+    const config = {
+        width,
+        height,
+        padding: 2,
+        tile: d3__namespace.treemapBinary,
+        round: true,
+        colorScale: d3__namespace.scaleOrdinal(d3__namespace.schemeSet3)
+    };
+    const layout = layoutSystem.createTreemapLayout(hierarchicalData, config);
+    layoutSystem.renderTreemap(container, layout, config);
+}
+/**
+ * Create circular waterfall visualization using partition layout
+ */
+function createWaterfallSunburst(data, container, width, height) {
+    const layoutSystem = createHierarchicalLayoutSystem();
+    const hierarchicalData = layoutSystem.transformWaterfallToHierarchy(data);
+    const config = {
+        width,
+        height,
+        innerRadius: 40,
+        type: 'sunburst',
+        colorScale: d3__namespace.scaleOrdinal(d3__namespace.schemeCategory10)
+    };
+    const layout = layoutSystem.createPartitionLayout(hierarchicalData, config);
+    layoutSystem.renderPartition(container, layout, config);
+}
+/**
+ * Create bubble chart waterfall using pack layout
+ */
+function createWaterfallBubbles(data, container, width, height) {
+    const layoutSystem = createHierarchicalLayoutSystem();
+    const hierarchicalData = layoutSystem.transformWaterfallToHierarchy(data);
+    const config = {
+        width,
+        height,
+        padding: 3,
+        colorScale: d3__namespace.scaleOrdinal(d3__namespace.schemePastel1),
+        sizeAccessor: d => Math.abs(d.value || 0)
+    };
+    const layout = layoutSystem.createPackLayout(hierarchicalData, config);
+    layoutSystem.renderPack(container, layout, config);
 }
 
 // MintWaterfall - D3.js compatible hierarchical layout system - TypeScript Version
@@ -4960,26 +7775,51 @@ if (typeof window !== "undefined" && window.d3) {
     window.d3.waterfallChart = waterfallChart;
 }
 
+exports.analyzeWaterfallStatistics = analyzeWaterfallStatistics;
 exports.applyTheme = applyTheme;
 exports.createAccessibilitySystem = createAccessibilitySystem;
+exports.createAdvancedDataProcessor = createAdvancedDataProcessor;
+exports.createAdvancedInteractionSystem = createAdvancedInteractionSystem;
+exports.createAdvancedPerformanceSystem = createAdvancedPerformanceSystem;
 exports.createAnimationSystem = createAnimationSystem;
 exports.createBrushSystem = createBrushSystemFactory;
 exports.createComparisonWaterfall = createComparisonWaterfall;
 exports.createDataProcessor = createDataProcessor;
+exports.createDivergingScale = createDivergingScale;
 exports.createExportSystem = createExportSystem;
 exports.createHierarchicalLayout = createHierarchicalLayout;
+exports.createHierarchicalLayoutSystem = createHierarchicalLayoutSystem;
 exports.createPerformanceManager = createPerformanceManager;
 exports.createRevenueWaterfall = createRevenueWaterfall;
 exports.createScaleSystem = createScaleSystem;
+exports.createSequentialScale = createSequentialScale;
+exports.createShapeGenerators = createShapeGenerators;
+exports.createStatisticalSystem = createStatisticalSystem;
 exports.createTemporalWaterfall = createTemporalWaterfall;
 exports.createTooltipSystem = createTooltipSystem;
 exports.createVarianceWaterfall = createVarianceWaterfall;
+exports.createVirtualWaterfallRenderer = createVirtualWaterfallRenderer;
+exports.createWaterfallBubbles = createWaterfallBubbles;
+exports.createWaterfallColorScale = createWaterfallColorScale;
+exports.createWaterfallConfidenceBands = createWaterfallConfidenceBands;
+exports.createWaterfallDragBehavior = createWaterfallDragBehavior;
+exports.createWaterfallForceConfig = createWaterfallForceConfig;
+exports.createWaterfallMilestones = createWaterfallMilestones;
+exports.createWaterfallSequenceAnalyzer = createWaterfallSequenceAnalyzer;
+exports.createWaterfallSpatialIndex = createWaterfallSpatialIndex;
+exports.createWaterfallSunburst = createWaterfallSunburst;
+exports.createWaterfallTickGenerator = createWaterfallTickGenerator;
+exports.createWaterfallTreemap = createWaterfallTreemap;
+exports.createWaterfallVoronoiConfig = createWaterfallVoronoiConfig;
 exports.createZoomSystem = createZoomSystem;
 exports.d3DataUtils = d3DataUtils;
 exports.dataProcessor = dataProcessor;
 exports.default = waterfallChart;
 exports.financialReducers = financialReducers;
+exports.getConditionalColor = getConditionalColor;
+exports.getEnhancedColorPalette = getEnhancedColorPalette;
 exports.groupWaterfallData = groupWaterfallData;
+exports.interpolateThemeColor = interpolateThemeColor;
 exports.themes = themes;
 exports.transformTransactionData = transformTransactionData;
 exports.version = version;

@@ -60,6 +60,37 @@ export interface BreakdownConfig {
     othersLabel?: string;
     maxGroups?: number;
 }
+export interface AdvancedColorConfig {
+    enabled: boolean;
+    scaleType: 'auto' | 'sequential' | 'diverging' | 'conditional';
+    themeName?: string;
+    customColorScale?: (value: number) => string;
+    neutralThreshold?: number;
+}
+export interface ConfidenceBandConfig {
+    enabled: boolean;
+    scenarios?: {
+        optimistic: Array<{
+            label: string;
+            value: number;
+        }>;
+        pessimistic: Array<{
+            label: string;
+            value: number;
+        }>;
+    };
+    opacity?: number;
+    showTrendLines?: boolean;
+}
+export interface MilestoneConfig {
+    enabled: boolean;
+    milestones: Array<{
+        label: string;
+        value: number;
+        type: 'target' | 'threshold' | 'alert' | 'achievement';
+        description?: string;
+    }>;
+}
 export interface BarEventHandler {
     (event: Event, data: ProcessedData): void;
 }

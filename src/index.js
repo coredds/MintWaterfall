@@ -32,6 +32,56 @@ export { themes, applyTheme } from "./mintwaterfall-themes.ts";
 export { createScaleSystem } from "./mintwaterfall-scales.ts";
 export { createBrushSystemFactory as createBrushSystem } from "./mintwaterfall-brush.ts";
 
+// NEW: Advanced color and shape features
+export { 
+    createSequentialScale,
+    createDivergingScale, 
+    getConditionalColor,
+    createWaterfallColorScale,
+    interpolateThemeColor,
+    getEnhancedColorPalette
+} from "./mintwaterfall-themes.ts";
+
+export { 
+    createShapeGenerators,
+    createWaterfallConfidenceBands,
+    createWaterfallMilestones 
+} from "./mintwaterfall-shapes.ts";
+
+// NEW: Advanced statistical analysis features
+export {
+    createStatisticalSystem,
+    analyzeWaterfallStatistics
+} from "./mintwaterfall-statistics.ts";
+
+// NEW: Advanced performance optimization features
+export {
+    createAdvancedPerformanceSystem,
+    createWaterfallSpatialIndex,
+    createVirtualWaterfallRenderer
+} from "./mintwaterfall-advanced-performance.ts";
+
+// NEW: MEDIUM PRIORITY - Advanced analytical enhancement features
+export {
+    createAdvancedDataProcessor,
+    createWaterfallSequenceAnalyzer,
+    createWaterfallTickGenerator
+} from "./mintwaterfall-advanced-data.ts";
+
+export {
+    createAdvancedInteractionSystem,
+    createWaterfallDragBehavior,
+    createWaterfallVoronoiConfig,
+    createWaterfallForceConfig
+} from "./mintwaterfall-advanced-interactions.ts";
+
+export {
+    createHierarchicalLayoutSystem,
+    createWaterfallTreemap,
+    createWaterfallSunburst,
+    createWaterfallBubbles
+} from "./mintwaterfall-hierarchical-layouts.ts";
+
 // Hierarchical Layout Features
 export { createHierarchicalLayout } from "./mintwaterfall-layouts.ts";
 

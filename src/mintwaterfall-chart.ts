@@ -13,6 +13,39 @@ import { createExportSystem } from "./mintwaterfall-export.js";
 import { createZoomSystem } from "./mintwaterfall-zoom.js";
 import { createPerformanceManager } from "./mintwaterfall-performance.js";
 
+// NEW: Import advanced features
+import { 
+    createSequentialScale, 
+    createDivergingScale, 
+    getConditionalColor,
+    createWaterfallColorScale,
+    interpolateThemeColor 
+} from './mintwaterfall-themes.js';
+import { 
+    createShapeGenerators, 
+    createWaterfallConfidenceBands, 
+    createWaterfallMilestones 
+} from './mintwaterfall-shapes.js';
+
+// NEW: Import MEDIUM PRIORITY analytical enhancement features
+import { 
+    createAdvancedDataProcessor,
+    createWaterfallSequenceAnalyzer,
+    createWaterfallTickGenerator
+} from './mintwaterfall-advanced-data.js';
+import { 
+    createAdvancedInteractionSystem,
+    createWaterfallDragBehavior,
+    createWaterfallVoronoiConfig,
+    createWaterfallForceConfig
+} from './mintwaterfall-advanced-interactions.js';
+import { 
+    createHierarchicalLayoutSystem,
+    createWaterfallTreemap,
+    createWaterfallSunburst,
+    createWaterfallBubbles
+} from './mintwaterfall-hierarchical-layouts.js';
+
 // Type definitions
 export interface StackData {
     value: number;
@@ -73,6 +106,35 @@ export interface BreakdownConfig {
     showOthers?: boolean;
     othersLabel?: string;
     maxGroups?: number;
+}
+
+// NEW: Advanced feature configurations
+export interface AdvancedColorConfig {
+    enabled: boolean;
+    scaleType: 'auto' | 'sequential' | 'diverging' | 'conditional';
+    themeName?: string;
+    customColorScale?: (value: number) => string;
+    neutralThreshold?: number;
+}
+
+export interface ConfidenceBandConfig {
+    enabled: boolean;
+    scenarios?: {
+        optimistic: Array<{label: string, value: number}>;
+        pessimistic: Array<{label: string, value: number}>;
+    };
+    opacity?: number;
+    showTrendLines?: boolean;
+}
+
+export interface MilestoneConfig {
+    enabled: boolean;
+    milestones: Array<{
+        label: string;
+        value: number;
+        type: 'target' | 'threshold' | 'alert' | 'achievement';
+        description?: string;
+    }>;
 }
 
 export interface BarEventHandler {
@@ -200,6 +262,9 @@ export interface WaterfallChart {
     // Event handling
     on(event: string, handler: BarEventHandler | null): WaterfallChart;
     
+    // Note: MEDIUM PRIORITY analytical enhancement features are available 
+    // via the exported utility functions but not integrated into the main chart API
+    
     // Internal system instances
     zoomSystemInstance?: any;
     
@@ -212,14 +277,14 @@ function getBarWidth(scale: any, barCount: number, totalWidth: number): number {
     if (scale.bandwidth) {
         // Band scale has bandwidth method - use it directly
         const bandwidth = scale.bandwidth();
-        console.log('Using band scale bandwidth:', bandwidth);
+        // Using band scale bandwidth
         return bandwidth;
     } else {
         // For continuous scales, calculate width based on bar count
         const padding = 0.1;
         const availableWidth = totalWidth * (1 - padding);
         const calculatedWidth = availableWidth / barCount;
-        console.log('Calculated width for continuous scale:', calculatedWidth);
+        // Calculated width for continuous scale
         return calculatedWidth;
     }
 }
@@ -242,7 +307,7 @@ export function waterfallChart(): WaterfallChart {
     let showTotal: boolean = false;
     let totalLabel: string = "Total";
     let totalColor: string = "#95A5A6";
-    let stacked: boolean = true;
+    let stacked: boolean = false;
     let barPadding: number = 0.05;
     let duration: number = 750;
     let ease: (t: number) => number = d3.easeQuadInOut;
@@ -255,6 +320,31 @@ export function waterfallChart(): WaterfallChart {
     let staggeredAnimations: boolean = false;
     let staggerDelay: number = 100;
     let scaleType: string = "auto"; // 'auto', 'linear', 'time', 'ordinal'
+    
+    // NEW: Advanced color and shape features
+    let advancedColorConfig: AdvancedColorConfig = {
+        enabled: false,
+        scaleType: 'auto',
+        themeName: 'default',
+        neutralThreshold: 0
+    };
+    
+    let confidenceBandConfig: ConfidenceBandConfig = {
+        enabled: false,
+        opacity: 0.3,
+        showTrendLines: true
+    };
+    
+    let milestoneConfig: MilestoneConfig = {
+        enabled: false,
+        milestones: []
+    };
+    
+    // Note: Advanced analytical enhancement feature variables removed
+    // Features are available via exported utility functions
+    
+    // Note: Hierarchical layout variables removed
+    // Features are available via exported utility functions
     
     // Trend line features
     let showTrendLine: boolean = false;
@@ -290,7 +380,45 @@ export function waterfallChart(): WaterfallChart {
     const tooltipSystem = createTooltipSystem();
     const exportSystem = createExportSystem();
     const zoomSystem = createZoomSystem();
+    
+    // NEW: Initialize advanced feature systems
+    const shapeGeneratorSystem = createShapeGenerators();
     const performanceManager = createPerformanceManager();
+    
+    // Note: Advanced analytical enhancement system instances removed
+    // Systems are available via exported utility functions
+    
+    // Helper function for advanced color determination
+    function getAdvancedBarColor(value: number, defaultColor: string, allData: ProcessedData[]): string {
+        if (!advancedColorConfig.enabled) {
+            return defaultColor;
+        }
+        
+        const themeName = advancedColorConfig.themeName || 'default';
+        
+        switch (advancedColorConfig.scaleType) {
+            case 'conditional':
+                return getConditionalColor(value, themeName, advancedColorConfig.neutralThreshold);
+            
+            case 'sequential':
+            case 'diverging':
+            case 'auto':
+                if (advancedColorConfig.customColorScale) {
+                    return advancedColorConfig.customColorScale(value);
+                }
+                
+                // Create appropriate color scale based on data
+                const colorScale = createWaterfallColorScale(
+                    allData.map(d => ({ value: d.barTotal })), 
+                    themeName, 
+                    advancedColorConfig.scaleType
+                );
+                return colorScale(value);
+            
+            default:
+                return defaultColor;
+        }
+    }
     
     // Performance configuration
     let enablePerformanceOptimization: boolean = false;
@@ -329,9 +457,24 @@ export function waterfallChart(): WaterfallChart {
                 return;
             }
 
-            const svg = d3.select(this);
+            // Handle both div containers and existing SVG elements
+            const element = d3.select(this);
+            let svg: any;
             
-            // Get actual SVG dimensions
+            if (this.tagName === 'svg') {
+                // Already an SVG element
+                svg = element;
+            } else {
+                // Container element (div) - create or select SVG
+                svg = element.selectAll('svg').data([0]);
+                const svgEnter = svg.enter().append('svg');
+                svg = svgEnter.merge(svg);
+                
+                // Set SVG dimensions
+                svg.attr('width', width).attr('height', height);
+            }
+            
+            // Get actual SVG dimensions from attributes if available
             const svgNode = svg.node() as SVGSVGElement;
             if (svgNode) {
                 const svgWidth = svgNode.getAttribute('width');
@@ -340,9 +483,9 @@ export function waterfallChart(): WaterfallChart {
                 if (svgHeight) height = parseInt(svgHeight, 10);
             }
             
-            console.log('Chart dimensions:', { width, height });
+            // Chart dimensions set
             
-            const container = svg.selectAll<SVGGElement, ChartData[]>(".waterfall-container").data([data]);
+            const container = svg.selectAll(".waterfall-container").data([data]);
             
             // Store reference for zoom system
             const svgContainer = svg;
@@ -355,10 +498,10 @@ export function waterfallChart(): WaterfallChart {
             const containerUpdate = containerEnter.merge(container);
             
             // Create chart group for zoom transforms
-            let chartGroup: d3.Selection<SVGGElement, ChartData[], any, unknown> = containerUpdate.select(".chart-group");
+            let chartGroup: any = containerUpdate.select(".chart-group");
             if (chartGroup.empty()) {
-                chartGroup = containerUpdate.append<SVGGElement>("g")
-                    .attr("class", "chart-group") as d3.Selection<SVGGElement, ChartData[], any, unknown>;
+                chartGroup = containerUpdate.append("g")
+                    .attr("class", "chart-group");
             }
 
             // Add clipping path to prevent overflow - this will be set after margins are calculated
@@ -386,7 +529,7 @@ export function waterfallChart(): WaterfallChart {
                 
                 if (dataHash === lastDataHash && cachedProcessedData) {
                     processedData = cachedProcessedData;
-                    console.log("MintWaterfall: Using cached processed data");
+                    // Using cached processed data
                 } else {
                     // Prepare data with cumulative calculations
                     if (data.length > 50000) {
@@ -403,12 +546,7 @@ export function waterfallChart(): WaterfallChart {
                     cachedProcessedData = processedData;
                 }
                 
-                console.log("🔧 processedData in chart:", processedData.map(d => ({
-                    label: d.label,
-                    barTotal: d.barTotal,
-                    cumulativeTotal: d.cumulativeTotal,
-                    stackCount: d.stacks?.length
-                })));
+                // Process data for chart rendering
                 
                 // Calculate intelligent margins based on data
                 const intelligentMargins = calculateIntelligentMargins(processedData, margin);
@@ -448,19 +586,9 @@ export function waterfallChart(): WaterfallChart {
                     .attr("width", width - intelligentMargins.left - intelligentMargins.right)
                     .attr("height", height - intelligentMargins.top - intelligentMargins.bottom + labelSpace);
                 
-                console.log('🔧 Clipping path set:', {
-                    x: intelligentMargins.left,
-                    y: Math.max(0, intelligentMargins.top - labelSpace),
-                    width: width - intelligentMargins.left - intelligentMargins.right,
-                    height: height - intelligentMargins.top - intelligentMargins.bottom + labelSpace
-                });
+                // Clipping path configured
                 
-                console.log('Scale setup:', {
-                    domain: xScale.domain(),
-                    range: xScale.range(),
-                    intelligentMargins,
-                    bandwidth: xScale.bandwidth ? xScale.bandwidth() : 'N/A'
-                });
+                // Scale configuration complete
 
                 // Enhanced Y scale using d3.extent and nice()
                 const yValues = processedData.map(d => d.cumulativeTotal);
@@ -499,6 +627,10 @@ export function waterfallChart(): WaterfallChart {
                 
                 // Create/update trend line (handles both show and hide cases)
                 drawTrendLine(chartGroup, processedData, xScale, yScale);
+                
+                // NEW: Draw advanced features
+                drawConfidenceBands(chartGroup, processedData, xScale, yScale);
+                drawMilestones(chartGroup, processedData, xScale, yScale);
                 
                 // Add brush functionality if enabled
                 if (enableBrush) {
@@ -637,13 +769,7 @@ export function waterfallChart(): WaterfallChart {
             left: baseMargin.left
         };
         
-        console.log('🔧 Intelligent margins calculated:', {
-            original: baseMargin,
-            calculated: intelligentMargin,
-            highestLabelPosition,
-            spaceNeededFromTop,
-            extraTopMarginNeeded
-        });
+        // Intelligent margins calculated
         
         return intelligentMargin;
     }
@@ -822,7 +948,7 @@ export function waterfallChart(): WaterfallChart {
         if (stacked) {
             drawStackedBars(barGroupsUpdate, xScale, yScale, intelligentMargins);
         } else {
-            drawWaterfallBars(barGroupsUpdate, xScale, yScale, intelligentMargins);
+            drawWaterfallBars(barGroupsUpdate, xScale, yScale, intelligentMargins, processedData);
         }
 
         // Add value labels
@@ -915,16 +1041,20 @@ export function waterfallChart(): WaterfallChart {
         });
     }
 
-    function drawWaterfallBars(barGroups: any, xScale: any, yScale: any, intelligentMargins: MarginConfig): void {
+    function drawWaterfallBars(barGroups: any, xScale: any, yScale: any, intelligentMargins: MarginConfig, allData: ProcessedData[] = []): void {
         barGroups.each(function(this: SVGGElement, d: any) {
             const group = d3.select(this);
             
             // Get bar width - use scale bandwidth if available, otherwise calculate using intelligent margins
             const barWidth = xScale.bandwidth ? xScale.bandwidth() : getBarWidth(xScale, barGroups.size(), width - intelligentMargins.left - intelligentMargins.right);
             
+            // Determine bar color using advanced color features
+            const defaultColor = d.stacks.length === 1 ? d.stacks[0].color : "#3498db";
+            const advancedColor = getAdvancedBarColor(d.barTotal, defaultColor, allData);
+            
             const barData = [{
                 value: d.barTotal,
-                color: d.stacks.length === 1 ? d.stacks[0].color : "#3498db", // Default blue if multiple stacks
+                color: advancedColor,
                 y: d.isTotal ? 
                     Math.min(yScale(0), yScale(d.cumulativeTotal)) : // Total bar: position correctly regardless of scale direction
                     yScale(Math.max(d.prevCumulativeTotal, d.cumulativeTotal)),
@@ -966,13 +1096,13 @@ export function waterfallChart(): WaterfallChart {
 
     function drawValueLabels(barGroups: any, xScale: any, yScale: any, intelligentMargins: MarginConfig): void {
         // Always show value labels on bars - this is independent of the total bar setting
-        console.log('🏷️ Drawing value labels, barGroups size:', barGroups.size());
+        // Drawing value labels
 
         barGroups.each(function(this: SVGGElement, d: any) {
             const group = d3.select(this);
             const barWidth = getBarWidth(xScale, barGroups.size(), width - intelligentMargins.left - intelligentMargins.right);
             
-            console.log('🏷️ Processing label for:', d.label, 'barTotal:', d.barTotal, 'cumulativeTotal:', d.cumulativeTotal);
+            // Processing label for bar
             
             const labelData = [{
                 value: d.barTotal,
@@ -1002,13 +1132,7 @@ export function waterfallChart(): WaterfallChart {
                     const padding = 8;
                     const finalY = barTop - padding;
                     
-                    console.log('🏷️ Label positioning:', {
-                        label: labelD.parent.label,
-                        cumulativeTotal: labelD.parent.cumulativeTotal,
-                        barTop: barTop,
-                        finalY: finalY,
-                        formattedValue: labelD.formattedValue
-                    });
+                    // Label positioning calculated
                     
                     return finalY;
                 })
@@ -1023,17 +1147,7 @@ export function waterfallChart(): WaterfallChart {
                 .attr("clip-path", "none") // Remove any clipping from labels themselves
                 .text((labelD: any) => labelD.formattedValue)
                 .each(function(this: SVGTextElement, labelD: any) {
-                    // Debug: Log each created label element
-                    const element = d3.select(this);
-                    console.log('🏷️ Label element created:', {
-                        text: labelD.formattedValue,
-                        x: element.attr("x"),
-                        y: element.attr("y"),
-                        opacity: element.style("opacity"),
-                        fill: element.style("fill"),
-                        fontSize: element.style("font-size"),
-                        element: this
-                    });
+                    // Label element created
                 });
 
             totalLabels.exit()
@@ -1616,11 +1730,179 @@ export function waterfallChart(): WaterfallChart {
         return chart;
     } as any;
 
+    // NEW: Advanced color and shape feature methods
+    chart.advancedColors = function(_?: AdvancedColorConfig): AdvancedColorConfig | WaterfallChart {
+        return arguments.length ? (advancedColorConfig = { ...advancedColorConfig, ..._! }, chart) : advancedColorConfig;
+    } as any;
+
+    chart.enableAdvancedColors = function(_?: boolean): boolean | WaterfallChart {
+        return arguments.length ? (advancedColorConfig.enabled = _!, chart) : advancedColorConfig.enabled;
+    } as any;
+
+    chart.colorScaleType = function(_?: 'auto' | 'sequential' | 'diverging' | 'conditional'): 'auto' | 'sequential' | 'diverging' | 'conditional' | WaterfallChart {
+        return arguments.length ? (advancedColorConfig.scaleType = _!, chart) : advancedColorConfig.scaleType;
+    } as any;
+
+    chart.confidenceBands = function(_?: ConfidenceBandConfig): ConfidenceBandConfig | WaterfallChart {
+        return arguments.length ? (confidenceBandConfig = { ...confidenceBandConfig, ..._! }, chart) : confidenceBandConfig;
+    } as any;
+
+    chart.enableConfidenceBands = function(_?: boolean): boolean | WaterfallChart {
+        return arguments.length ? (confidenceBandConfig.enabled = _!, chart) : confidenceBandConfig.enabled;
+    } as any;
+
+    chart.milestones = function(_?: MilestoneConfig): MilestoneConfig | WaterfallChart {
+        return arguments.length ? (milestoneConfig = { ...milestoneConfig, ..._! }, chart) : milestoneConfig;
+    } as any;
+
+    chart.enableMilestones = function(_?: boolean): boolean | WaterfallChart {
+        return arguments.length ? (milestoneConfig.enabled = _!, chart) : milestoneConfig.enabled;
+    } as any;
+
+    chart.addMilestone = function(milestone: {label: string, value: number, type: 'target' | 'threshold' | 'alert' | 'achievement', description?: string}): WaterfallChart {
+        milestoneConfig.milestones.push(milestone);
+        return chart;
+    } as any;
+
     // Event handling methods
     chart.on = function(): any {
         const value = (listeners.on as any).apply(listeners, Array.from(arguments));
         return value === listeners ? chart : value;
     };
+
+    // NEW: Advanced feature rendering functions
+    function drawConfidenceBands(container: any, processedData: ProcessedData[], xScale: any, yScale: any): void {
+        if (!confidenceBandConfig.enabled || !confidenceBandConfig.scenarios) return;
+
+        // Create confidence bands group
+        const confidenceGroup = container.selectAll(".confidence-bands-group").data([0]);
+        const confidenceGroupEnter = confidenceGroup.enter()
+            .append("g")
+            .attr("class", "confidence-bands-group");
+
+        const confidenceGroupUpdate = confidenceGroupEnter.merge(confidenceGroup);
+
+        // Generate confidence band data using the waterfall-specific utility
+        const confidenceBandData = createWaterfallConfidenceBands(
+            processedData.map(d => ({ label: d.label, value: d.barTotal })),
+            confidenceBandConfig.scenarios,
+            xScale,
+            yScale
+        );
+
+        // Render confidence band
+        const confidencePath = confidenceGroupUpdate.selectAll(".confidence-band").data([confidenceBandData.confidencePath]);
+        
+        const confidencePathEnter = confidencePath.enter()
+            .append("path")
+            .attr("class", "confidence-band")
+            .attr("fill", `rgba(52, 152, 219, ${confidenceBandConfig.opacity || 0.3})`)
+            .attr("stroke", "none")
+            .style("opacity", 0);
+
+        confidencePathEnter.merge(confidencePath)
+            .transition()
+            .duration(duration)
+            .ease(ease)
+            .attr("d", confidenceBandData.confidencePath)
+            .style("opacity", 1);
+
+        // Render trend lines if enabled
+        if (confidenceBandConfig.showTrendLines) {
+            // Optimistic trend line
+            const optimisticPath = confidenceGroupUpdate.selectAll(".optimistic-trend").data([confidenceBandData.optimisticPath]);
+            
+            const optimisticPathEnter = optimisticPath.enter()
+                .append("path")
+                .attr("class", "optimistic-trend")
+                .attr("fill", "none")
+                .attr("stroke", "#27ae60")
+                .attr("stroke-width", 2)
+                .attr("stroke-dasharray", "5,5")
+                .style("opacity", 0);
+
+            optimisticPathEnter.merge(optimisticPath)
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .attr("d", confidenceBandData.optimisticPath)
+                .style("opacity", 0.8);
+
+            // Pessimistic trend line
+            const pessimisticPath = confidenceGroupUpdate.selectAll(".pessimistic-trend").data([confidenceBandData.pessimisticPath]);
+            
+            const pessimisticPathEnter = pessimisticPath.enter()
+                .append("path")
+                .attr("class", "pessimistic-trend")
+                .attr("fill", "none")
+                .attr("stroke", "#e74c3c")
+                .attr("stroke-width", 2)
+                .attr("stroke-dasharray", "5,5")
+                .style("opacity", 0);
+
+            pessimisticPathEnter.merge(pessimisticPath)
+                .transition()
+                .duration(duration)
+                .ease(ease)
+                .attr("d", confidenceBandData.pessimisticPath)
+                .style("opacity", 0.8);
+        }
+
+        // Remove old elements
+        confidencePath.exit()
+            .transition()
+            .duration(duration)
+            .style("opacity", 0)
+            .remove();
+    }
+
+    function drawMilestones(container: any, processedData: ProcessedData[], xScale: any, yScale: any): void {
+        if (!milestoneConfig.enabled || milestoneConfig.milestones.length === 0) return;
+
+        // Create milestones group
+        const milestonesGroup = container.selectAll(".milestones-group").data([0]);
+        const milestonesGroupEnter = milestonesGroup.enter()
+            .append("g")
+            .attr("class", "milestones-group");
+
+        const milestonesGroupUpdate = milestonesGroupEnter.merge(milestonesGroup);
+
+        // Generate milestone markers using the waterfall-specific utility
+        const milestoneMarkers = createWaterfallMilestones(
+            milestoneConfig.milestones,
+            xScale,
+            yScale
+        );
+
+        // Render milestone markers
+        const markers = milestonesGroupUpdate.selectAll(".milestone-marker").data(milestoneMarkers);
+        
+        const markersEnter = markers.enter()
+            .append("path")
+            .attr("class", "milestone-marker")
+            .attr("transform", (d: any) => d.transform)
+            .attr("d", (d: any) => d.path)
+            .attr("fill", (d: any) => d.config.fillColor || "#f39c12")
+            .attr("stroke", (d: any) => d.config.strokeColor || "#ffffff")
+            .attr("stroke-width", (d: any) => d.config.strokeWidth || 2)
+            .style("opacity", 0);
+
+        markersEnter.merge(markers)
+            .transition()
+            .duration(duration)
+            .ease(ease)
+            .attr("transform", (d: any) => d.transform)
+            .attr("d", (d: any) => d.path)
+            .attr("fill", (d: any) => d.config.fillColor || "#f39c12")
+            .style("opacity", 1);
+
+        // Remove old markers
+        markers.exit()
+            .transition()
+            .duration(duration)
+            .style("opacity", 0)
+            .remove();
+    }
 
     return chart as WaterfallChart;
 }

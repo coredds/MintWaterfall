@@ -5,7 +5,8 @@ export default [
     ignores: [
       "dist/**",
       "node_modules/**",
-      "coverage/**"
+      "coverage/**",
+      "build/**"
     ],
     languageOptions: {
       ecmaVersion: 2021,
