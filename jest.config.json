@@ -9,15 +9,31 @@
   "collectCoverage": true,
   "coverageDirectory": "coverage",
   "coverageReporters": ["text", "lcov", "html"],
-  "moduleFileExtensions": ["js", "json"],
+  "collectCoverageFrom": [
+    "src/**/*.{js,ts}",
+    "!src/**/*.d.ts",
+    "!src/**/__tests__/**",
+    "!src/**/__mocks__/**"
+  ],
+  "coveragePathIgnorePatterns": [
+    "/node_modules/",
+    "/dist/",
+    "/coverage/",
+    "d3-.*"
+  ],
+  "moduleFileExtensions": ["js", "ts", "json"],
   "transform": {
-    "^.+\\.js$": "babel-jest"
+    "^.+\\.(js|ts)$": "babel-jest"
   },
   "transformIgnorePatterns": [
-    "node_modules/(?!(d3|d3-.*)/)"
+    "node_modules/(?!(d3|d3-.*|internmap)/)"
   ],
   "moduleNameMapper": {
-    "^d3$": "<rootDir>/tests/__mocks__/d3.js"
+    "^d3$": "<rootDir>/tests/__mocks__/d3.js",
+    "^../dist/mintwaterfall\\.esm\\.js$": "<rootDir>/src/index.js",
+    "^../dist/mintwaterfall\\.cjs\\.js$": "<rootDir>/src/index.js",
+    "^../dist/mintwaterfall\\.umd\\.js$": "<rootDir>/src/index.js",
+    "^\\./mintwaterfall-(.+)\\.js$": "./mintwaterfall-$1.ts"
   },
   "globals": {
     "__DEV__": true

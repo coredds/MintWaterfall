@@ -39,7 +39,7 @@ export {
     getConditionalColor,
     createWaterfallColorScale,
     interpolateThemeColor,
-    getEnhancedColorPalette
+    getAdvancedBarColor
 } from "./mintwaterfall-themes.ts";
 
 export { 

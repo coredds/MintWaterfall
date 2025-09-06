@@ -2,6 +2,7 @@
 // Provides WCAG 2.1 AA compliance features for screen readers and keyboard navigation with full type safety
 
 import * as d3 from 'd3';
+import { rgb } from 'd3-color';
 
 // Type definitions for accessibility system
 export interface AccessibilityConfig {
@@ -210,7 +211,9 @@ export function createAccessibilitySystem(): AccessibilitySystem {
         });
         
         // Store focusable elements
-        focusableElements = bars.nodes().filter(node => node !== null);
+        focusableElements = bars && bars.nodes && typeof bars.nodes === 'function' 
+            ? bars.nodes().filter(node => node !== null) 
+            : [];
         
         return {
             bars,
@@ -220,6 +223,10 @@ export function createAccessibilitySystem(): AccessibilitySystem {
     
     // Create ARIA label for individual bars
     function createBarAriaLabel(data: WaterfallDataItem, index: number, config: AccessibilityConfig = {}): string {
+        if (!data || !data.stacks || !Array.isArray(data.stacks)) {
+            return `Item ${index + 1}: Invalid data`;
+        }
+        
         const totalValue = data.stacks.reduce((sum, stack) => sum + stack.value, 0);
         const stackCount = data.stacks.length;
         const formatNumber = config.formatNumber || ((n: number) => n.toString());
@@ -579,8 +586,9 @@ export function createAccessibilitySystem(): AccessibilitySystem {
         // In production, use a proper color contrast library
         const getLuminance = (color: string): number => {
             // This is a simplified version - use a proper color library
-            const rgb = d3.rgb(color);
-            return (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+            const colorRgb = rgb(color);
+            if (!colorRgb) return 0;
+            return (0.299 * colorRgb.r + 0.587 * colorRgb.g + 0.114 * colorRgb.b) / 255;
         };
         
         const l1 = getLuminance(foreground);

@@ -2,6 +2,7 @@
 // Provides comprehensive statistical analysis features for waterfall chart data
 
 import * as d3 from 'd3';
+import { median, variance, deviation, quantile, bisector, ascending } from 'd3-array';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -12,17 +13,13 @@ export interface StatisticalSummary {
     sum: number;
     mean: number;
     median: number;
+    mode: number[];
     variance: number;
     standardDeviation: number;
     min: number;
     max: number;
     range: number;
-    quartiles: {
-        q1: number;
-        q2: number; // median
-        q3: number;
-        iqr: number; // interquartile range
-    };
+    quartiles: number[];
     percentiles: {
         p5: number;
         p10: number;
@@ -46,6 +43,15 @@ export interface OutlierAnalysis {
         index: number;
         label?: string;
     }>;
+    method: string;
+    threshold: any;
+    statistics: {
+        mean: number;
+        median: number;
+        q1: number;
+        q3: number;
+        iqr: number;
+    };
     summary: {
         totalOutliers: number;
         mildOutliers: number;
@@ -60,6 +66,7 @@ export interface DataQualityAssessment {
     accuracy: number; // percentage within expected range
     validity: number; // percentage of valid data types
     duplicates: number; // count of duplicate values
+    issues: string[];
     anomalies: OutlierAnalysis;
     recommendations: string[];
 }
@@ -68,6 +75,10 @@ export interface VarianceAnalysis {
     totalVariance: number;
     positiveVariance: number;
     negativeVariance: number;
+    withinGroupVariance: number;
+    betweenGroupVariance: number;
+    fStatistic: number;
+    significance: string;
     varianceContributions: Array<{
         label: string;
         value: number;
@@ -83,13 +94,25 @@ export interface VarianceAnalysis {
 
 export interface TrendAnalysis {
     slope: number;
+    intercept: number;
     correlation: number;
+    rSquared: number;
     direction: 'increasing' | 'decreasing' | 'stable';
-    strength: 'strong' | 'moderate' | 'weak';
+    strength: 'strong' | 'moderate' | 'weak' | 'none';
     confidence: number;
+    trend: 'increasing' | 'decreasing' | 'stable';
     projectedValues: Array<{
         period: number;
         value: number;
+        x: number;
+        y: number;
+        confidence: { lower: number; upper: number };
+    }>;
+    forecast: Array<{
+        period: number;
+        value: number;
+        x: number;
+        y: number;
         confidence: { lower: number; upper: number };
     }>;
 }
@@ -140,46 +163,79 @@ export function createStatisticalSystem(): StatisticalSystem {
         const cleanData = data.filter(d => d != null && !isNaN(d)).sort(d3.ascending);
         
         if (cleanData.length === 0) {
-            throw new Error('No valid data points for statistical analysis');
+            // Return empty statistical summary instead of throwing
+            return {
+                count: 0,
+                sum: 0,
+                mean: 0,
+                median: 0,
+                mode: [],
+                variance: 0,
+                standardDeviation: 0,
+                min: 0,
+                max: 0,
+                range: 0,
+                quartiles: [0, 0, 0],
+                percentiles: { p5: 0, p10: 0, p25: 0, p75: 0, p90: 0, p95: 0 }
+            };
         }
 
         const count = cleanData.length;
         const sum = d3.sum(cleanData);
         const mean = d3.mean(cleanData) || 0;
-        const median = d3.median(cleanData) || 0;
-        const variance = d3.variance(cleanData) || 0;
-        const standardDeviation = d3.deviation(cleanData) || 0;
+        const medianValue = median(cleanData) || 0;
+        const varianceValue = variance(cleanData) || 0;
+        const standardDeviation = deviation(cleanData) || 0;
         const min = d3.min(cleanData) || 0;
         const max = d3.max(cleanData) || 0;
         const range = max - min;
 
         // Calculate quartiles
-        const q1 = d3.quantile(cleanData, 0.25) || 0;
-        const q2 = median;
-        const q3 = d3.quantile(cleanData, 0.75) || 0;
+        const q1 = quantile(cleanData, 0.25) || 0;
+        const q2 = medianValue;
+        const q3 = quantile(cleanData, 0.75) || 0;
         const iqr = q3 - q1;
 
         // Calculate percentiles
         const percentiles = {
-            p5: d3.quantile(cleanData, 0.05) || 0,
-            p10: d3.quantile(cleanData, 0.10) || 0,
+            p5: quantile(cleanData, 0.05) || 0,
+            p10: quantile(cleanData, 0.10) || 0,
             p25: q1,
             p75: q3,
-            p90: d3.quantile(cleanData, 0.90) || 0,
-            p95: d3.quantile(cleanData, 0.95) || 0
+            p90: quantile(cleanData, 0.90) || 0,
+            p95: quantile(cleanData, 0.95) || 0
         };
+
+        // Calculate mode (most frequent value)
+        const valueFreq = new Map<number, number>();
+        cleanData.forEach(value => {
+            valueFreq.set(value, (valueFreq.get(value) || 0) + 1);
+        });
+        
+        let maxFreq = 0;
+        const modes: number[] = [];
+        valueFreq.forEach((freq, value) => {
+            if (freq > maxFreq) {
+                maxFreq = freq;
+                modes.length = 0;
+                modes.push(value);
+            } else if (freq === maxFreq) {
+                modes.push(value);
+            }
+        });
 
         return {
             count,
             sum,
             mean,
-            median,
-            variance,
+            median: medianValue,
+            mode: modes,
+            variance: varianceValue,
             standardDeviation,
             min,
             max,
             range,
-            quartiles: { q1, q2, q3, iqr },
+            quartiles: [q1, q2, q3],
             percentiles
         };
     }
@@ -190,7 +246,8 @@ export function createStatisticalSystem(): StatisticalSystem {
      */
     function detectOutliers(data: number[], labels: string[] = []): OutlierAnalysis {
         const summary = calculateSummary(data);
-        const { q1, q3, iqr } = summary.quartiles;
+        const [q1, q2, q3] = summary.quartiles;
+        const iqr = q3 - q1;
         
         // IQR method boundaries
         const lowerBound = q1 - 1.5 * iqr;
@@ -230,11 +287,20 @@ export function createStatisticalSystem(): StatisticalSystem {
         return {
             outliers,
             cleanData,
+            method: 'iqr',
+            threshold: { lowerBound, upperBound, extremeLowerBound, extremeUpperBound },
+            statistics: {
+                mean: summary.mean,
+                median: summary.median,
+                q1,
+                q3,
+                iqr
+            },
             summary: {
                 totalOutliers: outliers.length,
                 mildOutliers,
                 extremeOutliers,
-                outlierPercentage: (outliers.length / data.length) * 100
+                outlierPercentage: data.length > 0 ? (outliers.length / data.length) * 100 : 0
             }
         };
     }
@@ -265,22 +331,23 @@ export function createStatisticalSystem(): StatisticalSystem {
         // Analyze each data point
         data.forEach(item => {
             // Check for null/undefined
-            if (item == null) {
+            if (item == null || (item && item.value == null)) {
                 nullCount++;
                 return;
             }
 
             validCount++;
 
-            // Check data type
-            const itemType = typeof item;
+            // Check data type (check the value property if it exists, otherwise the item itself)
+            const valueToCheck = item && typeof item === 'object' && 'value' in item ? item.value : item;
+            const itemType = typeof valueToCheck;
             if (allowedTypes.includes(itemType)) {
                 typeValidCount++;
             }
 
             // Check range (for numbers)
-            if (typeof item === 'number' && expectedRange) {
-                if (item >= expectedRange[0] && item <= expectedRange[1]) {
+            if (itemType === 'number' && expectedRange) {
+                if (valueToCheck >= expectedRange[0] && valueToCheck <= expectedRange[1]) {
                     rangeValidCount++;
                 }
             } else if (!expectedRange) {
@@ -288,7 +355,7 @@ export function createStatisticalSystem(): StatisticalSystem {
             }
 
             // Check duplicates
-            const itemStr = JSON.stringify(item);
+            const itemStr = JSON.stringify(valueToCheck);
             if (seen.has(itemStr)) {
                 duplicates.add(itemStr);
             } else {
@@ -297,30 +364,38 @@ export function createStatisticalSystem(): StatisticalSystem {
         });
 
         // Calculate quality metrics
-        const completeness = ((totalCount - nullCount) / totalCount) * 100;
-        const validity = (typeValidCount / totalCount) * 100;
-        const accuracy = (rangeValidCount / totalCount) * 100;
+        const completeness = (totalCount - nullCount) / totalCount;
+        const validity = typeValidCount / totalCount;
+        const accuracy = rangeValidCount / totalCount;
         
         // Consistency (coefficient of variation for numeric data)
         const numericData = data.filter(d => typeof d === 'number' && !isNaN(d));
         const cv = numericData.length > 0 ? 
-            (d3.deviation(numericData) || 0) / (d3.mean(numericData) || 1) : 0;
+            (deviation(numericData) || 0) / (d3.mean(numericData) || 1) : 0;
         const consistency = Math.max(0, 100 - (cv * 100)); // Invert CV for consistency score
 
         // Outlier analysis for numeric data
         const anomalies = numericData.length > 0 ? 
             detectOutliers(numericData) : 
-            { outliers: [], cleanData: [], summary: { totalOutliers: 0, mildOutliers: 0, extremeOutliers: 0, outlierPercentage: 0 } };
+            { 
+                outliers: [], 
+                cleanData: [], 
+                method: 'None - No numeric data',
+                threshold: {},
+                statistics: { mean: 0, median: 0, q1: 0, q3: 0, iqr: 0 },
+                summary: { totalOutliers: 0, mildOutliers: 0, extremeOutliers: 0, outlierPercentage: 0 } 
+            };
 
         // Generate recommendations
         const recommendations: string[] = [];
-        if (completeness < (1 - nullTolerance) * 100) {
+        if (completeness < (1 - nullTolerance)) {
             recommendations.push(`Improve data completeness: ${nullCount} missing values detected`);
+            recommendations.push('Remove or impute missing values');
         }
-        if (validity < 95) {
+        if (validity < 0.95) {
             recommendations.push(`Validate data types: ${totalCount - typeValidCount} invalid types found`);
         }
-        if (accuracy < 90 && expectedRange) {
+        if (accuracy < 0.90 && expectedRange) {
             recommendations.push(`Check data accuracy: ${totalCount - rangeValidCount} values outside expected range`);
         }
         if (duplicates.size > duplicateTolerance * totalCount) {
@@ -330,12 +405,31 @@ export function createStatisticalSystem(): StatisticalSystem {
             recommendations.push(`Investigate outliers: ${anomalies.summary.totalOutliers} outliers detected (${anomalies.summary.outlierPercentage.toFixed(1)}%)`);
         }
 
+        // Generate issues list
+        const issues: string[] = [];
+        if (nullCount > 0) {
+            issues.push(`${nullCount} null or missing values found`);
+        }
+        if (totalCount - typeValidCount > 0) {
+            issues.push(`${totalCount - typeValidCount} invalid data types found`);
+        }
+        if (expectedRange && totalCount - rangeValidCount > 0) {
+            issues.push(`${totalCount - rangeValidCount} values outside expected range`);
+        }
+        if (duplicates.size > 0) {
+            issues.push(`${duplicates.size} duplicate values found`);
+        }
+        if (anomalies.summary.totalOutliers > 0) {
+            issues.push(`${anomalies.summary.totalOutliers} outliers detected`);
+        }
+
         return {
             completeness,
             consistency,
             accuracy,
             validity,
             duplicates: duplicates.size,
+            issues,
             anomalies,
             recommendations
         };
@@ -351,14 +445,14 @@ export function createStatisticalSystem(): StatisticalSystem {
      */
     function analyzeVariance(data: Array<{label: string, value: number}>): VarianceAnalysis {
         const values = data.map(d => d.value);
-        const totalVariance = d3.variance(values) || 0;
+        const totalVariance = variance(values) || 0;
         
         // Separate positive and negative contributions
         const positiveValues = values.filter(v => v > 0);
         const negativeValues = values.filter(v => v < 0);
         
-        const positiveVariance = positiveValues.length > 0 ? (d3.variance(positiveValues) || 0) : 0;
-        const negativeVariance = negativeValues.length > 0 ? (d3.variance(negativeValues) || 0) : 0;
+        const positiveVariance = positiveValues.length > 0 ? (variance(positiveValues) || 0) : 0;
+        const negativeVariance = negativeValues.length > 0 ? (variance(negativeValues) || 0) : 0;
 
         // Calculate individual contributions
         const mean = d3.mean(values) || 0;
@@ -382,10 +476,63 @@ export function createStatisticalSystem(): StatisticalSystem {
             variance: item.variance
         }));
 
+        // Calculate additional statistical measures for ANOVA-style analysis
+        const groupMean = d3.mean(values) || 0;
+        
+        // Group data by categories (try to extract category from label, fallback to positive/negative)
+        const categoryGroups = new Map();
+        data.forEach(item => {
+            // Try to extract category from label (e.g., "A1" -> "A", "Category1" -> "Category")
+            const category = item.label.match(/^([A-Za-z]+)/)?.[1] || 
+                           (item.value > 0 ? 'positive' : 'negative');
+            
+            if (!categoryGroups.has(category)) {
+                categoryGroups.set(category, []);
+            }
+            categoryGroups.get(category).push(item.value);
+        });
+        
+        const groups = Array.from(categoryGroups.entries()).map(([name, values]) => ({
+            name, values
+        })).filter(g => g.values.length > 0);
+        
+        // Calculate between-group variance
+        let betweenGroupVariance = 0;
+        if (groups.length > 1) {
+            const groupMeans = groups.map(g => d3.mean(g.values) || 0);
+            const groupSizes = groups.map(g => g.values.length);
+            const totalSize = values.length;
+            
+            betweenGroupVariance = groups.reduce((sum, group, i) => {
+                const groupMeanValue = groupMeans[i];
+                const groupSize = groupSizes[i];
+                return sum + (groupSize * Math.pow(groupMeanValue - groupMean, 2));
+            }, 0) / (groups.length - 1);
+        }
+        
+        // Within-group variance
+        const withinGroupVariance = groups.length > 0 ? 
+            groups.reduce((sum, group) => {
+                const groupVar = variance(group.values) || 0;
+                return sum + (groupVar * (group.values.length - 1));
+            }, 0) / Math.max(1, values.length - groups.length) : totalVariance;
+        
+        // F-statistic for variance analysis
+        const fStatistic = betweenGroupVariance > 0 && withinGroupVariance > 0 ? 
+            betweenGroupVariance / withinGroupVariance : 0;
+        
+        // Significance level (simplified p-value approximation)
+        const significance = fStatistic > 4 ? 'significant' : 
+                           fStatistic > 2 ? 'moderate' : 'not significant';
+
         return {
             totalVariance,
             positiveVariance,
             negativeVariance,
+            withinGroupVariance,
+            betweenGroupVariance,
+            fStatistic,
+            significance,
             varianceContributions,
             significantFactors
         };
@@ -397,7 +544,19 @@ export function createStatisticalSystem(): StatisticalSystem {
      */
     function analyzeTrend(data: Array<{x: number, y: number}>): TrendAnalysis {
         if (data.length < 2) {
-            throw new Error('At least 2 data points required for trend analysis');
+            // Return empty trend analysis instead of throwing
+            return {
+                slope: 0,
+                intercept: 0,
+                correlation: 0,
+                rSquared: 0,
+                direction: 'stable',
+                strength: 'none',
+                confidence: 0,
+                trend: 'stable',
+                projectedValues: [],
+                forecast: []
+            };
         }
 
         const xValues = data.map(d => d.x);
@@ -420,8 +579,8 @@ export function createStatisticalSystem(): StatisticalSystem {
         const slope = denominator !== 0 ? numerator / denominator : 0;
         
         // Calculate correlation coefficient
-        const xStd = d3.deviation(xValues) || 0;
-        const yStd = d3.deviation(yValues) || 0;
+        const xStd = deviation(xValues) || 0;
+        const yStd = deviation(yValues) || 0;
         const correlation = (xStd * yStd) !== 0 ? numerator / (Math.sqrt(denominator) * yStd * Math.sqrt(data.length - 1)) : 0;
         
         // Determine trend characteristics
@@ -435,11 +594,13 @@ export function createStatisticalSystem(): StatisticalSystem {
         const projectedValues = Array.from({ length: 3 }, (_, i) => {
             const period = lastX + (i + 1);
             const value = yMean + slope * (period - xMean);
-            const standardError = Math.sqrt(d3.variance(yValues) || 0) / Math.sqrt(data.length);
+            const standardError = Math.sqrt(variance(yValues) || 0) / Math.sqrt(data.length);
             
             return {
                 period,
                 value,
+                x: period, // alias for backward compatibility
+                y: value,  // alias for backward compatibility
                 confidence: {
                     lower: value - (1.96 * standardError),
                     upper: value + (1.96 * standardError)
@@ -447,13 +608,21 @@ export function createStatisticalSystem(): StatisticalSystem {
             };
         });
 
+        // Calculate intercept and R-squared
+        const intercept = yMean - slope * xMean;
+        const rSquared = correlation * correlation;
+
         return {
             slope,
+            intercept,
             correlation,
+            rSquared,
             direction,
             strength,
             confidence,
-            projectedValues
+            trend: direction, // alias for backward compatibility
+            projectedValues,
+            forecast: projectedValues // alias for backward compatibility
         };
     }
 
@@ -466,7 +635,7 @@ export function createStatisticalSystem(): StatisticalSystem {
      * Uses D3.js bisector for O(log n) lookups
      */
     function createBisector<T>(accessor: (d: T) => number): d3.Bisector<T, number> {
-        return d3.bisector(accessor);
+        return bisector(accessor);
     }
 
     /**
@@ -475,7 +644,7 @@ export function createStatisticalSystem(): StatisticalSystem {
      */
     function createSearch<T>(data: T[], accessor: (d: T) => number): (value: number) => T | undefined {
         const bisector = createBisector(accessor);
-        const sortedData = [...data].sort((a, b) => d3.ascending(accessor(a), accessor(b)));
+        const sortedData = [...data].sort((a, b) => ascending(accessor(a), accessor(b)));
         
         return (value: number): T | undefined => {
             const index = bisector.left(sortedData, value);
@@ -502,8 +671,8 @@ export function createStatisticalSystem(): StatisticalSystem {
      * Calculate moving average with configurable window
      */
     function calculateMovingAverage(data: number[], window: number): number[] {
-        if (window <= 0 || window > data.length) {
-            throw new Error('Invalid window size for moving average');
+        if (window <= 0 || window > data.length || data.length === 0) {
+            return []; // Return empty array instead of throwing
         }
 
         const result: number[] = [];
@@ -519,8 +688,8 @@ export function createStatisticalSystem(): StatisticalSystem {
      * Calculate exponential smoothing
      */
     function calculateExponentialSmoothing(data: number[], alpha: number): number[] {
-        if (alpha < 0 || alpha > 1) {
-            throw new Error('Alpha must be between 0 and 1');
+        if (alpha < 0 || alpha > 1 || data.length === 0) {
+            return []; // Return empty array instead of throwing
         }
 
         const result: number[] = [];

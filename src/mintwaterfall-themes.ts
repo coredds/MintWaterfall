@@ -265,39 +265,127 @@ export function createWaterfallColorScale(
 export function interpolateThemeColor(
     value: number,
     domain: [number, number],
+    themeName: keyof ThemeCollection = "default"
+): string {
+    const theme = themes[themeName] || themes.default;
+    const interpolator = theme.sequentialScale?.interpolator || d3.interpolateBlues;
+    
+    const normalizedValue = (value - domain[0]) / (domain[1] - domain[0]);
+    return interpolator(Math.max(0, Math.min(1, normalizedValue)));
+}
+
+/**
+ * Get advanced bar color based on value, context, and theme
+ * This is the main function for determining bar colors with advanced features
+ */
+export function getAdvancedBarColor(
+    value: number,
+    defaultColor: string,
+    allData: Array<{barTotal?: number; value?: number}> = [],
     themeName: keyof ThemeCollection = "default",
-    scaleType: 'sequential' | 'diverging' = 'sequential'
+    colorMode: 'default' | 'conditional' | 'sequential' | 'diverging' = 'conditional'
 ): string {
     const theme = themes[themeName] || themes.default;
     
-    if (scaleType === 'diverging') {
-        const maxAbs = Math.max(Math.abs(domain[0]), Math.abs(domain[1]));
-        const interpolator = theme.divergingScale?.interpolator || d3.interpolateRdYlBu;
-        const normalizedValue = value / maxAbs; // Normalize to [-1, 1]
-        return interpolator((normalizedValue + 1) / 2); // Convert to [0, 1] for interpolator
-    } else {
-        const interpolator = theme.sequentialScale?.interpolator || d3.interpolateBlues;
-        const normalizedValue = (value - domain[0]) / (domain[1] - domain[0]);
-        return interpolator(Math.max(0, Math.min(1, normalizedValue)));
+    switch (colorMode) {
+        case 'conditional':
+            return getConditionalColor(value, themeName);
+            
+        case 'sequential':
+            if (allData.length > 0) {
+                const values = allData.map(d => d.barTotal || d.value || 0);
+                const domain = d3.extent(values) as [number, number];
+                return interpolateThemeColor(value, domain, themeName);
+            }
+            return defaultColor;
+            
+        case 'diverging':
+            if (allData.length > 0) {
+                const values = allData.map(d => d.barTotal || d.value || 0);
+                const maxAbs = Math.max(...values.map(Math.abs));
+                const scale = createDivergingScale([-maxAbs, 0, maxAbs], themeName);
+                return scale(value);
+            }
+            return getConditionalColor(value, themeName);
+            
+        default:
+            return defaultColor;
     }
 }
 
 /**
- * Get enhanced color palette with interpolated values
- * Creates a smooth color progression for data visualization
+ * Create professional financial color schemes for waterfall charts
  */
-export function getEnhancedColorPalette(
-    steps: number = 10,
-    themeName: keyof ThemeCollection = "default",
-    scaleType: 'sequential' | 'diverging' = 'sequential'
-): string[] {
-    const theme = themes[themeName] || themes.default;
-    const interpolator = scaleType === 'diverging' 
-        ? (theme.divergingScale?.interpolator || d3.interpolateRdYlBu)
-        : (theme.sequentialScale?.interpolator || d3.interpolateBlues);
+export const financialThemes: Partial<ThemeCollection> = {
+    financial: {
+        name: "Financial",
+        background: "#ffffff",
+        gridColor: "#f5f5f5",
+        axisColor: "#333333",
+        textColor: "#333333",
+        totalColor: "#2c3e50",
+        colors: ["#27ae60", "#e74c3c", "#3498db", "#f39c12", "#9b59b6"],
+        sequentialScale: {
+            type: 'sequential',
+            interpolator: d3.interpolateRdYlGn
+        },
+        divergingScale: {
+            type: 'diverging',
+            interpolator: d3.interpolateRdYlGn
+        },
+        conditionalFormatting: {
+            positive: "#27ae60",  // Strong green for profits
+            negative: "#e74c3c",  // Strong red for losses
+            neutral: "#95a5a6"    // Neutral gray
+        }
+    },
     
-    return Array.from({ length: steps }, (_, i) => {
-        const t = i / (steps - 1);
-        return interpolator(t);
-    });
-}
+    professional: {
+        name: "Professional",
+        background: "#ffffff",
+        gridColor: "#e8e8e8",
+        axisColor: "#444444",
+        textColor: "#333333",
+        totalColor: "#2c3e50",
+        colors: ["#1f4e79", "#2e75b6", "#70ad47", "#ffc000", "#c55a11"],
+        sequentialScale: {
+            type: 'sequential',
+            interpolator: (t: number) => d3.interpolateHsl("#f0f8ff", "#1f4e79")(t)
+        },
+        divergingScale: {
+            type: 'diverging',
+            interpolator: d3.interpolateRdYlBu
+        },
+        conditionalFormatting: {
+            positive: "#70ad47",  // Professional green
+            negative: "#c55a11",  // Professional orange-red
+            neutral: "#7f8c8d"    // Professional gray
+        }
+    },
+    
+    heatmap: {
+        name: "Heat Map",
+        background: "#ffffff",
+        gridColor: "#f0f0f0",
+        axisColor: "#333333",
+        textColor: "#333333",
+        totalColor: "#2c3e50",
+        colors: ["#ffffcc", "#ffeda0", "#fed976", "#feb24c", "#fd8d3c", "#fc4e2a", "#e31a1c", "#bd0026", "#800026"],
+        sequentialScale: {
+            type: 'sequential',
+            interpolator: d3.interpolateYlOrRd
+        },
+        divergingScale: {
+            type: 'diverging',
+            interpolator: d3.interpolateRdYlBu
+        },
+        conditionalFormatting: {
+            positive: "#2ca02c",
+            negative: "#d62728",
+            neutral: "#ff7f0e"
+        }
+    }
+};
+
+// Merge financial themes with existing themes
+Object.assign(themes, financialThemes);

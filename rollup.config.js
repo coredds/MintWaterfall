@@ -10,16 +10,35 @@ const banner = `/*!
  * Released under the MIT License
  */`;
 
-const external = ["d3"];
-const globals = { d3: "d3" };
+const external = (id) => {
+  return id === "d3" || id.startsWith("d3-");
+};
+const globals = { 
+  d3: "d3",
+  "d3-array": "d3",
+  "d3-drag": "d3", 
+  "d3-force": "d3",
+  "d3-color": "d3",
+  "d3-selection": "d3"
+};
 
 const plugins = [
-  resolve(),
+  resolve({
+    preferBuiltins: false,
+    browser: true
+  }),
   typescript({
     tsconfig: "./tsconfig.json",
-    exclude: ["**/*.test.ts", "**/*.test.js", "tests/**/*"]
+    exclude: ["**/*.test.ts", "**/*.test.js", "tests/**/*"],
+    compilerOptions: {
+      declaration: false,
+      declarationMap: false,
+      sourceMap: false
+    }
   }),
-  cleanup()
+  cleanup({
+    comments: "none"
+  })
 ];
 
 const minifiedPlugins = [
@@ -39,8 +58,7 @@ export default [
     output: {
       file: "dist/mintwaterfall.esm.js",
       format: "es",
-      banner,
-      sourcemap: true
+      banner
     },
     plugins
   },
@@ -55,7 +73,6 @@ export default [
       name: "MintWaterfall",
       globals,
       banner,
-      sourcemap: true,
       exports: "named"
     },
     plugins
@@ -71,7 +88,6 @@ export default [
       name: "MintWaterfall",
       globals,
       banner,
-      sourcemap: true,
       exports: "named"
     },
     plugins: minifiedPlugins
@@ -85,7 +101,6 @@ export default [
       file: "dist/mintwaterfall.cjs.js",
       format: "cjs",
       banner,
-      sourcemap: true,
       exports: "named"
     },
     plugins

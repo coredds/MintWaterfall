@@ -219,6 +219,60 @@
         <p>MEDIUM PRIORITY D3.js Features: Advanced Data Manipulation, Sophisticated Interactions & Hierarchical Layouts</p>
     </div>
 
+    <!-- Advanced Color Scales Demo -->
+    <div class="demo-section">
+        <h2 class="demo-title">🎨 Advanced Color Scales & Themes</h2>
+        <p class="demo-description">
+            Professional <strong>sequential</strong>, <strong>diverging</strong>, and <strong>conditional formatting</strong> color scales 
+            with multiple theme options for enhanced waterfall visualization and financial data presentation.
+        </p>
+
+        <div class="controls">
+            <button onclick="enableConditionalColors()">Conditional Formatting</button>
+            <button onclick="enableSequentialColors()">Sequential Scale</button>
+            <button onclick="enableDivergingColors()">Diverging Scale</button>
+            <button onclick="switchTheme('financial')">Financial Theme</button>
+            <button onclick="switchTheme('professional')">Professional Theme</button>
+            
+            <select id="colorTheme" onchange="updateColorTheme()">
+                <option value="default">Default Theme</option>
+                <option value="financial">Financial Theme</option>
+                <option value="professional">Professional Theme</option>
+                <option value="heatmap">Heat Map Theme</option>
+                <option value="dark">Dark Theme</option>
+                <option value="accessible">Accessible Theme</option>
+            </select>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <h4>Conditional Formatting</h4>
+                <p>Automatic color coding based on positive/negative values with customizable neutral thresholds.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Sequential Scales (d3.interpolateRdYlGn)</h4>
+                <p>Smooth color gradients for showing data intensity and magnitude relationships.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Diverging Scales (d3.interpolateRdYlBu)</h4>
+                <p>Professional two-color gradients emphasizing positive/negative value distinctions.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Professional Themes</h4>
+                <p>Multiple color schemes optimized for financial reporting and business presentations.</p>
+            </div>
+        </div>
+
+        <div class="chart-container" id="advancedColorChart"></div>
+
+        <div class="metrics-panel" id="colorMetrics">
+            <h4>Color Scale Information</h4>
+            <div id="colorMetricsContent">
+                Click a color mode button to see color scale details...
+            </div>
+        </div>
+    </div>
+
     <!-- Advanced Data Manipulation Demo -->
     <div class="demo-section">
         <h2 class="demo-title">Advanced Data Manipulation</h2>
@@ -385,29 +439,220 @@
         console.log('MintWaterfall Analytical Enhancement Demo Loaded');
         console.log('Available MintWaterfall functions:', Object.keys(MintWaterfall));
 
-        // Sample waterfall data for demonstrations
+        // Sample waterfall data for demonstrations - using correct MintWaterfall format
         let currentDataset = [
-            { label: 'Starting Revenue', value: 10000, category: 'baseline' },
-            { label: 'Product Sales', value: 3500, category: 'revenue' },
-            { label: 'Service Revenue', value: 2200, category: 'revenue' },
-            { label: 'Marketing Costs', value: -1800, category: 'expenses' },
-            { label: 'Operations', value: -1200, category: 'expenses' },
-            { label: 'R&D Investment', value: -800, category: 'expenses' },
-            { label: 'Tax Benefits', value: 600, category: 'adjustments' },
-            { label: 'One-time Gains', value: 1100, category: 'adjustments' }
+            { label: 'Starting Revenue', stacks: [{ value: 10000, color: '#4F81BD' }], category: 'baseline' },
+            { label: 'Product Sales', stacks: [{ value: 3500, color: '#9CBB58' }], category: 'revenue' },
+            { label: 'Service Revenue', stacks: [{ value: 2200, color: '#9CBB58' }], category: 'revenue' },
+            { label: 'Marketing Costs', stacks: [{ value: -1800, color: '#F79646' }], category: 'expenses' },
+            { label: 'Operations', stacks: [{ value: -1200, color: '#F79646' }], category: 'expenses' },
+            { label: 'R&D Investment', stacks: [{ value: -800, color: '#F79646' }], category: 'expenses' },
+            { label: 'Tax Benefits', stacks: [{ value: 600, color: '#8064A2' }], category: 'adjustments' },
+            { label: 'One-time Gains', stacks: [{ value: 1100, color: '#8064A2' }], category: 'adjustments' }
         ];
 
         let secondDataset = [
-            { label: 'Starting Revenue', value: 9500, category: 'baseline' },
-            { label: 'New Product Line', value: 2800, category: 'revenue' },
-            { label: 'Subscription Growth', value: 1900, category: 'revenue' },
-            { label: 'Cost Optimization', value: 1200, category: 'savings' },
-            { label: 'New Hires', value: -2100, category: 'expenses' }
+            { label: 'Starting Revenue', stacks: [{ value: 9500, color: '#4F81BD' }], category: 'baseline' },
+            { label: 'New Product Line', stacks: [{ value: 2800, color: '#9CBB58' }], category: 'revenue' },
+            { label: 'Subscription Growth', stacks: [{ value: 1900, color: '#9CBB58' }], category: 'revenue' },
+            { label: 'Cost Optimization', stacks: [{ value: 1200, color: '#4BACC6' }], category: 'savings' },
+            { label: 'New Hires', stacks: [{ value: -2100, color: '#F79646' }], category: 'expenses' }
         ];
 
         // Initialize systems
         let dataProcessor, interactionSystem, hierarchicalLayoutSystem;
-        let currentChart, currentInteractionChart;
+        let currentChart, currentInteractionChart, currentAdvancedColorChart;
+
+        // Helper function to get the total value from stacks
+        function getValue(item) {
+            return item.stacks ? item.stacks.reduce((sum, stack) => sum + stack.value, 0) : 0;
+        }
+
+        // Helper function to create a stack item
+        function createStackItem(value, category) {
+            const colorMap = {
+                'baseline': '#4F81BD',
+                'revenue': '#9CBB58',
+                'expenses': '#F79646',
+                'adjustments': '#8064A2',
+                'savings': '#4BACC6',
+                'secondary': '#4ecdc4',
+                'merged': '#ff6b6b'
+            };
+            return { value: value, color: colorMap[category] || '#999999' };
+        }
+
+        
+        // =====================================================================
+        // ADVANCED COLOR SCALES FUNCTIONS
+        // =====================================================================
+
+        function createAdvancedColorChart() {
+            const container = d3.select('#advancedColorChart');
+            container.selectAll('*').remove();
+
+            currentAdvancedColorChart = MintWaterfall.waterfallChart()
+                .width(1000)
+                .height(520)
+                .margin({ top: 40, right: 80, bottom: 100, left: 120 })
+                .showTotal(true)
+                .totalLabel('Enhanced Visual Result');
+
+            container.datum(currentDataset).call(currentAdvancedColorChart);
+        }
+
+        function enableConditionalColors() {
+            try {
+                currentAdvancedColorChart
+                    .enableAdvancedColors(true)
+                    .colorMode('conditional');
+
+                createAdvancedColorChart();
+
+                updateColorMetrics('Conditional Formatting', {
+                    mode: 'conditional',
+                    description: 'Automatic color coding based on positive/negative values',
+                    positive: 'Green (#27ae60)',
+                    negative: 'Red (#e74c3c)',
+                    neutral: 'Gray (#95a5a6)',
+                    features: ['Value-based coloring', 'Customizable thresholds', 'Business-friendly colors']
+                });
+
+            } catch (error) {
+                console.error('Error enabling conditional colors:', error);
+            }
+        }
+
+        function enableSequentialColors() {
+            try {
+                currentAdvancedColorChart
+                    .enableAdvancedColors(true)
+                    .colorMode('sequential');
+
+                createAdvancedColorChart();
+
+                updateColorMetrics('Sequential Color Scale', {
+                    mode: 'sequential',
+                    description: 'Smooth color gradients showing data intensity',
+                    interpolator: 'd3.interpolateRdYlGn',
+                    domain: 'Min to Max values',
+                    features: ['Continuous color progression', 'Data magnitude visualization', 'Professional gradients']
+                });
+
+            } catch (error) {
+                console.error('Error enabling sequential colors:', error);
+            }
+        }
+
+        function enableDivergingColors() {
+            try {
+                currentAdvancedColorChart
+                    .enableAdvancedColors(true)
+                    .colorMode('diverging');
+
+                createAdvancedColorChart();
+
+                updateColorMetrics('Diverging Color Scale', {
+                    mode: 'diverging',
+                    description: 'Two-color gradient emphasizing positive/negative distinctions',
+                    interpolator: 'd3.interpolateRdYlBu',
+                    domain: 'Symmetric around zero',
+                    features: ['Balanced color distribution', 'Clear positive/negative emphasis', 'Financial data optimized']
+                });
+
+            } catch (error) {
+                console.error('Error enabling diverging colors:', error);
+            }
+        }
+
+        function switchTheme(themeName) {
+            try {
+                currentAdvancedColorChart
+                    .enableAdvancedColors(true)
+                    .colorTheme(themeName);
+
+                document.getElementById('colorTheme').value = themeName;
+                createAdvancedColorChart();
+
+                updateColorMetrics(`${themeName.charAt(0).toUpperCase() + themeName.slice(1)} Theme`, {
+                    mode: 'theme',
+                    themeName: themeName,
+                    description: `Professional ${themeName} color scheme`,
+                    features: getThemeFeatures(themeName)
+                });
+
+            } catch (error) {
+                console.error('Error switching theme:', error);
+            }
+        }
+
+        function updateColorTheme() {
+            const themeName = document.getElementById('colorTheme').value;
+            switchTheme(themeName);
+        }
+
+        function updateColorMetrics(title, info) {
+            const metricsContent = document.getElementById('colorMetricsContent');
+            
+            let html = `<h5>${title}</h5>`;
+            
+            if (info.description) {
+                html += `<div class="metrics-row">
+                    <span class="metric-label">📋 Description</span>
+                    <span class="metric-value">${info.description}</span>
+                </div>`;
+            }
+            
+            if (info.mode) {
+                html += `<div class="metrics-row">
+                    <span class="metric-label">🎨 Color Mode</span>
+                    <span class="metric-value">${info.mode}</span>
+                </div>`;
+            }
+            
+            if (info.interpolator) {
+                html += `<div class="metrics-row">
+                    <span class="metric-label">🌈 Interpolator</span>
+                    <span class="metric-value">${info.interpolator}</span>
+                </div>`;
+            }
+            
+            if (info.positive || info.negative) {
+                html += `<div class="metrics-row">
+                    <span class="metric-label">✅ Positive Values</span>
+                    <span class="metric-value">${info.positive}</span>
+                </div>`;
+                html += `<div class="metrics-row">
+                    <span class="metric-label">❌ Negative Values</span>
+                    <span class="metric-value">${info.negative}</span>
+                </div>`;
+            }
+            
+            if (info.features && info.features.length > 0) {
+                html += '<h6>Key Features:</h6>';
+                info.features.forEach(feature => {
+                    html += `<div class="metrics-row">
+                        <span class="metric-label">⭐ ${feature}</span>
+                        <span class="metric-value">Active</span>
+                    </div>`;
+                });
+            }
+
+            metricsContent.innerHTML = html;
+        }
+
+        function getThemeFeatures(themeName) {
+            const features = {
+                'financial': ['Professional green/red colors', 'Business-optimized palette', 'High contrast'],
+                'professional': ['Corporate color scheme', 'Subtle gradients', 'Meeting-ready visuals'],
+                'heatmap': ['Heat map visualization', 'Intensity-based coloring', 'Scientific palette'],
+                'dark': ['Dark mode support', 'Reduced eye strain', 'Modern appearance'],
+                'accessible': ['High contrast colors', 'Colorblind-friendly', 'WCAG compliant'],
+                'default': ['Balanced colors', 'General purpose', 'D3.js standard']
+            };
+            return features[themeName] || ['Standard color scheme'];
+        }
+
 
         // Initialize the demo
         function initializeDemo() {
@@ -417,6 +662,7 @@
                 hierarchicalLayoutSystem = MintWaterfall.createHierarchicalLayoutSystem();
                 
                 // Create initial charts
+                createAdvancedColorChart();
                 createDataManipulationChart();
                 createInteractionChart();
                 createInitialHierarchicalLayouts();
@@ -513,7 +759,7 @@
             for (let i = 0; i < currentDataset.length - 1; i++) {
                 const current = currentDataset[i];
                 const next = currentDataset[i + 1];
-                const change = next.value - current.value;
+                const change = getValue(next) - getValue(current);
                 const direction = change > 0 ? '↗️' : change < 0 ? '↘️' : '➡️';
                 
                 html += `<div class="metrics-row">
@@ -574,14 +820,14 @@
                 
                 switch (strategy) {
                     case 'value':
-                        optimizedData.sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+                        optimizedData.sort((a, b) => Math.abs(getValue(b)) - Math.abs(getValue(a)));
                         break;
                     case 'cumulative':
                         // Sort by cumulative impact
                         optimizedData = calculateCumulativeSort(optimizedData);
                         break;
                     case 'magnitude':
-                        optimizedData.sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+                        optimizedData.sort((a, b) => Math.abs(getValue(b)) - Math.abs(getValue(a)));
                         break;
                     case 'alphabetical':
                         optimizedData.sort((a, b) => a.label.localeCompare(b.label));
@@ -625,7 +871,7 @@
             // Simulate cumulative impact calculation
             return data.map((d, i) => ({
                 ...d,
-                cumulativeImpact: data.slice(0, i + 1).reduce((sum, item) => sum + Math.abs(item.value), 0)
+                cumulativeImpact: data.slice(0, i + 1).reduce((sum, item) => sum + Math.abs(getValue(item)), 0)
             }))
             .sort((a, b) => b.cumulativeImpact - a.cumulativeImpact);
         }
@@ -646,7 +892,10 @@
                     if (datasetMap.has(item.label)) {
                         // Conflict resolution - average the values
                         const existing = datasetMap.get(item.label);
-                        existing.value = (existing.value + item.value) / 2;
+                        const existingValue = getValue(existing);
+                        const itemValue = getValue(item);
+                        const averageValue = (existingValue + itemValue) / 2;
+                        existing.stacks = [createStackItem(averageValue, 'merged')];
                         existing.source = 'merged';
                     } else {
                         datasetMap.set(item.label, { ...item, source: 'secondary' });
@@ -699,7 +948,7 @@
         function generateCustomTicks() {
             try {
                 // Simulate d3.ticks() custom generation
-                const values = currentDataset.map(d => d.value);
+                const values = currentDataset.map(d => getValue(d));
                 const domain = [Math.min(...values), Math.max(...values)];
                 
                 // Simulate advanced tick generation
@@ -776,27 +1025,128 @@
 
         function enableDragInteraction() {
             try {
-                console.log('Enabling drag interaction simulation...');
+                console.log('Enabling actual drag interaction...');
                 
-                // Simulate drag behavior
-                d3.select('#interactionChart').selectAll('.bar')
-                    .style('cursor', 'ns-resize')
-                    .on('mousedown', function(event, d) {
+                // Create actual drag behavior
+                const drag = d3.drag()
+                    .on('start', function(event, d) {
+                        // Check if data is properly bound
+                        if (!d || !d.stacks || !d.stacks[0]) {
+                            console.warn('Invalid data structure for drag start:', d);
+                            return;
+                        }
+                        
                         d3.select(this)
                             .style('stroke', '#ff6b6b')
-                            .style('stroke-width', '3px');
+                            .style('stroke-width', '3px')
+                            .style('opacity', 0.7);
+                        
+                        // Store initial values
+                        const bar = d3.select(this);
+                        bar.datum().initialY = event.y;
+                        bar.datum().initialValue = getValue(d);
                     })
-                    .on('mouseup', function(event, d) {
+                    .on('drag', function(event, d) {
+                        // Check if data is properly bound
+                        if (!d || !d.stacks || !d.stacks[0]) {
+                            console.warn('Invalid data structure for drag:', d);
+                            return;
+                        }
+                        
+                        // Calculate new value based on vertical drag
+                        const deltaY = event.y - d.initialY;
+                        const scale = 50; // Adjust sensitivity
+                        const newValue = d.initialValue - (deltaY * scale);
+                        
+                        // Update the data
+                        d.stacks[0].value = newValue;
+                        
+                        // Update the visual feedback
+                        d3.select(this)
+                            .style('transform', `translateY(${deltaY}px)`);
+                        
+                        // Show current value in tooltip
+                        const tooltip = d3.select('body').selectAll('.drag-tooltip')
+                            .data([d]);
+                        
+                        tooltip.enter()
+                            .append('div')
+                            .attr('class', 'drag-tooltip')
+                            .style('position', 'absolute')
+                            .style('background', 'rgba(0,0,0,0.8)')
+                            .style('color', 'white')
+                            .style('padding', '8px')
+                            .style('border-radius', '4px')
+                            .style('font-size', '12px')
+                            .style('pointer-events', 'none')
+                            .style('z-index', '1000');
+                        
+                        d3.select('.drag-tooltip')
+                            .style('left', (event.sourceEvent.pageX + 10) + 'px')
+                            .style('top', (event.sourceEvent.pageY - 10) + 'px')
+                            .text(`${d.label}: ${newValue.toLocaleString()}`);
+                    })
+                    .on('end', function(event, d) {
+                        // Clean up visual effects
                         d3.select(this)
                             .style('stroke', null)
-                            .style('stroke-width', null);
+                            .style('stroke-width', null)
+                            .style('opacity', 1)
+                            .style('transform', null);
+                        
+                        // Remove tooltip
+                        d3.select('.drag-tooltip').remove();
+                        
+                        // Recreate the chart with new values
+                        setTimeout(() => {
+                            createInteractionChart();
+                            // Re-enable drag after chart recreation
+                            setTimeout(() => {
+                                if (document.getElementById('interactionMode').value === 'drag' || 
+                                    document.getElementById('interactionMode').value === 'combined') {
+                                    enableDragInteraction();
+                                }
+                            }, 100);
+                        }, 100);
+                        
+                        showInteractionFeedback('Value Updated', `${d.label} adjusted to ${getValue(d).toLocaleString()}`);
                     });
                 
+                // Apply drag behavior to bars - only to elements with proper data
+                const bars = d3.select('#interactionChart').selectAll('*')
+                    .filter(function(d) { 
+                        return d && d.stacks && d.stacks.length > 0; 
+                    });
+                
+                console.log('Found draggable bars:', bars.size());
+                
+                bars.style('cursor', 'ns-resize')
+                    .call(drag);
+                
                 updateInteractionStatus('drag', true);
-                showInteractionFeedback('Drag Interaction Enabled', 'Use mouse to drag bars vertically (simulated)');
+                showInteractionFeedback('Drag Interaction Enabled', 'Drag bars vertically to adjust values');
                 
             } catch (error) {
                 console.error('Error enabling drag interaction:', error);
+                // Fallback to basic interaction if drag fails
+                const clickBars = d3.select('#interactionChart').selectAll('*')
+                    .filter(function(d) { 
+                        return d && d.stacks && d.stacks.length > 0; 
+                    });
+                
+                clickBars.style('cursor', 'pointer')
+                    .on('click', function(event, d) {
+                        if (!d || !d.stacks || !d.stacks[0]) return;
+                        
+                        const newValue = prompt(`Enter new value for ${d.label}:`, getValue(d));
+                        if (newValue !== null && !isNaN(newValue)) {
+                            d.stacks[0].value = parseFloat(newValue);
+                            createInteractionChart();
+                            enableDragInteraction();
+                            showInteractionFeedback('Value Updated', `${d.label} set to ${getValue(d).toLocaleString()}`);
+                        }
+                    });
+                showInteractionFeedback('Drag Interaction Enabled', 'Click bars to manually enter values');
             }
         }
 
@@ -872,15 +1222,19 @@
 
         function resetInteractions() {
             // Reset all interactions
-            d3.select('#interactionChart').selectAll('.bar')
+            d3.select('#interactionChart').selectAll('.bar, rect')
                 .style('cursor', 'default')
                 .style('stroke', null)
                 .style('stroke-width', null)
                 .style('transform', null)
+                .style('opacity', null)
                 .on('mousedown', null)
-                .on('mouseup', null);
+                .on('mouseup', null)
+                .on('click', null)
+                .on('.drag', null); // Remove drag behavior
             
             d3.select('#interactionChart').selectAll('.hover-zone').remove();
+            d3.selectAll('.drag-tooltip').remove(); // Remove any lingering tooltips
             
             updateInteractionStatus('drag', false);
             updateInteractionStatus('hover', false);
@@ -959,7 +1313,7 @@
                         name: "Revenue",
                         children: currentDataset.filter(d => d.category === 'revenue').map(d => ({
                             name: d.label,
-                            value: Math.abs(d.value),
+                            value: Math.abs(getValue(d)),
                             category: d.category
                         }))
                     },
@@ -967,7 +1321,7 @@
                         name: "Expenses", 
                         children: currentDataset.filter(d => d.category === 'expenses').map(d => ({
                             name: d.label,
-                            value: Math.abs(d.value),
+                            value: Math.abs(getValue(d)),
                             category: d.category
                         }))
                     },
@@ -975,7 +1329,7 @@
                         name: "Adjustments",
                         children: currentDataset.filter(d => d.category === 'adjustments').map(d => ({
                             name: d.label,
-                            value: Math.abs(d.value),
+                            value: Math.abs(getValue(d)),
                             category: d.category
                         }))
                     }

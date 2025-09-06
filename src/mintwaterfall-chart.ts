@@ -19,7 +19,9 @@ import {
     createDivergingScale, 
     getConditionalColor,
     createWaterfallColorScale,
-    interpolateThemeColor 
+    interpolateThemeColor,
+    getAdvancedBarColor,
+    ThemeCollection 
 } from './mintwaterfall-themes.js';
 import { 
     createShapeGenerators, 
@@ -189,6 +191,19 @@ export interface WaterfallChart {
     brushOptions(): BrushOptions;
     brushOptions(value: BrushOptions): WaterfallChart;
     
+    // NEW: Advanced color features
+    enableAdvancedColors(): boolean;
+    enableAdvancedColors(value: boolean): WaterfallChart;
+    
+    colorMode(): 'default' | 'conditional' | 'sequential' | 'diverging';
+    colorMode(value: 'default' | 'conditional' | 'sequential' | 'diverging'): WaterfallChart;
+    
+    colorTheme(): string;
+    colorTheme(value: string): WaterfallChart;
+    
+    neutralThreshold(): number;
+    neutralThreshold(value: number): WaterfallChart;
+    
     staggeredAnimations(): boolean;
     staggeredAnimations(value: boolean): WaterfallChart;
     
@@ -329,6 +344,9 @@ export function waterfallChart(): WaterfallChart {
         neutralThreshold: 0
     };
     
+    // Advanced color mode for enhanced visual impact
+    let colorMode: 'default' | 'conditional' | 'sequential' | 'diverging' = 'conditional';
+    
     let confidenceBandConfig: ConfidenceBandConfig = {
         enabled: false,
         opacity: 0.3,
@@ -388,37 +406,6 @@ export function waterfallChart(): WaterfallChart {
     // Note: Advanced analytical enhancement system instances removed
     // Systems are available via exported utility functions
     
-    // Helper function for advanced color determination
-    function getAdvancedBarColor(value: number, defaultColor: string, allData: ProcessedData[]): string {
-        if (!advancedColorConfig.enabled) {
-            return defaultColor;
-        }
-        
-        const themeName = advancedColorConfig.themeName || 'default';
-        
-        switch (advancedColorConfig.scaleType) {
-            case 'conditional':
-                return getConditionalColor(value, themeName, advancedColorConfig.neutralThreshold);
-            
-            case 'sequential':
-            case 'diverging':
-            case 'auto':
-                if (advancedColorConfig.customColorScale) {
-                    return advancedColorConfig.customColorScale(value);
-                }
-                
-                // Create appropriate color scale based on data
-                const colorScale = createWaterfallColorScale(
-                    allData.map(d => ({ value: d.barTotal })), 
-                    themeName, 
-                    advancedColorConfig.scaleType
-                );
-                return colorScale(value);
-            
-            default:
-                return defaultColor;
-        }
-    }
     
     // Performance configuration
     let enablePerformanceOptimization: boolean = false;
@@ -1050,7 +1037,14 @@ export function waterfallChart(): WaterfallChart {
             
             // Determine bar color using advanced color features
             const defaultColor = d.stacks.length === 1 ? d.stacks[0].color : "#3498db";
-            const advancedColor = getAdvancedBarColor(d.barTotal, defaultColor, allData);
+            const advancedColor = advancedColorConfig.enabled ? 
+                getAdvancedBarColor(
+                    d.barTotal, 
+                    defaultColor, 
+                    allData, 
+                    advancedColorConfig.themeName as keyof ThemeCollection || 'default',
+                    colorMode
+                ) : defaultColor;
             
             const barData = [{
                 value: d.barTotal,
@@ -1741,6 +1735,19 @@ export function waterfallChart(): WaterfallChart {
 
     chart.colorScaleType = function(_?: 'auto' | 'sequential' | 'diverging' | 'conditional'): 'auto' | 'sequential' | 'diverging' | 'conditional' | WaterfallChart {
         return arguments.length ? (advancedColorConfig.scaleType = _!, chart) : advancedColorConfig.scaleType;
+    } as any;
+    
+    // NEW: Additional advanced color methods
+    chart.colorMode = function(_?: 'default' | 'conditional' | 'sequential' | 'diverging'): 'default' | 'conditional' | 'sequential' | 'diverging' | WaterfallChart {
+        return arguments.length ? (colorMode = _!, chart) : colorMode;
+    } as any;
+    
+    chart.colorTheme = function(_?: string): string | WaterfallChart {
+        return arguments.length ? (advancedColorConfig.themeName = _!, chart) : (advancedColorConfig.themeName || 'default');
+    } as any;
+    
+    chart.neutralThreshold = function(_?: number): number | WaterfallChart {
+        return arguments.length ? (advancedColorConfig.neutralThreshold = _!, chart) : (advancedColorConfig.neutralThreshold || 0);
     } as any;
 
     chart.confidenceBands = function(_?: ConfidenceBandConfig): ConfidenceBandConfig | WaterfallChart {

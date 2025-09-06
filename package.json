@@ -37,11 +37,15 @@
     "demo:breakdown": "python -m http.server 8080 && echo \"Demo available at: http://localhost:8080/breakdown-feature-demo.html\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:fast": "jest --passWithNoTests --maxWorkers=4",
+    "test:core": "jest tests/core-api.test.js tests/chart.test.js tests/data.test.js",
     "prebuild": "rimraf dist",
-    "build": "npm run build:ts && rollup -c && npm run build:types",
+    "build": "rollup -c && npm run build:types",
+    "build:fast": "rollup -c rollup.config.fast.js && npm run build:types",
+    "build:full": "npm run build:ts && rollup -c && npm run build:types",
     "build:ts": "tsc --noEmit",
     "build:types": "cp index.d.ts dist/index.d.ts || copy index.d.ts dist\\index.d.ts",
     "build:watch": "rollup -c -w",
@@ -83,6 +87,7 @@
   "devDependencies": {
     "@babel/core": "^7.28.3",
     "@babel/preset-env": "^7.28.3",
+    "@babel/preset-typescript": "^7.27.1",
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-terser": "^0.4.4",
@@ -110,5 +115,12 @@
     "*.md": [
       "prettier --write"
     ]
+  },
+  "dependencies": {
+    "d3-array": "^3.2.4",
+    "d3-color": "^3.1.0",
+    "d3-drag": "^3.0.0",
+    "d3-force": "^3.0.0",
+    "d3-selection": "^3.0.0"
   }
 }

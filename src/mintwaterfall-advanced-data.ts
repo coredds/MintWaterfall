@@ -2,6 +2,7 @@
 // Enhanced D3.js data manipulation capabilities for comprehensive waterfall analysis
 
 import * as d3 from 'd3';
+import { group, rollup, flatRollup, cross, index } from 'd3-array';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -67,7 +68,7 @@ export interface AdvancedDataProcessor {
 // ADVANCED DATA PROCESSOR IMPLEMENTATION
 // ============================================================================
 
-export function createAdvancedDataProcessor(): AdvancedDataProcessor {
+function createAdvancedDataProcessorOLD(): AdvancedDataProcessor {
     
     // ========================================================================
     // SEQUENCE ANALYSIS (d3.pairs)
@@ -583,8 +584,8 @@ export function createWaterfallSequenceAnalyzer(data: any[]): {
     
     // Identify critical paths (large impact changes)
     const criticalPaths = flowAnalysis
-        .filter(seq => seq.magnitude === 'large')
-        .map(seq => `${seq.from} → ${seq.to}`);
+        .filter((seq: any) => seq.magnitude === 'large')
+        .map((seq: any) => `${seq.from} → ${seq.to}`);
     
     // Generate optimization suggestions
     const optimizationSuggestions = processor.suggestDataOptimizations(data);
@@ -625,7 +626,7 @@ export function createWaterfallTickGenerator(domain: [number, number], dataPoint
     });
     
     // Generate labels
-    const labels = ticks.map(tick => {
+    const labels = ticks.map((tick: number) => {
         if (tick === 0) return '0';
         if (Math.abs(tick) >= 1000000) return `${(tick / 1000000).toFixed(1)}M`;
         if (Math.abs(tick) >= 1000) return `${(tick / 1000).toFixed(1)}K`;
@@ -633,7 +634,7 @@ export function createWaterfallTickGenerator(domain: [number, number], dataPoint
     });
     
     // Identify key markers (data points that align with ticks)
-    const keyMarkers = ticks.filter(tick => {
+    const keyMarkers = ticks.filter((tick: number) => {
         return dataPoints.some(d => Math.abs(extractValue(d) - tick) < Math.abs(domain[1] - domain[0]) / 50);
     });
     
@@ -647,4 +648,387 @@ export function createWaterfallTickGenerator(domain: [number, number], dataPoint
         }
         return 0;
     }
+}
+
+// ============================================================================
+// MISSING ADVANCED DATA PROCESSOR FUNCTIONS
+// ============================================================================
+
+/**
+ * Creates an advanced data processor with D3.js data manipulation functions
+ */
+export function createAdvancedDataProcessor() {
+    
+    // Group data by key using d3.group
+    function groupBy<T>(data: T[], accessor: (d: T) => string): Map<string, T[]> {
+        if (!data || !Array.isArray(data) || !accessor) {
+            return new Map();
+        }
+        return group(data, accessor);
+    }
+    
+    // Rollup data with reducer using d3.rollup
+    function rollupBy<T, R>(data: T[], reducer: (values: T[]) => R, accessor: (d: T) => string): Map<string, R> {
+        if (!data || !Array.isArray(data) || !reducer || !accessor) {
+            return new Map();
+        }
+        return rollup(data, reducer, accessor);
+    }
+    
+    // Flat rollup using d3.flatRollup
+    function flatRollupBy<T, R>(data: T[], reducer: (values: T[]) => R, accessor: (d: T) => string): [string, R][] {
+        if (!data || !Array.isArray(data) || !reducer || !accessor) {
+            return [];
+        }
+        return flatRollup(data, reducer, accessor);
+    }
+    
+    // Cross tabulate two arrays using d3.cross
+    function crossTabulate<A, B, R>(a: A[], b: B[], reducer?: (a: A, b: B) => R): (R | [A, B])[] {
+        if (!Array.isArray(a) || !Array.isArray(b)) {
+            return [];
+        }
+        if (reducer) {
+            return cross(a, b, reducer);
+        } else {
+            return cross(a, b) as [A, B][];
+        }
+    }
+    
+    // Index data by key using d3.index
+    function indexBy<T>(data: T[], accessor: (d: T) => string): Map<string, T> {
+        if (!data || !Array.isArray(data) || !accessor) {
+            return new Map();
+        }
+        
+        try {
+            return index(data, accessor);
+        } catch (error) {
+            // Handle duplicate keys gracefully by creating a manual index
+            const result = new Map<string, T>();
+            data.forEach(item => {
+                const key = accessor(item);
+                if (!result.has(key)) {
+                    result.set(key, item);
+                }
+            });
+            return result;
+        }
+    }
+    
+    // Aggregate data by time periods
+    function aggregateByTime<T>(
+        data: T[], 
+        timeAccessor: (d: T) => Date, 
+        granularity: 'day' | 'week' | 'month' | 'year',
+        reducer: (values: T[]) => any
+    ): any[] {
+        if (!data || !Array.isArray(data) || !timeAccessor || !reducer) {
+            return [];
+        }
+        
+        const timeGroups = group(data, (d: T) => {
+            const date = timeAccessor(d);
+            if (!date || !(date instanceof Date)) return 'invalid';
+            
+            switch (granularity) {
+                case 'day':
+                    return date.toISOString().split('T')[0];
+                case 'week':
+                    const week = new Date(date);
+                    week.setDate(date.getDate() - date.getDay());
+                    return week.toISOString().split('T')[0];
+                case 'month':
+                    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                case 'year':
+                    return String(date.getFullYear());
+                default:
+                    return date.toISOString().split('T')[0];
+            }
+        });
+        
+        return Array.from(timeGroups.entries()).map(([period, values]) => ({
+            period,
+            data: reducer(values),
+            count: values.length
+        }));
+    }
+    
+    // Create multi-dimensional waterfall
+    function createMultiDimensionalWaterfall(
+        multiData: Record<string, any[]>,
+        options: {
+            aggregationMethod?: 'sum' | 'average' | 'count' | 'max' | 'min';
+            includeRegionalTotals?: boolean;
+            includeGrandTotal?: boolean;
+        }
+    ): any[] {
+        const result: any[] = [];
+        const { aggregationMethod = 'sum' } = options;
+        
+        if (!multiData || typeof multiData !== 'object') {
+            return result;
+        }
+        
+        const regions = Object.keys(multiData);
+        let grandTotal = 0;
+        
+        for (const region of regions) {
+            const data = multiData[region];
+            if (!Array.isArray(data)) continue;
+            
+            let regionTotal = 0;
+            
+            for (const item of data) {
+                let value = 0;
+                if (item.value !== undefined) {
+                    value = item.value;
+                } else if (item.stacks && Array.isArray(item.stacks)) {
+                    value = item.stacks.reduce((sum: number, stack: any) => sum + (stack.value || 0), 0);
+                }
+                
+                result.push({
+                    ...item,
+                    region,
+                    value,
+                    label: `${region}: ${item.label}`
+                });
+                
+                switch (aggregationMethod) {
+                    case 'sum':
+                        regionTotal += value;
+                        break;
+                    case 'average':
+                        regionTotal += value;
+                        break;
+                    case 'count':
+                        regionTotal += 1;
+                        break;
+                    case 'max':
+                        regionTotal = Math.max(regionTotal, value);
+                        break;
+                    case 'min':
+                        regionTotal = regionTotal === 0 ? value : Math.min(regionTotal, value);
+                        break;
+                }
+            }
+            
+            if (options.includeRegionalTotals) {
+                result.push({
+                    label: `${region} Total`,
+                    value: aggregationMethod === 'average' ? regionTotal / data.length : regionTotal,
+                    region,
+                    isRegionalTotal: true
+                });
+            }
+            
+            grandTotal += regionTotal;
+        }
+        
+        if (options.includeGrandTotal) {
+            result.push({
+                label: 'Grand Total',
+                value: grandTotal,
+                isGrandTotal: true
+            });
+        }
+        
+        return result;
+    }
+    
+    // Aggregate waterfall by period with additional metrics
+    function aggregateWaterfallByPeriod(
+        data: any[],
+        periodField: string,
+        options: {
+            includeMovingAverage?: boolean;
+            movingAverageWindow?: number;
+            calculateGrowthRates?: boolean;
+            includeVariance?: boolean;
+        }
+    ): any[] {
+        if (!data || !Array.isArray(data)) {
+            return [];
+        }
+        
+        const periodGroups = group(data, (d: any) => d[periodField] || 'unknown');
+        const result = Array.from(periodGroups.entries()).map(([period, items]) => {
+            const total = items.reduce((sum, item) => {
+                if (item.value !== undefined) return sum + item.value;
+                if (item.stacks && Array.isArray(item.stacks)) {
+                    return sum + item.stacks.reduce((s: number, stack: any) => s + (stack.value || 0), 0);
+                }
+                return sum;
+            }, 0);
+            
+            return {
+                period,
+                items,
+                total,
+                count: items.length,
+                average: total / items.length,
+                movingAverage: 0, // Will be calculated if requested
+                growthRate: 0 // Will be calculated if requested
+            };
+        });
+        
+        // Add moving average if requested
+        if (options.includeMovingAverage) {
+            const window = options.movingAverageWindow || 3;
+            result.forEach((item, index) => {
+                const start = Math.max(0, index - Math.floor(window / 2));
+                const end = Math.min(result.length, start + window);
+                const windowData = result.slice(start, end);
+                item.movingAverage = windowData.reduce((sum, w) => sum + w.total, 0) / windowData.length;
+            });
+        }
+        
+        // Add growth rates if requested
+        if (options.calculateGrowthRates) {
+            result.forEach((item, index) => {
+                if (index > 0) {
+                    const prev = result[index - 1];
+                    item.growthRate = prev.total !== 0 ? (item.total - prev.total) / prev.total : 0;
+                }
+            });
+        }
+        
+        return result;
+    }
+    
+    // Create breakdown waterfall with sub-items
+    function createBreakdownWaterfall(
+        data: any[],
+        breakdownField: string,
+        options: {
+            maintainOriginalStructure?: boolean;
+            includeSubtotals?: boolean;
+            colorByBreakdown?: boolean;
+        }
+    ): any[] {
+        if (!data || !Array.isArray(data)) {
+            return [];
+        }
+        
+        const result: any[] = [];
+        
+        for (const item of data) {
+            const breakdowns = item[breakdownField];
+            
+            if (breakdowns && Array.isArray(breakdowns)) {
+                // Add main item
+                if (options.maintainOriginalStructure) {
+                    result.push({ ...item, isMainItem: true });
+                }
+                
+                // Add breakdown items
+                let subtotal = 0;
+                breakdowns.forEach((breakdown: any, index: number) => {
+                    const breakdownItem = {
+                        ...breakdown,
+                        parentLabel: item.label,
+                        isBreakdown: true,
+                        breakdownIndex: index,
+                        color: options.colorByBreakdown ? `hsl(${index * 360 / breakdowns.length}, 70%, 60%)` : breakdown.color
+                    };
+                    result.push(breakdownItem);
+                    subtotal += breakdown.value || 0;
+                });
+                
+                // Add subtotal if requested
+                if (options.includeSubtotals && breakdowns.length > 1) {
+                    result.push({
+                        label: `${item.label} Subtotal`,
+                        value: subtotal,
+                        parentLabel: item.label,
+                        isSubtotal: true
+                    });
+                }
+            } else {
+                // No breakdown data, add as-is
+                result.push({ ...item, hasBreakdown: false });
+            }
+        }
+        
+        return result;
+    }
+    
+    // Additional methods needed by existing code
+    function analyzeSequence(data: any[]): any[] {
+        // Simplified implementation for compatibility
+        if (!Array.isArray(data) || data.length < 2) {
+            return [];
+        }
+        
+        return data.slice(1).map((item, index) => {
+            const prev = data[index];
+            const current = item;
+            const prevValue = extractValue(prev);
+            const currentValue = extractValue(current);
+            const change = currentValue - prevValue;
+            
+            return {
+                index,
+                from: prev.label || `Item ${index}`,
+                to: current.label || `Item ${index + 1}`,
+                fromValue: prevValue,
+                toValue: currentValue,
+                change,
+                percentChange: prevValue !== 0 ? (change / prevValue) * 100 : 0,
+                direction: change > 0 ? 'increase' : change < 0 ? 'decrease' : 'stable',
+                magnitude: Math.abs(change) > 1000 ? 'large' : Math.abs(change) > 100 ? 'medium' : 'small'
+            };
+        });
+    }
+    
+    function suggestDataOptimizations(data: any[]): any[] {
+        // Simplified implementation for compatibility
+        const suggestions: any[] = [];
+        
+        if (!Array.isArray(data) || data.length === 0) {
+            return suggestions;
+        }
+        
+        if (data.length > 20) {
+            suggestions.push({
+                type: 'aggregation',
+                priority: 'medium',
+                description: 'Consider grouping similar items for better readability',
+                impact: 'Reduces visual clutter'
+            });
+        }
+        
+        return suggestions;
+    }
+    
+    function generateCustomTicks(domain: [number, number], options: any): number[] {
+        // Simplified implementation using d3.ticks
+        const tickCount = options.targetTickCount || 8;
+        return d3.ticks(domain[0], domain[1], tickCount);
+    }
+    
+    function extractValue(item: any): number {
+        if (typeof item === 'number') return item;
+        if (item.value !== undefined) return item.value;
+        if (item.stacks && Array.isArray(item.stacks)) {
+            return item.stacks.reduce((sum: number, stack: any) => sum + (stack.value || 0), 0);
+        }
+        return 0;
+    }
+
+    // Return the processor interface
+    return {
+        groupBy,
+        rollupBy,
+        flatRollupBy,
+        crossTabulate,
+        indexBy,
+        aggregateByTime,
+        createMultiDimensionalWaterfall,
+        aggregateWaterfallByPeriod,
+        createBreakdownWaterfall,
+        analyzeSequence,
+        suggestDataOptimizations,
+        generateCustomTicks
+    };
 }
