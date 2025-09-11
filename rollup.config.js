@@ -4,7 +4,7 @@ import typescript from "@rollup/plugin-typescript";
 import cleanup from "rollup-plugin-cleanup";
 
 const banner = `/*!
- * MintWaterfall v${process.env.npm_package_version || "0.8.6"}
+ * MintWaterfall v${process.env.npm_package_version || "0.8.7"}
  * D3.js-compatible waterfall chart component
  * (c) 2024 David Duarte
  * Released under the MIT License
