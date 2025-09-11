@@ -1,5 +1,5 @@
 // TypeScript definitions for MintWaterfall v0.6.0
-// Project: https://github.com/your-username/mintwaterfall
+// Project: https://github.com/coredds/MintWaterfall
 // Definitions by: MintWaterfall Team
 
 export interface StackData {
