@@ -1,9 +1,9 @@
-# MintWaterfall v0.8.7
+# MintWaterfall v0.8.8
 
 [![CI](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml/badge.svg?branch=main)](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml)
 [![Security Audit](https://github.com/coredds/MintWaterfall/actions/workflows/security.yml/badge.svg)](https://github.com/coredds/MintWaterfall/actions/workflows/security.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.8.7-blue.svg)](https://github.com/coredds/MintWaterfall/releases)
+[![Version](https://img.shields.io/badge/version-0.8.8-blue.svg)](https://github.com/coredds/MintWaterfall/releases)
 [![codecov](https://codecov.io/gh/coredds/MintWaterfall/branch/main/graph/badge.svg)](https://codecov.io/gh/coredds/MintWaterfall)
 
 A comprehensive TypeScript waterfall chart library built on D3.js v7. Features advanced data processing, statistical analysis, interactive visualizations, and enterprise-grade performance with complete type safety.
@@ -338,13 +338,17 @@ npm start             # Development server (localhost:8080)
 
 ## Recent Updates
 
-### v0.8.7 (Current)
+### v0.8.8 (Current)
+- Updated all dev dependencies to latest versions (babel, eslint, jest, rollup, typescript)
+- Major updates: husky 8.0 → 9.1.7, jsdom 26.1 → 27.0.0
+- All 338 tests passing with zero vulnerabilities
+- Complete compatibility verification with updated tooling
+
+### v0.8.7
 - Complete statistical analysis system with 89.6% test coverage
 - Advanced interaction system with drag, hover, and force simulation
 - Comprehensive data processing with D3.js integration
 - Full accessibility compliance with WCAG 2.1 support
-- 338 tests across 18 test suites with 100% pass rate
-- Optimized build pipeline with 5.8-second build times
 - TypeScript strict mode with complete type definitions
 
 ## Contributing

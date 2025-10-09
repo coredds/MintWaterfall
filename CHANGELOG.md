@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.8] - 2025-10-09
+
+### Changed
+- **📦 Dependencies Update**: Updated all dev dependencies to latest versions
+  - `@babel/core`: 7.28.3 → 7.28.4
+  - `@rollup/plugin-node-resolve`: 16.0.1 → 16.0.2
+  - `babel-jest`: 30.0.5 → 30.2.0
+  - `eslint`: 9.33.0 → 9.37.0
+  - `jest`: 30.0.5 → 30.2.0
+  - `jest-environment-jsdom`: 30.0.5 → 30.2.0
+  - `jsdom`: 26.1.0 → 27.0.0 (major)
+  - `lint-staged`: 16.1.5 → 16.2.3
+  - `rollup`: 4.47.1 → 4.52.4
+  - `typescript`: 5.9.2 → 5.9.3
+  - `husky`: 8.0.0 → 9.1.7 (major)
+
+### Technical
+- **✅ All Tests Passing**: 338 tests across 18 test suites
+- **🔒 Zero Vulnerabilities**: Complete security audit passed
+- **🏗️ Build System**: Verified compatibility with all updated tools
+
 ## [0.8.7] - 2025-09-11
 
 ### Fixed
