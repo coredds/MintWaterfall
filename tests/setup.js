@@ -4,7 +4,7 @@ global.TextEncoder = require("util").TextEncoder;
 global.TextDecoder = require("util").TextDecoder;
 
 // Set up structuredClone polyfill for jsdom 27.0.0
-if (typeof global.structuredClone === 'undefined') {
+if (typeof global.structuredClone === "undefined") {
   global.structuredClone = (obj) => JSON.parse(JSON.stringify(obj));
 }
 
