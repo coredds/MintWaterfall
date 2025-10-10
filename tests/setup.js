@@ -1,11 +1,39 @@
 // Test setup file
 // Polyfills for Node.js environment
-global.TextEncoder = require("util").TextEncoder;
-global.TextDecoder = require("util").TextDecoder;
+const util = require("util");
+global.TextEncoder = util.TextEncoder;
+global.TextDecoder = util.TextDecoder;
 
 // Set up structuredClone polyfill for jsdom 27.0.0
 if (typeof global.structuredClone === "undefined") {
-  global.structuredClone = (obj) => JSON.parse(JSON.stringify(obj));
+  global.structuredClone = (obj) => {
+    // Simple deep clone implementation for testing
+    if (obj === null || typeof obj !== "object") return obj;
+    if (obj instanceof Date) return new Date(obj);
+    if (obj instanceof Array) return obj.map((item) => global.structuredClone(item));
+    if (obj instanceof Object) {
+      const cloned = {};
+      for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          cloned[key] = global.structuredClone(obj[key]);
+        }
+      }
+      return cloned;
+    }
+    return obj;
+  };
+}
+
+// Set up WeakRef polyfill for jsdom 27.0.0 (if needed)
+if (typeof global.WeakRef === "undefined") {
+  global.WeakRef = class WeakRef {
+    constructor(target) {
+      this._target = target;
+    }
+    deref() {
+      return this._target;
+    }
+  };
 }
 
 const { JSDOM } = require("jsdom");
