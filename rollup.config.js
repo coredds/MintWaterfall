@@ -13,19 +13,19 @@ const banner = `/*!
 const external = (id) => {
   return id === "d3" || id.startsWith("d3-");
 };
-const globals = { 
+const globals = {
   d3: "d3",
   "d3-array": "d3",
-  "d3-drag": "d3", 
+  "d3-drag": "d3",
   "d3-force": "d3",
   "d3-color": "d3",
-  "d3-selection": "d3"
+  "d3-selection": "d3",
 };
 
 const plugins = [
   resolve({
     preferBuiltins: false,
-    browser: true
+    browser: true,
   }),
   typescript({
     tsconfig: "./tsconfig.json",
@@ -33,21 +33,21 @@ const plugins = [
     compilerOptions: {
       declaration: false,
       declarationMap: false,
-      sourceMap: false
-    }
+      sourceMap: false,
+    },
   }),
   cleanup({
-    comments: "none"
-  })
+    comments: "none",
+  }),
 ];
 
 const minifiedPlugins = [
   ...plugins,
   terser({
     output: {
-      comments: /^!/
-    }
-  })
+      comments: /^!/,
+    },
+  }),
 ];
 
 export default [
@@ -58,11 +58,11 @@ export default [
     output: {
       file: "dist/mintwaterfall.esm.js",
       format: "es",
-      banner
+      banner,
     },
-    plugins
+    plugins,
   },
-  
+
   // UMD build (for browser <script> tags)
   {
     input: "src/index.js",
@@ -73,11 +73,11 @@ export default [
       name: "MintWaterfall",
       globals,
       banner,
-      exports: "named"
+      exports: "named",
     },
-    plugins
+    plugins,
   },
-  
+
   // Minified UMD build
   {
     input: "src/index.js",
@@ -88,11 +88,11 @@ export default [
       name: "MintWaterfall",
       globals,
       banner,
-      exports: "named"
+      exports: "named",
     },
-    plugins: minifiedPlugins
+    plugins: minifiedPlugins,
   },
-  
+
   // CommonJS build (for Node.js)
   {
     input: "src/index.js",
@@ -101,8 +101,8 @@ export default [
       file: "dist/mintwaterfall.cjs.js",
       format: "cjs",
       banner,
-      exports: "named"
+      exports: "named",
     },
-    plugins
-  }
+    plugins,
+  },
 ];

@@ -1,5 +1,5 @@
 /*!
- * MintWaterfall v0.8.8
+ * MintWaterfall v0.8.9
  * D3.js-compatible waterfall chart component
  * (c) 2024 David Duarte
  * Released under the MIT License
@@ -7899,9 +7899,9 @@ function createHierarchicalLayout() {
     return hierarchicalLayout;
 }
 
-const version = "0.8.7";
+const version = "0.8.9";
 if (typeof window !== "undefined" && window.d3) {
-    window.d3.waterfallChart = waterfallChart;
+  window.d3.waterfallChart = waterfallChart;
 }
 
 export { analyzeWaterfallStatistics, applyTheme, createAccessibilitySystem, createAdvancedDataProcessor, createAdvancedInteractionSystem, createAdvancedPerformanceSystem, createAnimationSystem, createBrushSystemFactory as createBrushSystem, createComparisonWaterfall, createDataProcessor, createDivergingScale, createExportSystem, createHierarchicalLayout, createHierarchicalLayoutSystem, createPerformanceManager, createRevenueWaterfall, createScaleSystem, createSequentialScale, createShapeGenerators, createStatisticalSystem, createTemporalWaterfall, createTooltipSystem, createVarianceWaterfall, createVirtualWaterfallRenderer, createWaterfallBubbles, createWaterfallColorScale, createWaterfallConfidenceBands, createWaterfallDragBehavior, createWaterfallForceConfig, createWaterfallMilestones, createWaterfallSequenceAnalyzer, createWaterfallSpatialIndex, createWaterfallSunburst, createWaterfallTickGenerator, createWaterfallTreemap, createWaterfallVoronoiConfig, createZoomSystem, d3DataUtils, dataProcessor, waterfallChart as default, financialReducers, getAdvancedBarColor, getConditionalColor, groupWaterfallData, interpolateThemeColor, themes, transformTransactionData, version, waterfallChart };

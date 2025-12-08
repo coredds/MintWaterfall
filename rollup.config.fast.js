@@ -9,12 +9,12 @@ const banner = `/*!
  */`;
 
 const external = [
-  "d3", 
-  "d3-array", 
-  "d3-drag", 
-  "d3-force", 
-  "d3-color", 
-  "d3-selection"
+  "d3",
+  "d3-array",
+  "d3-drag",
+  "d3-force",
+  "d3-color",
+  "d3-selection",
 ];
 
 export default {
@@ -24,19 +24,19 @@ export default {
     file: "dist/mintwaterfall.cjs.js",
     format: "cjs",
     banner,
-    exports: "named"
+    exports: "named",
   },
   plugins: [
     resolve({
-      preferBuiltins: false
+      preferBuiltins: false,
     }),
     typescript({
       tsconfig: "./tsconfig.json",
       exclude: ["**/*.test.ts", "**/*.test.js", "tests/**/*"],
       compilerOptions: {
         declaration: false,
-        declarationMap: false
-      }
-    })
-  ]
+        declarationMap: false,
+      },
+    }),
+  ],
 };

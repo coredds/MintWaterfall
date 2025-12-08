@@ -5,9 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.9] - 2025-12-08
+
+### Changed
+
+- **Dependencies Update**: Updated all dev dependencies to latest compatible versions
+  - `@babel/core`: 7.28.4 → 7.28.5
+  - `@babel/preset-env`: 7.28.3 → 7.28.5
+  - `@babel/preset-typescript`: 7.27.1 → 7.28.5
+  - `@rollup/plugin-babel`: 6.0.4 → 6.1.0
+  - `@rollup/plugin-node-resolve`: 16.0.2 → 16.0.3
+  - `@rollup/plugin-typescript`: 12.1.4 → 12.3.0
+  - `eslint`: 9.37.0 → 9.39.1
+  - `prettier`: 3.6.2 → 3.7.4
+  - `lint-staged`: 16.2.3 → 16.2.7
+  - `rollup`: 4.52.4 → 4.53.3
+  - `rimraf`: 6.0.1 → 6.1.2
+  - `jsdom`: kept at 26.1.0 (v27 has breaking changes)
+
+### Fixed
+
+- Code formatting updated to comply with Prettier 3.7.4
+
+### Technical
+
+- All 338 tests passing across 18 test suites
+- Zero vulnerabilities
+- All formatting checks passing
+
 ## [0.8.8] - 2025-10-09
 
 ### Changed
+
 - **Dependencies Update**: Updated all dev dependencies to latest compatible versions
   - `@babel/core`: 7.28.3 → 7.28.4
   - `@rollup/plugin-node-resolve`: 16.0.1 → 16.0.2
@@ -22,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `jsdom`: kept at 26.1.0 (v27 has compatibility issues)
 
 ### Technical
+
 - All 338 tests passing across 18 test suites
 - Zero vulnerabilities
 - Build system verified with all updated tools
@@ -30,14 +60,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.8.7] - 2025-09-11
 
 ### Fixed
+
 - **🔗 Repository URL**: Updated placeholder repository URL from `https://github.com/your-username/mintwaterfall` to correct address `https://github.com/coredds/MintWaterfall` in TypeScript definition files
 
 ## [0.8.6] - 2025-09-04
 
 ### Added
+
 - **🚀 Advanced D3.js Data Processing Features**: Complete Phase 1 implementation
   - `d3.group()` and `d3.rollup()` multi-dimensional grouping
-  - `d3.flatRollup()` hierarchical data flattening  
+  - `d3.flatRollup()` hierarchical data flattening
   - `d3.cross()` and `d3.index()` cross-tabulation and indexing
   - Temporal aggregation with `d3.timeMonth()` intervals
   - Revenue waterfall analysis with breakdown capabilities
@@ -48,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Comprehensive error handling and fallback mechanisms
 
 ### Enhanced
+
 - **📊 Interactive Demo Section**: New advanced data processing showcase
   - Live demonstration buttons for each D3.js function
   - Real-time chart updates with processed data
@@ -60,6 +93,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **📚 API Documentation**: Updated with complete advanced features reference
 
 ### Technical
+
 - **⚡ Performance Optimizations**: Efficient data processing pipelines
 - **🔍 Debug Enhancements**: Comprehensive logging and error reporting
 - **🧪 Type Safety**: Enhanced TypeScript interfaces for new features
@@ -67,6 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.8.5] - 2025-01-19
 
 ### Added
+
 - **🧪 Complete Test Suite**: Comprehensive testing with 100% pass rate
   - 183 passing tests across 12 test suites
   - Enhanced features testing (scales, brush, animations)
@@ -75,6 +110,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Performance-optimized test execution (4.7s)
 
 ### Changed
+
 - **🏗️ TypeScript Migration Complete**: Full TypeScript support with type safety
   - All core modules converted to TypeScript (.ts)
   - Complete type definitions for all APIs
@@ -87,6 +123,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed obsolete console-based tests
 
 ### Fixed
+
 - **🔧 Scale System Issues**: Fixed API mismatches and type issues
   - Enhanced scale factory with proper TypeScript interfaces
   - Fixed brush system with complete selection utilities
@@ -94,6 +131,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improved chart API consistency
 
 ### Removed
+
 - **📝 Hierarchical Layouts**: Removed unused hierarchical layout functionality
   - Treemap, partition, pack, cluster, tree visualizations removed
   - Focus on core waterfall chart functionality
@@ -102,6 +140,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.8.1] - 2025-08-30
 
 ### Added
+
 - **🏗️ Hierarchical Layout System**: Complete D3.js layout algorithm implementation
   - `d3.hierarchy()` support for hierarchical data structures
   - `d3.treemap()` for space-efficient breakdown visualizations
@@ -132,6 +171,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Performance optimizations for large enterprise datasets
 
 ### Enhanced
+
 - **Chart API**: Extended with performance configuration methods
   - `enablePerformanceOptimization()` - Toggle performance features
   - `performanceDashboard()` - Real-time metrics display
@@ -146,6 +186,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhanced error handling and fallbacks
 
 ### Performance
+
 - **Large Dataset Support**: Handles >500K data points efficiently
 - **Memory Management**: Automatic cleanup and garbage collection triggers
 - **Render Optimization**: Smart sampling and virtualization strategies
@@ -153,6 +194,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Load Time**: <2s initial render for 100K+ data points
 
 ### Documentation
+
 - **HIERARCHICAL_LAYOUTS.md**: Comprehensive guide for new layout features
 - **API Documentation**: Updated with all new methods and options
 - **Performance Examples**: Interactive demos for testing optimizations
@@ -160,6 +202,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.0] - 2025-08-28
 
 ### Added
+
 - **📈 Trend Line Overlays**: Complete trend analysis system with linear, moving average, and polynomial options
 - **🔄 Enhanced Data Loading**: CSV, JSON, TSV format support with HTTP URL loading and automatic format detection
 - **🖼️ High-DPI PNG Export**: 2x scaling support with enhanced image quality and comprehensive error handling
@@ -170,11 +213,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **📚 Educational Information**: Contextual explanations for each trend type with technical details
 
 ### Fixed
+
 - **ESLint Compliance**: All linting issues resolved with modern code standards
 - **Deprecated API**: Removed legacy accessibility detection methods in favor of W3C Forced Colors Mode standard
 - **Code Quality**: Unused variables properly handled with appropriate ESLint disable comments for future-use functions
 
 ### Changed
+
 - **Accessibility System**: Enhanced with automatic CSS injection for forced colors mode support
 - **Export System**: Improved PNG generation with high-DPI support and better error handling
 - **Demo Experience**: Consolidated trend line features into main demonstration page for unified user experience
@@ -182,6 +227,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.6] - 2025-08-22
 
 ### Added
+
 - **Enhanced D3.js v7 compatibility**: Full scale system support for band, linear, ordinal, and time scales
 - **Advanced interactive features**: Brush system for data filtering and selection
 - **Staggered animations**: Enhanced visual feedback with progressive reveal animations
@@ -189,18 +235,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Utility functions**: `getBarWidth()` and `getBarPosition()` for cross-scale compatibility
 
 ### Fixed
+
 - **Brush system errors**: Resolved `scale.invert is not a function` for band scales
 - **Scale bandwidth errors**: Fixed `xScale.bandwidth is not a function` when switching scale types
 - **D3 v7 API compatibility**: Removed deprecated `cornerRadius()` and `handleSize()` brush methods
 - **Animation toggling**: Enhanced staggered animation toggle for immediate visual feedback
 
 ### Changed
+
 - **Test coverage**: Increased from 121 to 168 comprehensive test cases
 - **Code organization**: Improved scale handling with dedicated utility functions
 - **Performance**: Optimized rendering for different scale types
 - **Documentation**: Updated API documentation with new advanced features
 
 ### Technical Details
+
 - All 168 tests passing with 51% code coverage
 - Zero lint issues maintained
 - Production-ready status achieved
@@ -209,6 +258,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.5] - 2025-08-XX
 
 ### Added
+
 - **Comprehensive testing**: 121 test cases with 57% code coverage
 - **Enhanced functionality**: Fixed normalize/bounce buttons, improved UI/UX
 - **Visual improvements**: 1100px wide charts, centered layouts, visual feedback system
@@ -216,12 +266,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation**: Updated README, API docs, and examples
 
 ### Changed
+
 - **Code quality**: Achieved zero lint issues, professional codebase standards
 - **Performance**: Optimized bundle size and rendering efficiency
 
 ## [0.5.4] - 2025-08-XX
 
 ### Added
+
 - Initial production release
 - Basic waterfall and stacked chart functionality
 - D3.js integration
@@ -229,6 +281,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Theme support
 
 ### Technical
+
 - Core chart rendering engine
 - Data processing pipeline
 - Event handling system
@@ -245,6 +298,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Support
 
 For questions about specific versions or upgrade paths, please:
+
 - Check the [API documentation](API.md)
 - View [examples](mintwaterfall-example.html)
 - File an [issue](https://github.com/coredds/MintWaterfall/issues)

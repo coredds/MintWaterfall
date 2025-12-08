@@ -5,17 +5,20 @@ We welcome contributions to MintWaterfall! This document provides guidelines for
 ## Development Setup
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/coredds/MintWaterfall.git
    cd MintWaterfall
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Start development server**
+
    ```bash
    npm run dev
    ```
@@ -54,6 +57,7 @@ MintWaterfall/
 ### Commit Messages
 
 Use conventional commit format:
+
 - `feat:` for new features
 - `fix:` for bug fixes
 - `docs:` for documentation changes
@@ -62,6 +66,7 @@ Use conventional commit format:
 - `test:` for test-related changes
 
 Examples:
+
 ```
 feat: add tooltip support for bar interactions
 fix: resolve animation timing issues
@@ -71,17 +76,20 @@ docs: update API documentation with examples
 ### Pull Request Process
 
 1. **Create feature branch**
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
 2. **Make changes and commit**
+
    ```bash
    git add .
    git commit -m "feat: add your feature description"
    ```
 
 3. **Push branch and create PR**
+
    ```bash
    git push origin feature/your-feature-name
    ```
@@ -123,6 +131,7 @@ docs: update API documentation with examples
 ## Bug Reports
 
 When reporting bugs, please include:
+
 - Clear description of the issue
 - Steps to reproduce
 - Expected vs actual behavior
@@ -132,6 +141,7 @@ When reporting bugs, please include:
 ## Feature Requests
 
 For feature requests, please:
+
 - Check if feature already exists or is planned
 - Describe the use case and benefit
 - Provide examples of how it would be used
@@ -153,6 +163,7 @@ For feature requests, please:
 ### Browser Testing
 
 Test in:
+
 - Chrome (latest)
 - Firefox (latest)
 - Safari (latest)

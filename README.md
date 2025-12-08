@@ -3,7 +3,7 @@
 [![CI](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml/badge.svg?branch=main)](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml)
 [![Security Audit](https://github.com/coredds/MintWaterfall/actions/workflows/security.yml/badge.svg)](https://github.com/coredds/MintWaterfall/actions/workflows/security.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.8.8-blue.svg)](https://github.com/coredds/MintWaterfall/releases)
+[![Version](https://img.shields.io/badge/version-0.8.9-blue.svg)](https://github.com/coredds/MintWaterfall/releases)
 [![codecov](https://codecov.io/gh/coredds/MintWaterfall/branch/main/graph/badge.svg)](https://codecov.io/gh/coredds/MintWaterfall)
 
 A comprehensive TypeScript waterfall chart library built on D3.js v7. Features advanced data processing, statistical analysis, interactive visualizations, and enterprise-grade performance with complete type safety.
@@ -13,6 +13,7 @@ A comprehensive TypeScript waterfall chart library built on D3.js v7. Features a
 ## Features
 
 ### Core Visualization
+
 - **Dual Chart Modes**: Traditional waterfall and stacked visualization
 - **Interactive Elements**: Drag interactions, enhanced hover detection, force simulation
 - **Advanced Animations**: Smooth transitions with customizable duration and easing
@@ -20,18 +21,21 @@ A comprehensive TypeScript waterfall chart library built on D3.js v7. Features a
 - **Accessibility**: WCAG 2.1 compliant with keyboard navigation and screen reader support
 
 ### Statistical Analysis
+
 - **Comprehensive Statistics**: Mean, median, variance, quartiles, outlier detection
 - **Trend Analysis**: Linear regression with confidence intervals and forecasting
 - **Data Quality Assessment**: Completeness, validity, accuracy metrics with recommendations
 - **Variance Analysis**: ANOVA-style analysis with between/within group variance
 
 ### Advanced Data Processing
+
 - **D3.js Integration**: Native support for grouping, rollup, cross-tabulation, and indexing
 - **Multi-dimensional Operations**: Complex data transformations and aggregations
 - **Temporal Processing**: Time-series aggregation with configurable intervals
 - **Financial Analysis**: Revenue breakdown, variance analysis, period comparisons
 
 ### Performance & Architecture
+
 - **TypeScript**: Complete type safety with strict checking across 20+ modules
 - **Optimized Build**: 4 bundle formats (ESM, UMD, CJS, Minified) with external D3 dependencies
 - **Test Coverage**: 338 tests across 18 test suites with 26.5% overall coverage
@@ -44,55 +48,60 @@ npm install mintwaterfall
 ```
 
 **CDN:**
+
 ```html
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://unpkg.com/mintwaterfall@latest/dist/mintwaterfall.min.js"></script>
 ```
 
 **ES Modules:**
+
 ```javascript
-import { waterfallChart, createDataProcessor, createStatisticalSystem } from 'mintwaterfall';
-import * as d3 from 'd3';
+import {
+  waterfallChart,
+  createDataProcessor,
+  createStatisticalSystem,
+} from "mintwaterfall";
+import * as d3 from "d3";
 ```
 
 ## Quick Start
 
 ```javascript
 const data = [
-    {
-        label: "Q1 Revenue",
-        stacks: [{ value: 45000, color: "#3498db", label: "$45K" }],
-        category: "revenue"
-    },
-    {
-        label: "Q2 Growth", 
-        stacks: [{ value: 30000, color: "#2ecc71", label: "$30K" }],
-        category: "revenue"
-    },
-    {
-        label: "Expenses",
-        stacks: [{ value: -15000, color: "#e74c3c", label: "-$15K" }],
-        category: "expenses"
-    }
+  {
+    label: "Q1 Revenue",
+    stacks: [{ value: 45000, color: "#3498db", label: "$45K" }],
+    category: "revenue",
+  },
+  {
+    label: "Q2 Growth",
+    stacks: [{ value: 30000, color: "#2ecc71", label: "$30K" }],
+    category: "revenue",
+  },
+  {
+    label: "Expenses",
+    stacks: [{ value: -15000, color: "#e74c3c", label: "-$15K" }],
+    category: "expenses",
+  },
 ];
 
 const chart = waterfallChart()
-    .width(800)
-    .height(400)
-    .showTotal(true)
-    .theme('corporate')
-    .enableAccessibility(true);
+  .width(800)
+  .height(400)
+  .showTotal(true)
+  .theme("corporate")
+  .enableAccessibility(true);
 
-d3.select('#chart')
-    .datum(data)
-    .call(chart);
+d3.select("#chart").datum(data).call(chart);
 ```
 
 ## Advanced Features
 
 ### Statistical Analysis
+
 ```javascript
-import { createStatisticalSystem } from 'mintwaterfall';
+import { createStatisticalSystem } from "mintwaterfall";
 
 const stats = createStatisticalSystem();
 
@@ -105,7 +114,10 @@ const outliers = stats.detectOutliers(data, labels);
 // Returns: { outliers, cleanData, method, threshold, statistics }
 
 // Trend analysis with forecasting
-const trend = stats.analyzeTrend([{x: 1, y: 10}, {x: 2, y: 20}]);
+const trend = stats.analyzeTrend([
+  { x: 1, y: 10 },
+  { x: 2, y: 20 },
+]);
 // Returns: { slope, intercept, correlation, rSquared, forecast }
 
 // Data quality assessment
@@ -114,93 +126,101 @@ const quality = stats.assessDataQuality(rawData);
 ```
 
 ### Interactive Systems
+
 ```javascript
-import { createAdvancedInteractionSystem } from 'mintwaterfall';
+import { createAdvancedInteractionSystem } from "mintwaterfall";
 
 const interactions = createAdvancedInteractionSystem(container, data);
 
 // Enable drag interactions with constraints
 interactions.enableDrag({
-    enabled: true,
-    axis: 'vertical',
-    constraints: { minValue: -100, maxValue: 100 }
+  enabled: true,
+  axis: "vertical",
+  constraints: { minValue: -100, maxValue: 100 },
 });
 
 // Enhanced hover detection with Voronoi diagrams
 interactions.enableEnhancedHover({
-    enabled: true,
-    extent: [[0, 0], [800, 400]]
+  enabled: true,
+  extent: [
+    [0, 0],
+    [800, 400],
+  ],
 });
 
 // Force simulation for dynamic layouts
 interactions.startForceSimulation({
-    enabled: true,
-    forces: { collision: true, positioning: true },
-    strength: { collision: 0.7, positioning: 0.5 }
+  enabled: true,
+  forces: { collision: true, positioning: true },
+  strength: { collision: 0.7, positioning: 0.5 },
 });
 ```
 
 ### Advanced Data Processing
+
 ```javascript
-import { createAdvancedDataProcessor } from 'mintwaterfall';
+import { createAdvancedDataProcessor } from "mintwaterfall";
 
 const processor = createAdvancedDataProcessor();
 
 // Multi-dimensional grouping
-const grouped = processor.groupBy(salesData, d => d.region);
+const grouped = processor.groupBy(salesData, (d) => d.region);
 
 // Data rollup with custom reducers
 const aggregated = processor.rollupBy(
-    salesData, 
-    values => d3.sum(values, d => d.revenue),
-    d => d.category
+  salesData,
+  (values) => d3.sum(values, (d) => d.revenue),
+  (d) => d.category,
 );
 
 // Cross-tabulation for dimensional analysis
 const crossTab = processor.crossTabulate(
-    categories, quarters,
-    (cat, quarter) => ({ category: cat, quarter, key: `${cat}-${quarter}` })
+  categories,
+  quarters,
+  (cat, quarter) => ({ category: cat, quarter, key: `${cat}-${quarter}` }),
 );
 
 // Time-based aggregation
 const timeAggregated = processor.aggregateByTime(
-    timeSeriesData,
-    d => new Date(d.date),
-    d => d.value,
-    'month'
+  timeSeriesData,
+  (d) => new Date(d.date),
+  (d) => d.value,
+  "month",
 );
 ```
 
 ## Configuration API
 
 ### Chart Configuration
+
 ```javascript
 chart
-    .width(800)                    // Chart dimensions
-    .height(400)
-    .margin({top: 20, right: 30, bottom: 40, left: 50})
-    .showTotal(true)               // Display total bar
-    .stacked(false)                // Toggle chart mode
-    .barPadding(0.1)               // Bar spacing
-    .duration(750)                 // Animation duration
-    .theme('corporate')            // Theme selection
-    .enableAccessibility(true)     // WCAG compliance
+  .width(800) // Chart dimensions
+  .height(400)
+  .margin({ top: 20, right: 30, bottom: 40, left: 50 })
+  .showTotal(true) // Display total bar
+  .stacked(false) // Toggle chart mode
+  .barPadding(0.1) // Bar spacing
+  .duration(750) // Animation duration
+  .theme("corporate") // Theme selection
+  .enableAccessibility(true); // WCAG compliance
 ```
 
 ### Accessibility Features
+
 ```javascript
-import { createAccessibilitySystem } from 'mintwaterfall';
+import { createAccessibilitySystem } from "mintwaterfall";
 
 const a11y = createAccessibilitySystem();
 
 // Create accessible chart descriptions
 const descriptionId = a11y.createChartDescription(container, data, {
-    title: "Quarterly Revenue Analysis",
-    summary: "Shows revenue trends across four quarters"
+  title: "Quarterly Revenue Analysis",
+  summary: "Shows revenue trends across four quarters",
 });
 
 // Validate color contrast
-const contrast = a11y.validateColorContrast('#3498db', '#ffffff');
+const contrast = a11y.validateColorContrast("#3498db", "#ffffff");
 // Returns: { ratio, passesAA, passesAAA, level }
 
 // Handle keyboard navigation
@@ -208,56 +228,61 @@ a11y.handleChartKeydown(keyEvent, data, config);
 ```
 
 ### Event Handling
+
 ```javascript
 chart.on("barClick", (event, d) => {
-    console.log("Clicked:", d.label, d.value);
+  console.log("Clicked:", d.label, d.value);
 });
 
 chart.on("brushEnd", (selection) => {
-    console.log("Selected range:", selection);
+  console.log("Selected range:", selection);
 });
 
 // Advanced interaction events
-interactions.on('dragStart', (event) => {
-    console.log('Drag started:', event);
+interactions.on("dragStart", (event) => {
+  console.log("Drag started:", event);
 });
 
-interactions.on('hoverEnter', (data) => {
-    console.log('Hover detected:', data);
+interactions.on("hoverEnter", (data) => {
+  console.log("Hover detected:", data);
 });
 ```
 
 ## Data Formats
 
 ### Basic Waterfall Data
+
 ```javascript
-const waterfallData = [{
+const waterfallData = [
+  {
     label: "Category Name",
     stacks: [
-        { value: 100, color: "#3498db", label: "Positive" },
-        { value: -25, color: "#e74c3c", label: "Negative" }
+      { value: 100, color: "#3498db", label: "Positive" },
+      { value: -25, color: "#e74c3c", label: "Negative" },
     ],
-    category: "revenue"
-}];
+    category: "revenue",
+  },
+];
 ```
 
 ### Advanced Processing Data
+
 ```javascript
 const businessData = [
-    { 
-        region: 'North', 
-        product: 'Widget', 
-        revenue: 100000, 
-        date: '2024-01-15',
-        category: 'sales'
-    },
-    { 
-        region: 'South', 
-        product: 'Gadget', 
-        revenue: 85000, 
-        date: '2024-01-20',
-        category: 'sales'
-    }
+  {
+    region: "North",
+    product: "Widget",
+    revenue: 100000,
+    date: "2024-01-15",
+    category: "sales",
+  },
+  {
+    region: "South",
+    product: "Gadget",
+    revenue: 85000,
+    date: "2024-01-20",
+    category: "sales",
+  },
 ];
 ```
 
@@ -266,20 +291,21 @@ const businessData = [
 Available themes: `default`, `dark`, `corporate`, `accessible`, `colorful`, `financial`, `professional`
 
 ```javascript
-chart.theme('corporate');
+chart.theme("corporate");
 
 // Custom theme configuration
 chart.themeConfig({
-    background: '#ffffff',
-    colors: ['#3498db', '#2ecc71', '#e74c3c'],
-    text: '#2c3e50',
-    grid: '#ecf0f1'
+  background: "#ffffff",
+  colors: ["#3498db", "#2ecc71", "#e74c3c"],
+  text: "#2c3e50",
+  grid: "#ecf0f1",
 });
 ```
 
 ## Development
 
 ### Setup
+
 ```bash
 git clone https://github.com/coredds/MintWaterfall.git
 cd MintWaterfall
@@ -287,6 +313,7 @@ npm install
 ```
 
 ### Commands
+
 ```bash
 npm test              # Run full test suite (338 tests)
 npm run test:core     # Run core functionality tests (136 tests)
@@ -297,6 +324,7 @@ npm start             # Development server (localhost:8080)
 ```
 
 ### Build Output
+
 - `dist/mintwaterfall.esm.js` - ES Module bundle
 - `dist/mintwaterfall.umd.js` - UMD bundle for browsers
 - `dist/mintwaterfall.min.js` - Minified production bundle
@@ -304,6 +332,7 @@ npm start             # Development server (localhost:8080)
 - `dist/index.d.ts` - TypeScript definitions
 
 ### Test Coverage
+
 - **338 total tests** across 18 test suites (100% pass rate)
 - **26.5% overall coverage** with high-value test focus
 - **Statistical Analysis: 89.6% coverage** (27 tests)
@@ -312,6 +341,7 @@ npm start             # Development server (localhost:8080)
 - **Critical Integration Tests: 21 tests** for regression prevention
 
 ### Performance Metrics
+
 - **Build time: 5.8 seconds** (optimized Rollup configuration)
 - **Test execution: 7.2 seconds** (full suite with coverage)
 - **Bundle sizes optimized** with external D3 dependencies
@@ -325,6 +355,7 @@ npm start             # Development server (localhost:8080)
 ## Architecture
 
 ### Module Structure
+
 - **Core Chart**: `mintwaterfall-chart.ts` - Main chart component
 - **Data Processing**: `mintwaterfall-data.ts` - Data transformation utilities
 - **Advanced Data**: `mintwaterfall-advanced-data.ts` - D3 integration and complex operations
@@ -339,12 +370,14 @@ npm start             # Development server (localhost:8080)
 ## Recent Updates
 
 ### v0.8.8 (Current)
+
 - Updated all dev dependencies to latest versions (babel, eslint, jest, rollup, typescript)
 - Major updates: husky 8.0 → 9.1.7, jsdom 26.1 → 27.0.0
 - All 338 tests passing with zero vulnerabilities
 - Complete compatibility verification with updated tooling
 
 ### v0.8.7
+
 - Complete statistical analysis system with 89.6% test coverage
 - Advanced interaction system with drag, hover, and force simulation
 - Comprehensive data processing with D3.js integration
@@ -354,6 +387,7 @@ npm start             # Development server (localhost:8080)
 ## Contributing
 
 Contributions welcome. Requirements:
+
 - TypeScript with strict type checking
 - D3.js v7+ compatibility
 - Comprehensive test coverage for new features
