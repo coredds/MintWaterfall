@@ -1,4 +1,4 @@
-// TypeScript definitions for MintWaterfall v0.6.0
+// TypeScript definitions for MintWaterfall v0.8.10
 // Project: https://github.com/coredds/MintWaterfall
 // Definitions by: MintWaterfall Team
 

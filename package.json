@@ -1,6 +1,6 @@
 {
   "name": "mintwaterfall",
-  "version": "0.8.9",
+  "version": "0.8.10",
   "description": "A powerful, D3.js-compatible waterfall chart component with enterprise features including breakdown analysis, conditional formatting, stacking capabilities, animations, and extensive customization options",
   "main": "dist/mintwaterfall.cjs.js",
   "module": "dist/mintwaterfall.esm.js",
@@ -79,7 +79,7 @@
     "url": "https://github.com/coredds/MintWaterfall/issues"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=18.0.0"
   },
   "peerDependencies": {
     "d3": "^7.0.0"

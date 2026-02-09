@@ -1,8 +1,10 @@
 // Basic ESLint configuration for ES2021 and browser
 export default [
   {
-    files: ["**/*.js"],
     ignores: ["dist/**", "node_modules/**", "coverage/**", "build/**"],
+  },
+  {
+    files: ["**/*.js"],
     languageOptions: {
       ecmaVersion: 2021,
       sourceType: "module",

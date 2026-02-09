@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.10] - 2026-02-09
+
+### Changed
+
+- **Dependencies Update**: Updated all dev dependencies to latest compatible versions
+  - `@babel/core`: 7.28.5 → 7.29.0
+  - `@babel/preset-env`: 7.28.5 → 7.29.0
+  - `eslint`: 9.39.1 → 9.39.2
+  - `prettier`: 3.7.4 → 3.8.1
+  - `rollup`: 4.53.3 → 4.57.1
+- **GitHub Actions Modernized**: Updated all CI/CD workflows
+  - Node.js CI matrix updated from [18.x, 20.x] to [20.x, 22.x]
+  - Replaced deprecated `actions/create-release@v1` with `softprops/action-gh-release@v2`
+  - Updated `codecov/codecov-action` from v4 to v5
+  - All workflows now use Node.js 22.x and npm caching
+- **Engine requirement**: Updated `engines.node` from `>=14.0.0` to `>=18.0.0` to reflect actual minimum
+- **ESLint config**: Fixed flat config `ignores` so `coverage/` directory is properly excluded
+
+### Fixed
+
+- **Security**: Resolved high-severity vulnerability in `@isaacs/brace-expansion`
+- **publish.yml**: Added missing `build` step before `npm publish`
+- **security.yml**: Removed redundant duplicate audit step
+- **Version mismatches**: Corrected stale fallback versions in rollup configs (0.8.7 → 0.8.10)
+- **Copyright years**: Updated banner copyright to 2024-2026
+- **Type definitions header**: Updated `index.d.ts` version from v0.6.0 to v0.8.10
+- **Demo files**: Updated version references in example HTML
+
+### Technical
+
+- All 338 tests passing across 18 test suites
+- Zero vulnerabilities
+- Build and lint verified clean
+
 ## [0.8.9] - 2025-12-08
 
 ### Changed

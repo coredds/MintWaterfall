@@ -1,7 +1,7 @@
 /*!
- * MintWaterfall v0.8.9
+ * MintWaterfall v0.8.10
  * D3.js-compatible waterfall chart component
- * (c) 2024 David Duarte
+ * (c) 2024-2026 David Duarte
  * Released under the MIT License
  */
 import * as d3 from 'd3';
@@ -7899,7 +7899,7 @@ function createHierarchicalLayout() {
     return hierarchicalLayout;
 }
 
-const version = "0.8.9";
+const version = "0.8.10";
 if (typeof window !== "undefined" && window.d3) {
   window.d3.waterfallChart = waterfallChart;
 }

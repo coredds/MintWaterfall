@@ -97,7 +97,7 @@ export { createExportSystem } from "./mintwaterfall-export.ts";
 export { createZoomSystem } from "./mintwaterfall-zoom.ts";
 
 // Version information
-export const version = "0.8.9";
+export const version = "0.8.10";
 
 // Default exports for convenience
 import { waterfallChart } from "./mintwaterfall-chart.ts";

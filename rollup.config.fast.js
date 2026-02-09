@@ -2,9 +2,9 @@ import resolve from "@rollup/plugin-node-resolve";
 import typescript from "@rollup/plugin-typescript";
 
 const banner = `/*!
- * MintWaterfall v${process.env.npm_package_version || "0.8.7"} - FAST BUILD
+ * MintWaterfall v${process.env.npm_package_version || "0.8.10"} - FAST BUILD
  * D3.js-compatible waterfall chart component
- * (c) 2024 David Duarte
+ * (c) 2024-2026 David Duarte
  * Released under the MIT License
  */`;
 

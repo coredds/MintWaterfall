@@ -3,7 +3,7 @@
 [![CI](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml/badge.svg?branch=main)](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml)
 [![Security Audit](https://github.com/coredds/MintWaterfall/actions/workflows/security.yml/badge.svg)](https://github.com/coredds/MintWaterfall/actions/workflows/security.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.8.9-blue.svg)](https://github.com/coredds/MintWaterfall/releases)
+[![Version](https://img.shields.io/badge/version-0.8.10-blue.svg)](https://github.com/coredds/MintWaterfall/releases)
 [![codecov](https://codecov.io/gh/coredds/MintWaterfall/branch/main/graph/badge.svg)](https://codecov.io/gh/coredds/MintWaterfall)
 
 A comprehensive TypeScript waterfall chart library built on D3.js v7. Features advanced data processing, statistical analysis, interactive visualizations, and enterprise-grade performance with complete type safety.
@@ -349,7 +349,7 @@ npm start             # Development server (localhost:8080)
 
 ## Browser Compatibility
 
-**Requirements**: ES6 Modules, D3.js v7+, SVG support  
+**Requirements**: ES6 Modules, D3.js v7+, SVG support, Node.js 18+  
 **Tested**: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
 
 ## Architecture
@@ -369,12 +369,19 @@ npm start             # Development server (localhost:8080)
 
 ## Recent Updates
 
-### v0.8.8 (Current)
+### v0.8.10 (Current)
 
-- Updated all dev dependencies to latest versions (babel, eslint, jest, rollup, typescript)
-- Major updates: husky 8.0 → 9.1.7, jsdom 26.1 → 27.0.0
-- All 338 tests passing with zero vulnerabilities
-- Complete compatibility verification with updated tooling
+- Security fix: resolved high-severity vulnerability in `@isaacs/brace-expansion`
+- Updated dependencies: babel 7.29, eslint 9.39.2, prettier 3.8.1, rollup 4.57.1
+- Modernized GitHub Actions: Node 22.x, replaced deprecated actions, added npm caching
+- Fixed missing build step in `publish.yml` workflow
+- Updated engine requirement to `>=18.0.0` to match actual toolchain minimum
+- Corrected stale version references across configs and demo files
+
+### v0.8.9
+
+- Updated all dev dependencies to latest compatible versions
+- Code formatting updated to comply with Prettier 3.7.4
 
 ### v0.8.7
 
