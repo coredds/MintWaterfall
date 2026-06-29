@@ -195,11 +195,6 @@ function renderChart(id, data, fn) {
   sel.datum(data).call(fn);
 }
 
-function fmt(n) {
-  if (n == null || isNaN(n)) return "\u2014";
-  return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
-}
-
 function makeStat(k, v, cls) {
   return '<div class="stat"><div class="k">' + k + '</div><div class="v ' + (cls||"") + '">' + v + '</div></div>';
 }
@@ -329,26 +324,27 @@ function makeStat(k, v, cls) {
 (function () {
   try {
     var stats = createStatisticalSystem();
-    var values = [5200, -2100, 3100, -950, -620, -380, 180, -450, 880];
+    // Monthly sales data — sensible for statistical analysis
+    var values = [4200, 3800, 5100, 4700, 6000, 5500, 6900, 6400, 7200, 8100, 7800, 9400];
     var s = stats.calculateSummary(values);
     var trend = stats.analyzeTrend(values.map(function(v,i){ return { x: i+1, y: v }; }));
 
     var cls = function (v) { return v >= 0 ? "pos" : "neg"; };
     var html = "";
-    html += makeStat("Count",  fmt(s.count));
-    html += makeStat("Sum",    fmt(s.sum),           cls(s.sum));
-    html += makeStat("Mean",   fmt(s.mean),          cls(s.mean));
-    html += makeStat("Median", fmt(s.median),        cls(s.median));
-    html += makeStat("Min",    fmt(s.min),           "neg");
-    html += makeStat("Max",    fmt(s.max),           "pos");
-    html += makeStat("Range",  fmt(s.range));
-    html += makeStat("Variance",       fmt(s.variance));
-    html += makeStat("Std Dev",        fmt(s.standardDeviation));
-    html += makeStat("Slope",          fmt(trend.slope),          cls(trend.slope));
-    html += makeStat("R\u00B2",        fmt(trend.rSquared));
-    html += makeStat("Direction",      trend.direction);
-    html += makeStat("Strength",       trend.strength);
-    html += makeStat("Confidence",     fmt(trend.confidence * 100) + "%");
+    html += makeStat("Count",  String(s.count));
+    html += makeStat("Sum",    "$" + s.sum.toLocaleString(), cls(s.sum));
+    html += makeStat("Mean",   "$" + s.mean.toLocaleString(), cls(s.mean));
+    html += makeStat("Median", "$" + s.median.toLocaleString(), cls(s.median));
+    html += makeStat("Min",    "$" + s.min.toLocaleString(), "neg");
+    html += makeStat("Max",    "$" + s.max.toLocaleString(), "pos");
+    html += makeStat("Range",  "$" + s.range.toLocaleString());
+    html += makeStat("Variance",     s.variance.toLocaleString(undefined, { maximumFractionDigits: 0 }));
+    html += makeStat("Std Dev",      s.standardDeviation.toLocaleString(undefined, { maximumFractionDigits: 0 }));
+    html += makeStat("R\u00B2",      (trend.rSquared * 100).toFixed(1) + "%");
+    html += makeStat("Slope",        "$" + Math.round(trend.slope).toLocaleString() + "/mo", cls(trend.slope));
+    html += makeStat("Direction",    trend.direction);
+    html += makeStat("Strength",     trend.strength);
+    html += makeStat("Confidence",   (trend.confidence).toFixed(1) + "%");
     document.getElementById("stat-grid").innerHTML = html;
   } catch (er) {
     document.getElementById("stat-grid").innerHTML =
