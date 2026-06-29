@@ -177,6 +177,8 @@ export interface WaterfallChart {
     virtualizationThreshold(): number;
     virtualizationThreshold(value: number): WaterfallChart;
     on(event: string, handler: BarEventHandler | null): WaterfallChart;
+    data(): WaterfallChart;
+    data(value: any): WaterfallChart;
     (selection: d3.Selection<any, any, any, any>): void;
 }
 

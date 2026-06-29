@@ -56,7 +56,7 @@ export function waterfallChart(): WaterfallChart {
                 item.stacks.every(stack => typeof stack.value === "number" && typeof stack.color === "string")
             );
             if (!isValidData) {
-                console.error("MintWaterfall: Invalid data structure.");
+                console.error("MintWaterfall: Invalid data structure. Each item must have a 'label' string and 'stacks' array with 'value' numbers and 'color' strings.");
                 return;
             }
 
@@ -244,6 +244,12 @@ export function waterfallChart(): WaterfallChart {
     chart.colorMode = accessor(() => config.colorMode, v => { config.colorMode = v; });
     chart.colorTheme = accessor(() => config.advancedColorConfig.themeName || "default", v => { config.advancedColorConfig.themeName = v; });
     chart.neutralThreshold = accessor(() => config.advancedColorConfig.neutralThreshold || 0, v => { config.advancedColorConfig.neutralThreshold = v; });
+    let boundData: any = null;
+    chart.data = function (this: any, value?: any) {
+        if (arguments.length === 0) return chart;
+        boundData = value;
+        return chart;
+    } as any;
 
     chart.on = function (): any {
         const value = (listeners.on as any).apply(listeners, Array.from(arguments));
