@@ -1,0 +1,366 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0] - 2026-06-29
+
+### Changed
+
+- **TypeScript migration complete** — all source files now `.ts`, entry point is `src/index.ts`
+- **Module restructuring** — chart split into `src/chart/{config,chart,render,lifecycle}.ts`, data split into `src/data/{validation,transforms,advanced,pipeline}.ts`
+- **Merged enterprise scaffolding** — removed empty placeholder files (`src/enterprise/`, `src/features/`, `src/utils/`)
+- **Consolidated modules** — merged advanced variants into base modules, dropped `mintwaterfall-` prefix on all files
+- **Removed D3 namespace mutation** — `window.d3.waterfallChart` no longer set (UMD build still provides script-tag access)
+- **Demo replaced** — 4000-line demo → minimal working example
+- **CI/CD consolidated** — 8 workflows → 4, added TypeScript type-check step
+- **Added AGENTS.md** — development conventions, architecture, commands
+
+### Fixed
+
+- **Type declarations** — restored `index.d.ts` for downstream consumers
+- **Jest config** — updated `testMatch` for TS test files, fixed module paths
+- **CHANGELOG/README/CONTRIBUTING** — updated for v1.0.0 structure
+
+### Removed
+
+- **`mintwaterfall-chart-core.ts`** — duplicate chart implementation
+- **`mintwaterfall-advanced-data.ts`** — merged into `src/data/advanced.ts`
+- **`mintwaterfall-advanced-performance.ts`** — merged into `src/performance.ts`
+- **`mintwaterfall-advanced-interactions.ts`** → renamed to `src/interactions.ts`
+- **`mintwaterfall-hierarchical-layouts.ts`** → merged into `src/layouts.ts`
+- **Legacy test directories** — `tests/compatibility/`, `tests/enterprise/`
+
+## [0.8.10] - 2026-02-09
+
+### Changed
+
+- **Dependencies Update**: Updated all dev dependencies to latest compatible versions
+  - `@babel/core`: 7.28.5 → 7.29.0
+  - `@babel/preset-env`: 7.28.5 → 7.29.0
+  - `eslint`: 9.39.1 → 9.39.2
+  - `prettier`: 3.7.4 → 3.8.1
+  - `rollup`: 4.53.3 → 4.57.1
+- **GitHub Actions Modernized**: Updated all CI/CD workflows
+  - Node.js CI matrix updated from [18.x, 20.x] to [20.x, 22.x]
+  - Replaced deprecated `actions/create-release@v1` with `softprops/action-gh-release@v2`
+  - Updated `codecov/codecov-action` from v4 to v5
+  - All workflows now use Node.js 22.x and npm caching
+- **Engine requirement**: Updated `engines.node` from `>=14.0.0` to `>=18.0.0` to reflect actual minimum
+- **ESLint config**: Fixed flat config `ignores` so `coverage/` directory is properly excluded
+
+### Fixed
+
+- **Security**: Resolved high-severity vulnerability in `@isaacs/brace-expansion`
+- **publish.yml**: Added missing `build` step before `npm publish`
+- **security.yml**: Removed redundant duplicate audit step
+- **Version mismatches**: Corrected stale fallback versions in rollup configs (0.8.7 → 0.8.10)
+- **Copyright years**: Updated banner copyright to 2024-2026
+- **Type definitions header**: Updated `index.d.ts` version from v0.6.0 to v0.8.10
+- **Demo files**: Updated version references in example HTML
+
+### Technical
+
+- All 338 tests passing across 18 test suites
+- Zero vulnerabilities
+- Build and lint verified clean
+
+## [0.8.9] - 2025-12-08
+
+### Changed
+
+- **Dependencies Update**: Updated all dev dependencies to latest compatible versions
+  - `@babel/core`: 7.28.4 → 7.28.5
+  - `@babel/preset-env`: 7.28.3 → 7.28.5
+  - `@babel/preset-typescript`: 7.27.1 → 7.28.5
+  - `@rollup/plugin-babel`: 6.0.4 → 6.1.0
+  - `@rollup/plugin-node-resolve`: 16.0.2 → 16.0.3
+  - `@rollup/plugin-typescript`: 12.1.4 → 12.3.0
+  - `eslint`: 9.37.0 → 9.39.1
+  - `prettier`: 3.6.2 → 3.7.4
+  - `lint-staged`: 16.2.3 → 16.2.7
+  - `rollup`: 4.52.4 → 4.53.3
+  - `rimraf`: 6.0.1 → 6.1.2
+  - `jsdom`: kept at 26.1.0 (v27 has breaking changes)
+
+### Fixed
+
+- Code formatting updated to comply with Prettier 3.7.4
+
+### Technical
+
+- All 338 tests passing across 18 test suites
+- Zero vulnerabilities
+- All formatting checks passing
+
+## [0.8.8] - 2025-10-09
+
+### Changed
+
+- **Dependencies Update**: Updated all dev dependencies to latest compatible versions
+  - `@babel/core`: 7.28.3 → 7.28.4
+  - `@rollup/plugin-node-resolve`: 16.0.1 → 16.0.2
+  - `babel-jest`: 30.0.5 → 30.2.0
+  - `eslint`: 9.33.0 → 9.37.0
+  - `jest`: 30.0.5 → 30.2.0
+  - `jest-environment-jsdom`: 30.0.5 → 30.2.0
+  - `lint-staged`: 16.1.5 → 16.2.3
+  - `rollup`: 4.47.1 → 4.52.4
+  - `typescript`: 5.9.2 → 5.9.3
+  - `husky`: 8.0.0 → 9.1.7 (major)
+  - `jsdom`: kept at 26.1.0 (v27 has compatibility issues)
+
+### Technical
+
+- All 338 tests passing across 18 test suites
+- Zero vulnerabilities
+- Build system verified with all updated tools
+- CI/CD pipeline compatibility maintained
+
+## [0.8.7] - 2025-09-11
+
+### Fixed
+
+- **🔗 Repository URL**: Updated placeholder repository URL from `https://github.com/your-username/mintwaterfall` to correct address `https://github.com/coredds/MintWaterfall` in TypeScript definition files
+
+## [0.8.6] - 2025-09-04
+
+### Added
+
+- **🚀 Advanced D3.js Data Processing Features**: Complete Phase 1 implementation
+  - `d3.group()` and `d3.rollup()` multi-dimensional grouping
+  - `d3.flatRollup()` hierarchical data flattening
+  - `d3.cross()` and `d3.index()` cross-tabulation and indexing
+  - Temporal aggregation with `d3.timeMonth()` intervals
+  - Revenue waterfall analysis with breakdown capabilities
+  - Variance analysis for actual vs budget comparison
+  - Period comparison with period-over-period analysis
+  - Financial reducers with statistical functions (mean, variance, quantiles)
+  - Transaction data transformation utilities
+  - Comprehensive error handling and fallback mechanisms
+
+### Enhanced
+
+- **📊 Interactive Demo Section**: New advanced data processing showcase
+  - Live demonstration buttons for each D3.js function
+  - Real-time chart updates with processed data
+  - Detailed explanations and performance metrics
+  - Error handling with informative fallback data
+- **🔧 Robust Error Handling**: Improved null-safety and data validation
+  - Fixed NaN display issues in financial reducers
+  - Added comprehensive try-catch blocks
+  - Console debugging and logging enhancements
+- **📚 API Documentation**: Updated with complete advanced features reference
+
+### Technical
+
+- **⚡ Performance Optimizations**: Efficient data processing pipelines
+- **🔍 Debug Enhancements**: Comprehensive logging and error reporting
+- **🧪 Type Safety**: Enhanced TypeScript interfaces for new features
+
+## [0.8.5] - 2025-01-19
+
+### Added
+
+- **🧪 Complete Test Suite**: Comprehensive testing with 100% pass rate
+  - 183 passing tests across 12 test suites
+  - Enhanced features testing (scales, brush, animations)
+  - Data processing validation with 50+ test cases
+  - Chart functionality testing with 83+ test cases
+  - Performance-optimized test execution (4.7s)
+
+### Changed
+
+- **🏗️ TypeScript Migration Complete**: Full TypeScript support with type safety
+  - All core modules converted to TypeScript (.ts)
+  - Complete type definitions for all APIs
+  - Enhanced IntelliSense and developer experience
+  - Backward compatibility maintained
+- **🧹 Codebase Cleanup**: Removed unnecessary files and tests
+  - Removed hierarchical layout functionality (not needed for waterfall charts)
+  - Cleaned up intermediate migration documentation
+  - Optimized test suite for faster execution
+  - Removed obsolete console-based tests
+
+### Fixed
+
+- **🔧 Scale System Issues**: Fixed API mismatches and type issues
+  - Enhanced scale factory with proper TypeScript interfaces
+  - Fixed brush system with complete selection utilities
+  - Resolved data processor method completeness
+  - Improved chart API consistency
+
+### Removed
+
+- **📝 Hierarchical Layouts**: Removed unused hierarchical layout functionality
+  - Treemap, partition, pack, cluster, tree visualizations removed
+  - Focus on core waterfall chart functionality
+  - Simplified codebase and reduced bundle size
+
+## [0.8.1] - 2025-08-30
+
+### Added
+
+- **🏗️ Hierarchical Layout System**: Complete D3.js layout algorithm implementation
+  - `d3.hierarchy()` support for hierarchical data structures
+  - `d3.treemap()` for space-efficient breakdown visualizations
+  - `d3.partition()` for hierarchical breakdowns (icicle and sunburst layouts)
+  - `d3.pack()`, `d3.cluster()`, and `d3.tree()` layout algorithms
+- **📊 Advanced Chart Components**: New specialized chart types
+  - `treemapChart()` - Space-efficient hierarchical visualization
+  - `partitionChart()` - Flexible icicle and sunburst charts
+  - `sunburstChart()` - Radial hierarchical visualization
+- **🔧 Modern Data Processing**: Advanced D3.js data structures
+  - `d3.group()` for multi-level data grouping operations
+  - `d3.rollup()` for data aggregation and summarization
+  - Cross-tabulation, time series, and summary utilities
+  - Efficient data transformation pipelines
+- **⚡ Performance Optimization System**: Enterprise-grade performance
+  - Data virtualization for >100K data points
+  - Incremental update patterns for efficient rendering
+  - Memory optimization with automatic cleanup
+  - Real-time performance monitoring and metrics
+  - Configurable chunk processing and render thresholds
+- **📈 Performance Dashboard**: Real-time monitoring capabilities
+  - Render time, memory usage, and FPS tracking
+  - Benchmark testing across different dataset sizes
+  - Performance comparison with/without optimizations
+- **🎯 Power BI Integration Ready**: Enhanced D3.js feature coverage
+  - Layout algorithms for advanced breakdown visualizations
+  - Modern data structures for complex transformations
+  - Performance optimizations for large enterprise datasets
+
+### Enhanced
+
+- **Chart API**: Extended with performance configuration methods
+  - `enablePerformanceOptimization()` - Toggle performance features
+  - `performanceDashboard()` - Real-time metrics display
+  - `virtualizationThreshold()` - Configure large dataset handling
+  - `getPerformanceMetrics()` - Access performance data
+- **Data Processing**: Advanced transformation capabilities
+  - Hierarchical data conversion utilities
+  - Waterfall format transformation from any data structure
+  - Efficient filtering and aggregation for large datasets
+- **Browser Compatibility**: Improved module system integration
+  - Better D3.js namespace integration
+  - Enhanced error handling and fallbacks
+
+### Performance
+
+- **Large Dataset Support**: Handles >500K data points efficiently
+- **Memory Management**: Automatic cleanup and garbage collection triggers
+- **Render Optimization**: Smart sampling and virtualization strategies
+- **Response Time**: <100ms updates for incremental data changes
+- **Load Time**: <2s initial render for 100K+ data points
+
+### Documentation
+
+- **HIERARCHICAL_LAYOUTS.md**: Comprehensive guide for new layout features
+- **API Documentation**: Updated with all new methods and options
+- **Performance Examples**: Interactive demos for testing optimizations
+
+## [0.6.0] - 2025-08-28
+
+### Added
+
+- **📈 Trend Line Overlays**: Complete trend analysis system with linear, moving average, and polynomial options
+- **🔄 Enhanced Data Loading**: CSV, JSON, TSV format support with HTTP URL loading and automatic format detection
+- **🖼️ High-DPI PNG Export**: 2x scaling support with enhanced image quality and comprehensive error handling
+- **♿ Modern Accessibility**: Forced Colors Mode support with CSS system colors, deprecated `-ms-high-contrast` removed
+- **🧪 Comprehensive Testing**: 27 new test cases covering trend lines, data loading, and export functionality (206 total tests)
+- **🎨 Interactive Demo Integration**: Trend line demonstration integrated into main demo with live controls and styling options
+- **⚙️ Real-time Configuration**: Dynamic trend line styling with color, width, style, and algorithm parameter controls
+- **📚 Educational Information**: Contextual explanations for each trend type with technical details
+
+### Fixed
+
+- **ESLint Compliance**: All linting issues resolved with modern code standards
+- **Deprecated API**: Removed legacy accessibility detection methods in favor of W3C Forced Colors Mode standard
+- **Code Quality**: Unused variables properly handled with appropriate ESLint disable comments for future-use functions
+
+### Changed
+
+- **Accessibility System**: Enhanced with automatic CSS injection for forced colors mode support
+- **Export System**: Improved PNG generation with high-DPI support and better error handling
+- **Demo Experience**: Consolidated trend line features into main demonstration page for unified user experience
+
+## [0.5.6] - 2025-08-22
+
+### Added
+
+- **Enhanced D3.js v7 compatibility**: Full scale system support for band, linear, ordinal, and time scales
+- **Advanced interactive features**: Brush system for data filtering and selection
+- **Staggered animations**: Enhanced visual feedback with progressive reveal animations
+- **Scale switching capabilities**: Dynamic switching between different scale types
+- **Utility functions**: `getBarWidth()` and `getBarPosition()` for cross-scale compatibility
+
+### Fixed
+
+- **Brush system errors**: Resolved `scale.invert is not a function` for band scales
+- **Scale bandwidth errors**: Fixed `xScale.bandwidth is not a function` when switching scale types
+- **D3 v7 API compatibility**: Removed deprecated `cornerRadius()` and `handleSize()` brush methods
+- **Animation toggling**: Enhanced staggered animation toggle for immediate visual feedback
+
+### Changed
+
+- **Test coverage**: Increased from 121 to 168 comprehensive test cases
+- **Code organization**: Improved scale handling with dedicated utility functions
+- **Performance**: Optimized rendering for different scale types
+- **Documentation**: Updated API documentation with new advanced features
+
+### Technical Details
+
+- All 168 tests passing with 51% code coverage
+- Zero lint issues maintained
+- Production-ready status achieved
+- Enhanced error handling and debugging capabilities
+
+## [0.5.5] - 2025-08-XX
+
+### Added
+
+- **Comprehensive testing**: 121 test cases with 57% code coverage
+- **Enhanced functionality**: Fixed normalize/bounce buttons, improved UI/UX
+- **Visual improvements**: 1100px wide charts, centered layouts, visual feedback system
+- **Complete CI/CD pipeline**: Automated testing, security audits, deployment
+- **Documentation**: Updated README, API docs, and examples
+
+### Changed
+
+- **Code quality**: Achieved zero lint issues, professional codebase standards
+- **Performance**: Optimized bundle size and rendering efficiency
+
+## [0.5.4] - 2025-08-XX
+
+### Added
+
+- Initial production release
+- Basic waterfall and stacked chart functionality
+- D3.js integration
+- Animation system
+- Theme support
+
+### Technical
+
+- Core chart rendering engine
+- Data processing pipeline
+- Event handling system
+- Basic test suite setup
+
+---
+
+## Versioning Guidelines
+
+- **Major version** (X.0.0): Breaking changes, major API overhauls
+- **Minor version** (0.X.0): New features, enhancements, non-breaking changes
+- **Patch version** (0.0.X): Bug fixes, documentation updates, maintenance
+
+## Support
+
+For questions about specific versions or upgrade paths, please:
+
+- Check the [API documentation](API.md)
+- View [examples](mintwaterfall-example.html)
+- File an [issue](https://github.com/coredds/MintWaterfall/issues)

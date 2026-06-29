@@ -1,0 +1,48 @@
+# Node modules
+node_modules/
+
+# Build outputs (comment out to track dist files for now)
+# dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python HTTP server artifacts
+__pycache__/
+*.pyc
+
+# VS Code settings
+.vscode/
+
+# Environment files
+.env
+
+# Coverage
+coverage/
+
+# Build output
+# dist/ - Commented out for GitHub Pages deployment
+build/
+
+# Misc
+*.log
+*.tmp
+
+# Local environments
+.env.*
+
+# GitHub workflows temp
+.github/workflows/*.tmp
+
+# Worktree isolation
+.worktrees/
+
+# Local dev tooling (not project code)
+.superpowers/
+docs/superpowers/

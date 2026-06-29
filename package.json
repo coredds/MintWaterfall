@@ -1,0 +1,127 @@
+{
+  "name": "mintwaterfall",
+  "version": "1.0.0",
+  "description": "A powerful, D3.js-compatible waterfall chart component with enterprise features including breakdown analysis, conditional formatting, stacking capabilities, animations, and extensive customization options",
+  "main": "dist/mintwaterfall.cjs.js",
+  "module": "dist/mintwaterfall.esm.js",
+  "browser": "dist/mintwaterfall.min.js",
+  "unpkg": "dist/mintwaterfall.min.js",
+  "jsdelivr": "dist/mintwaterfall.min.js",
+  "types": "dist/index.d.ts",
+  "typings": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/mintwaterfall.esm.js",
+      "require": "./dist/mintwaterfall.cjs.js",
+      "browser": "./dist/mintwaterfall.min.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/",
+    "src/",
+    "API.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "start": "python -m http.server 8080",
+    "dev": "python -m http.server 8080",
+    "demo": "python -m http.server 8080",
+    "demo:breakdown": "python -m http.server 8080 && echo \"Demo available at: http://localhost:8080/breakdown-feature-demo.html\"",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "jest --passWithNoTests",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:fast": "jest --passWithNoTests --maxWorkers=4",
+    "test:core": "jest tests/core-api.test.js tests/chart.test.js tests/data.test.js",
+    "prebuild": "rimraf dist",
+    "build": "rollup -c && npm run build:types",
+    "build:fast": "rollup -c rollup.config.fast.js && npm run build:types",
+    "build:full": "npm run build:ts && rollup -c && npm run build:types",
+    "build:ts": "tsc --noEmit",
+    "build:types": "cp index.d.ts dist/index.d.ts || copy index.d.ts dist\\index.d.ts",
+    "build:watch": "rollup -c -w",
+    "build:analyze": "rollup -c --environment ANALYZE",
+    "format": "prettier --write \"src/**/*.js\" \"*.js\" \"*.md\"",
+    "format:check": "prettier --check \"src/**/*.js\" \"*.js\" \"*.md\""
+  },
+  "keywords": [
+    "d3js",
+    "d3",
+    "waterfall",
+    "chart",
+    "visualization",
+    "stacked",
+    "data-viz",
+    "svg",
+    "interactive",
+    "animation"
+  ],
+  "author": {
+    "name": "David Duarte",
+    "email": "david.duarte@outlook.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/coredds/MintWaterfall.git"
+  },
+  "homepage": "https://coredds.github.io/MintWaterfall/",
+  "bugs": {
+    "url": "https://github.com/coredds/MintWaterfall/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "peerDependencies": {
+    "d3": "^7.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.5",
+    "@babel/preset-env": "^7.28.5",
+    "@babel/preset-typescript": "^7.28.5",
+    "@rollup/plugin-babel": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "@types/d3": "^7.4.3",
+    "babel-jest": "^30.0.5",
+    "eslint": "^9.39.1",
+    "husky": "^9.1.7",
+    "jest": "^30.0.5",
+    "jest-environment-jsdom": "^30.0.5",
+    "jsdom": "^26.1.0",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.7.4",
+    "rimraf": "^6.1.2",
+    "rollup": "^4.53.3",
+    "rollup-plugin-cleanup": "^3.2.1",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.2"
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.md": [
+      "prettier --write"
+    ]
+  },
+  "dependencies": {
+    "d3-array": "^3.2.4",
+    "d3-color": "^3.1.0",
+    "d3-drag": "^3.0.0",
+    "d3-force": "^3.0.0",
+    "d3-selection": "^3.0.0"
+  },
+  "overrides": {
+    "js-yaml": "^4.1.1"
+  }
+}
