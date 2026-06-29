@@ -222,6 +222,7 @@ export function waterfallChart(): WaterfallChart {
         if (v) {
             config.advancedColorConfig.enabled = true;
             config.advancedColorConfig.themeName = v;
+            config.colorMode = "sequential";
             applyTheme(chart as any, v as any);
         }
     });

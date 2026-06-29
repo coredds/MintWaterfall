@@ -70,12 +70,12 @@ export const themes: ThemeCollection = {
     
     dark: {
         name: "Dark",
-        background: "#2c3e50",
-        gridColor: "#34495e",
+        background: "#1a252f",
+        gridColor: "#2c3e50",
         axisColor: "#bdc3c7",
         textColor: "#ecf0f1",
-        totalColor: "#95a5a6",
-        colors: ["#3498db", "#2ecc71", "#e74c3c", "#f39c12", "#9b59b6", "#1abc9c", "#e67e22", "#f1c40f"],
+        totalColor: "#7f8c8d",
+        colors: ["#e74c3c", "#f39c12", "#2ecc71", "#3498db", "#9b59b6", "#1abc9c", "#f1c40f", "#e67e22"],
         sequentialScale: {
             type: 'sequential',
             interpolator: d3.interpolateViridis
@@ -85,12 +85,12 @@ export const themes: ThemeCollection = {
             interpolator: d3.interpolatePiYG
         },
         conditionalFormatting: {
-            positive: "#2ecc71",
+            positive: "#1abc9c",
             negative: "#e74c3c",
-            neutral: "#95a5a6"
+            neutral: "#7f8c8d"
         }
     },
-    
+
     corporate: {
         name: "Corporate",
         background: "#ffffff",
@@ -113,7 +113,7 @@ export const themes: ThemeCollection = {
             neutral: "#7f8c8d"
         }
     },
-    
+
     accessible: {
         name: "Accessible",
         background: "#ffffff",

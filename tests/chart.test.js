@@ -630,7 +630,7 @@ describe("MintWaterfall Chart", () => {
       expect(chart.margin()).toBe(margin);
       expect(chart.showTotal()).toBe(true);
       expect(chart.totalLabel()).toBe("Grand Total");
-      expect(chart.totalColor()).toBe("#95a5a6"); // dark theme totalColor
+      expect(chart.totalColor()).toBe("#7f8c8d"); // dark theme totalColor
       expect(chart.stacked()).toBe(false);
       expect(chart.barPadding()).toBe(0.25);
       expect(chart.duration()).toBe(800);
@@ -998,7 +998,7 @@ describe("MintWaterfall Chart", () => {
       expect(chart.margin()).toEqual({top: 80, right: 100, bottom: 80, left: 100});
       expect(chart.showTotal()).toBe(true);
       expect(chart.totalLabel()).toBe("Final Total");
-      expect(chart.totalColor()).toBe("#95a5a6"); // dark theme totalColor
+      expect(chart.totalColor()).toBe("#7f8c8d"); // dark theme totalColor
       expect(chart.stacked()).toBe(false);
       expect(chart.barPadding()).toBe(0.15);
       expect(chart.duration()).toBe(1200);

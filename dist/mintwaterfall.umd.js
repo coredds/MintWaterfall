@@ -442,12 +442,12 @@
         },
         dark: {
             name: "Dark",
-            background: "#2c3e50",
-            gridColor: "#34495e",
+            background: "#1a252f",
+            gridColor: "#2c3e50",
             axisColor: "#bdc3c7",
             textColor: "#ecf0f1",
-            totalColor: "#95a5a6",
-            colors: ["#3498db", "#2ecc71", "#e74c3c", "#f39c12", "#9b59b6", "#1abc9c", "#e67e22", "#f1c40f"],
+            totalColor: "#7f8c8d",
+            colors: ["#e74c3c", "#f39c12", "#2ecc71", "#3498db", "#9b59b6", "#1abc9c", "#f1c40f", "#e67e22"],
             sequentialScale: {
                 type: 'sequential',
                 interpolator: d3__namespace.interpolateViridis
@@ -457,9 +457,9 @@
                 interpolator: d3__namespace.interpolatePiYG
             },
             conditionalFormatting: {
-                positive: "#2ecc71",
+                positive: "#1abc9c",
                 negative: "#e74c3c",
-                neutral: "#95a5a6"
+                neutral: "#7f8c8d"
             }
         },
         corporate: {
@@ -535,6 +535,10 @@
         // Apply theme colors to chart configuration
         chart.totalColor(theme.totalColor);
         return theme;
+    }
+    function getThemeColorPalette(themeName = "default") {
+        const theme = themes[themeName] || themes.default;
+        return theme.colors;
     }
     // ============================================================================
     // ADVANCED COLOR SCALE FUNCTIONS
@@ -876,12 +880,21 @@
         });
     }
     function drawWaterfallBars(barGroups, xScale, yScale, config, margins, allData = []) {
-        barGroups.each(function (d) {
+        barGroups.each(function (d, i) {
             const group = d3__namespace.select(this);
             const barWidth = xScale.bandwidth ? xScale.bandwidth() : getBarWidth(xScale, barGroups.size(), config.width - margins.left - margins.right);
             const defaultColor = d.stacks.length === 1 ? d.stacks[0].color : "#3498db";
-            const advancedColor = config.advancedColorConfig.enabled ?
-                getAdvancedBarColor(d.barTotal, defaultColor, allData, config.advancedColorConfig.themeName || 'default', config.colorMode) : defaultColor;
+            let advancedColor = defaultColor;
+            if (config.advancedColorConfig.enabled) {
+                if (config.colorMode === 'conditional') {
+                    advancedColor = getAdvancedBarColor(d.barTotal, defaultColor, allData, config.advancedColorConfig.themeName || 'default', config.colorMode);
+                }
+                else {
+                    const themeName = config.advancedColorConfig.themeName || 'default';
+                    const palette = getThemeColorPalette(themeName);
+                    advancedColor = palette[i % palette.length];
+                }
+            }
             const barData = [{
                     value: d.barTotal,
                     color: advancedColor,
@@ -4199,6 +4212,7 @@ Performance Report:
             if (v) {
                 config.advancedColorConfig.enabled = true;
                 config.advancedColorConfig.themeName = v;
+                config.colorMode = "sequential";
                 applyTheme(chart, v);
             }
         });

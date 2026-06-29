@@ -2,7 +2,7 @@
 import * as d3 from "d3";
 import { ChartConfig, ProcessedData, MarginConfig, getBarWidth, getBarPosition } from "./config.js";
 import { createWaterfallConfidenceBands, createWaterfallMilestones } from "../shapes.js";
-import { getAdvancedBarColor, ThemeCollection } from "../themes.js";
+import { getAdvancedBarColor, getThemeColorPalette, ThemeCollection } from "../themes.js";
 
 export function drawGrid(container: any, yScale: any, config: ChartConfig, margins: MarginConfig): void {
     const gridGroup = container.selectAll(".grid-group").data([0]);
@@ -197,20 +197,26 @@ export function drawStackedBars(barGroups: any, xScale: any, yScale: any, config
 }
 
 export function drawWaterfallBars(barGroups: any, xScale: any, yScale: any, config: ChartConfig, margins: MarginConfig, allData: ProcessedData[] = []): void {
-    barGroups.each(function(this: SVGGElement, d: any) {
+    barGroups.each(function(this: SVGGElement, d: any, i: number) {
         const group = d3.select(this);
 
         const barWidth = xScale.bandwidth ? xScale.bandwidth() : getBarWidth(xScale, barGroups.size(), config.width - margins.left - margins.right);
 
         const defaultColor = d.stacks.length === 1 ? d.stacks[0].color : "#3498db";
-        const advancedColor = config.advancedColorConfig.enabled ?
-            getAdvancedBarColor(
-                d.barTotal,
-                defaultColor,
-                allData,
-                config.advancedColorConfig.themeName as keyof ThemeCollection || 'default',
-                config.colorMode
-            ) : defaultColor;
+        let advancedColor = defaultColor;
+        if (config.advancedColorConfig.enabled) {
+            if (config.colorMode === 'conditional') {
+                advancedColor = getAdvancedBarColor(
+                    d.barTotal, defaultColor, allData,
+                    config.advancedColorConfig.themeName as keyof ThemeCollection || 'default',
+                    config.colorMode
+                );
+            } else {
+                const themeName = (config.advancedColorConfig.themeName as keyof ThemeCollection) || 'default';
+                const palette = getThemeColorPalette(themeName);
+                advancedColor = palette[i % palette.length];
+            }
+        }
 
         const barData = [{
             value: d.barTotal,
