@@ -5,7 +5,7 @@
 export { waterfallChart } from "./mintwaterfall-chart.ts";
 
 // Data processing - Core
-export { createDataProcessor, dataProcessor } from "./mintwaterfall-data.ts";
+export { createDataProcessor, dataProcessor } from "./data/pipeline.js";
 
 // Data processing - Advanced D3.js Operations
 export {
@@ -20,7 +20,7 @@ export {
   // Financial utilities
   financialReducers,
   d3DataUtils,
-} from "./mintwaterfall-data.ts";
+} from "./data/pipeline.js";
 
 // Animation system
 export { createAnimationSystem } from "./mintwaterfall-animations.ts";
@@ -66,7 +66,7 @@ export {
   createAdvancedDataProcessor,
   createWaterfallSequenceAnalyzer,
   createWaterfallTickGenerator,
-} from "./mintwaterfall-advanced-data.ts";
+} from "./data/advanced.js";
 
 export {
   createAdvancedInteractionSystem,
