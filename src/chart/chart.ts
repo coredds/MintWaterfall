@@ -11,14 +11,14 @@ import {
     drawGrid, drawAxes, drawBars, drawConnectors, drawTrendLine,
     drawConfidenceBands, drawMilestones,
 } from "./render.js";
-import { createScaleSystem } from "../mintwaterfall-scales.js";
-import { createBrushSystem } from "../mintwaterfall-brush.js";
+import { createScaleSystem } from "../scales.js";
+import { createBrushSystem } from "../brush.js";
 import { createAccessibilitySystem } from "../mintwaterfall-accessibility.js";
 import { createTooltipSystem } from "../mintwaterfall-tooltip.js";
 import { createExportSystem } from "../mintwaterfall-export.js";
 import { createZoomSystem } from "../mintwaterfall-zoom.js";
 import { createPerformanceManager } from "../performance.js";
-import { createShapeGenerators } from "../mintwaterfall-shapes.js";
+import { createShapeGenerators } from "../shapes.js";
 
 export function waterfallChart(): WaterfallChart {
     const config: ChartConfig = {

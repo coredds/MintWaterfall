@@ -1,8 +1,8 @@
 // MintWaterfall Chart Render Functions
 import * as d3 from "d3";
 import { ChartConfig, ProcessedData, MarginConfig, getBarWidth, getBarPosition } from "./config.js";
-import { createWaterfallConfidenceBands, createWaterfallMilestones } from "../mintwaterfall-shapes.js";
-import { getAdvancedBarColor, ThemeCollection } from "../mintwaterfall-themes.js";
+import { createWaterfallConfidenceBands, createWaterfallMilestones } from "../shapes.js";
+import { getAdvancedBarColor, ThemeCollection } from "../themes.js";
 
 export function drawGrid(container: any, yScale: any, config: ChartConfig, margins: MarginConfig): void {
     const gridGroup = container.selectAll(".grid-group").data([0]);

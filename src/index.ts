@@ -2,7 +2,7 @@
 // D3.js-compatible waterfall chart component library with enhanced features
 
 // Core chart functionality
-export { waterfallChart } from "./mintwaterfall-chart.ts";
+export { waterfallChart } from "./chart/chart.js";
 
 // Data processing - Core
 export { createDataProcessor, dataProcessor } from "./data/pipeline.js";
@@ -23,16 +23,16 @@ export {
 } from "./data/pipeline.js";
 
 // Animation system
-export { createAnimationSystem } from "./mintwaterfall-animations.ts";
+export { createAnimationSystem } from "./animations.js";
 
 // Themes
-export { themes, applyTheme } from "./mintwaterfall-themes.ts";
+export { themes, applyTheme } from "./themes.js";
 
 // Enhanced D3.js features
-export { createScaleSystem } from "./mintwaterfall-scales.ts";
-export { createBrushSystemFactory as createBrushSystem } from "./mintwaterfall-brush.ts";
+export { createScaleSystem } from "./scales.js";
+export { createBrushSystemFactory as createBrushSystem } from "./brush.js";
 
-// NEW: Advanced color and shape features
+// Advanced color and shape features
 export {
   createSequentialScale,
   createDivergingScale,
@@ -40,19 +40,19 @@ export {
   createWaterfallColorScale,
   interpolateThemeColor,
   getAdvancedBarColor,
-} from "./mintwaterfall-themes.ts";
+} from "./themes.js";
 
 export {
   createShapeGenerators,
   createWaterfallConfidenceBands,
   createWaterfallMilestones,
-} from "./mintwaterfall-shapes.ts";
+} from "./shapes.js";
 
-// NEW: Advanced statistical analysis features
+// Advanced statistical analysis features
 export {
   createStatisticalSystem,
   analyzeWaterfallStatistics,
-} from "./mintwaterfall-statistics.ts";
+} from "./statistics.js";
 
 // Performance optimization features
 export {
@@ -60,9 +60,9 @@ export {
   createAdvancedPerformanceSystem,
   createWaterfallSpatialIndex,
   createVirtualWaterfallRenderer,
-} from "./performance.ts";
+} from "./performance.js";
 
-// NEW: MEDIUM PRIORITY - Advanced analytical enhancement features
+// Advanced analytical enhancement features
 export {
   createAdvancedDataProcessor,
   createWaterfallSequenceAnalyzer,
@@ -74,7 +74,7 @@ export {
   createWaterfallDragBehavior,
   createWaterfallVoronoiConfig,
   createWaterfallForceConfig,
-} from "./interactions.ts";
+} from "./interactions.js";
 
 export {
   createHierarchicalLayout,
@@ -82,22 +82,19 @@ export {
   createWaterfallTreemap,
   createWaterfallSunburst,
   createWaterfallBubbles,
-} from "./layouts.ts";
+} from "./layouts.js";
 
 // Accessibility & UX Features
-export { createAccessibilitySystem } from "./mintwaterfall-accessibility.ts";
-export { createTooltipSystem } from "./mintwaterfall-tooltip.ts";
-export { createExportSystem } from "./mintwaterfall-export.ts";
+export { createAccessibilitySystem } from "./mintwaterfall-accessibility.js";
+export { createTooltipSystem } from "./mintwaterfall-tooltip.js";
+export { createExportSystem } from "./mintwaterfall-export.js";
 
 // Interactivity Features
-export { createZoomSystem } from "./mintwaterfall-zoom.ts";
+export { createZoomSystem } from "./mintwaterfall-zoom.js";
 
 // Version information
 export const version = "0.8.10";
 
-// Default exports for convenience
-import { waterfallChart } from "./mintwaterfall-chart.ts";
-
-// Export main chart as default
+// Default export
+import { waterfallChart } from "./chart/chart.js";
 export default waterfallChart;
-
