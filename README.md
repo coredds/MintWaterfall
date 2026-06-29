@@ -1,12 +1,12 @@
 # MintWaterfall
 
-[![CI](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml/badge.svg?branch=main)](https://github.com/coredds/MintWaterfall/actions/workflows/basic-checks.yml)
+[![CI](https://github.com/coredds/MintWaterfall/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/coredds/MintWaterfall/actions/workflows/ci.yml)
 [![Security Audit](https://github.com/coredds/MintWaterfall/actions/workflows/security.yml/badge.svg)](https://github.com/coredds/MintWaterfall/actions/workflows/security.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.8.10-blue.svg)](https://github.com/coredds/MintWaterfall/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/coredds/MintWaterfall/releases)
 [![codecov](https://codecov.io/gh/coredds/MintWaterfall/branch/main/graph/badge.svg)](https://codecov.io/gh/coredds/MintWaterfall)
 
-A comprehensive TypeScript waterfall chart library built on D3.js v7. Features advanced data processing, statistical analysis, interactive visualizations, and enterprise-grade performance with complete type safety.
+A TypeScript waterfall chart library built on D3.js v7. Features data processing, statistical analysis, interactive visualizations, themes, accessibility, and tree-shakeable modules with full type safety.
 
 **[Live Demo](https://coredds.github.io/MintWaterfall/mintwaterfall-example.html)**
 
@@ -36,10 +36,10 @@ A comprehensive TypeScript waterfall chart library built on D3.js v7. Features a
 
 ### Performance & Architecture
 
-- **TypeScript**: Complete type safety with strict checking across 20+ modules
+- **TypeScript**: Complete type safety with strict checking across 16 modules
 - **Optimized Build**: 4 bundle formats (ESM, UMD, CJS, Minified) with external D3 dependencies
-- **Test Coverage**: 338 tests across 18 test suites with 26.5% overall coverage
-- **Production Ready**: Robust error handling, edge case management, and performance optimization
+- **Test Suite**: 334 tests across 16 test suites, 100% pass rate
+- **Tree-shakeable**: Import only what you need — zero overhead for unused features
 
 ## Installation
 
@@ -315,11 +315,11 @@ npm install
 ### Commands
 
 ```bash
-npm test              # Run full test suite (338 tests)
-npm run test:core     # Run core functionality tests (136 tests)
-npm run test:fast     # Run tests with parallel execution
+npm test              # Run full test suite (334 tests)
+npm run test:coverage # Tests with coverage
 npm run lint          # ESLint code quality checks
 npm run build         # Production build (4 bundle formats)
+npm run build:ts      # TypeScript type-check only
 npm start             # Development server (localhost:8080)
 ```
 
@@ -329,15 +329,13 @@ npm start             # Development server (localhost:8080)
 - `dist/mintwaterfall.umd.js` - UMD bundle for browsers
 - `dist/mintwaterfall.min.js` - Minified production bundle
 - `dist/mintwaterfall.cjs.js` - CommonJS bundle for Node.js
-- `dist/index.d.ts` - TypeScript definitions
 
 ### Test Coverage
 
-- **338 total tests** across 18 test suites (100% pass rate)
-- **26.5% overall coverage** with high-value test focus
+- **334 total tests** across 16 test suites (100% pass rate)
+- **18% overall coverage** with focus on data validation (96.9%) and transforms (73.2%)
 - **Statistical Analysis: 89.6% coverage** (27 tests)
-- **Advanced Interactions: 42.4% coverage** (28 tests)
-- **Advanced Data Processing: 25.9% coverage** (28 tests)
+- **Accessibility: 89.6% coverage** (27 tests)
 - **Critical Integration Tests: 21 tests** for regression prevention
 
 ### Performance Metrics
@@ -356,20 +354,35 @@ npm start             # Development server (localhost:8080)
 
 ### Module Structure
 
-- **Core Chart**: `mintwaterfall-chart.ts` - Main chart component
-- **Data Processing**: `mintwaterfall-data.ts` - Data transformation utilities
-- **Advanced Data**: `mintwaterfall-advanced-data.ts` - D3 integration and complex operations
-- **Statistics**: `mintwaterfall-statistics.ts` - Statistical analysis functions
-- **Interactions**: `mintwaterfall-advanced-interactions.ts` - Drag, hover, force simulation
-- **Accessibility**: `mintwaterfall-accessibility.ts` - WCAG compliance features
-- **Animations**: `mintwaterfall-animations.ts` - Transition and animation system
-- **Themes**: `mintwaterfall-themes.ts` - Theme management
-- **Export**: `mintwaterfall-export.ts` - Export functionality
-- **Performance**: `mintwaterfall-performance.ts` - Optimization utilities
+- **Chart Factory**: `src/chart/chart.ts` — Composes config, render, lifecycle
+- **Chart Config**: `src/chart/config.ts` — Types, defaults, margins, utilities
+- **Rendering**: `src/chart/render.ts` — Grid, axes, bars, connectors, trend lines
+- **Data Pipeline**: `src/data/pipeline.ts` — Unified data processor
+- **Transforms**: `src/data/transforms.ts` — Aggregation, sorting, filtering, normalization
+- **Advanced Data**: `src/data/advanced.ts` — D3 group/rollup/cross/index operations
+- **Validation**: `src/data/validation.ts` — Input validation and summaries
+- **Statistics**: `src/statistics.ts` — Statistical analysis functions
+- **Interactions**: `src/interactions.ts` — Drag, hover, force simulation
+- **Accessibility**: `src/accessibility.ts` — WCAG compliance features
+- **Animations**: `src/animations.ts` — Transition and animation system
+- **Themes**: `src/themes.ts` — Theme management and color scales
+- **Export**: `src/export.ts` — SVG, PNG, JSON, CSV export
+- **Layouts**: `src/layouts.ts` — Hierarchical and basic layouts
+- **Performance**: `src/performance.ts` — Optimization and spatial indexing
 
 ## Recent Updates
 
-### v0.8.10 (Current)
+### v1.0.0 (Current)
+
+- **TypeScript migration complete** — all source files are `.ts`, entry point is `src/index.ts`
+- **Module restructuring** — chart split into `src/chart/`, data split into `src/data/`
+- **Consolidated modules** — merged advanced variants, dropped `mintwaterfall-` prefix
+- **Removed D3 namespace mutation** — no more `window.d3.waterfallChart`
+- **CI/CD consolidated** — 8 workflows → 4, added TypeScript type-check step
+- **Demo replaced** — minimal working example replaces 4000-line demo
+- **Added AGENTS.md** — development conventions, architecture, commands
+
+### v0.8.10
 
 - Security fix: resolved high-severity vulnerability in `@isaacs/brace-expansion`
 - Updated dependencies: babel 7.29, eslint 9.39.2, prettier 3.8.1, rollup 4.57.1

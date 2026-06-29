@@ -1,6 +1,6 @@
 # Contributing to MintWaterfall
 
-We welcome contributions to MintWaterfall! This document provides guidelines for contributing to the project.
+Contributions welcome! This document provides guidelines for contributing to the project.
 
 ## Development Setup
 
@@ -20,11 +20,12 @@ We welcome contributions to MintWaterfall! This document provides guidelines for
 3. **Start development server**
 
    ```bash
-   npm run dev
+   npm start
    ```
 
-4. **Run linting**
+4. **Run type-checking and linting**
    ```bash
+   npm run build:ts
    npm run lint
    ```
 
@@ -32,38 +33,60 @@ We welcome contributions to MintWaterfall! This document provides guidelines for
 
 ```
 MintWaterfall/
-├── mintwaterfall-chart.js      # Main chart component
-├── mintwaterfall-tooltip.js    # Tooltip functionality
-├── mintwaterfall-themes.js     # Theme system
-├── mintwaterfall-example.html  # Live examples
-├── API.md                      # API documentation
-├── README.md                   # Project overview
-├── package.json               # Dependencies and scripts
-└── .github/
-    └── workflows/
-        └── basic-checks.yml   # CI/CD pipeline
+├── src/
+│   ├── index.ts              # Entry point — re-exports all public API
+│   ├── chart/
+│   │   ├── config.ts         # Types, interfaces, defaults, utilities
+│   │   ├── chart.ts          # Chart factory (getter/setters, rendering)
+│   │   ├── render.ts         # Grid, axes, bars, connectors, trend lines
+│   │   └── lifecycle.ts      # Data preparation, cumulative totals
+│   ├── data/
+│   │   ├── validation.ts     # Types, validateData(), getDataSummary()
+│   │   ├── transforms.ts     # Aggregation, sorting, filtering, normalization
+│   │   ├── advanced.ts       # D3 group/rollup/cross/index operations
+│   │   └── pipeline.ts       # createDataProcessor(), standalone helpers
+│   ├── statistics.ts         # Statistical analysis system
+│   ├── accessibility.ts      # WCAG 2.1 compliance (ARIA, keyboard nav)
+│   ├── themes.ts             # Theme system, color scales
+│   ├── animations.ts         # Animation/transition system
+│   ├── brush.ts              # Brush selection
+│   ├── scales.ts             # Scale system (band, linear, ordinal, time)
+│   ├── performance.ts        # Performance optimization + spatial indexing
+│   ├── interactions.ts       # Drag, hover, force simulation
+│   ├── layouts.ts            # Hierarchical + basic layouts
+│   ├── export.ts             # SVG, PNG, JSON, CSV export
+│   ├── tooltip.ts            # Tooltip system
+│   ├── zoom.ts               # Zoom/pan
+│   └── shapes.ts             # Shape generators
+├── tests/                    # Test suites (Jest + jsdom)
+├── docs/superpowers/         # Design specs and implementation plans
+├── AGENTS.md                 # AI tooling conventions
+├── README.md                 # Project overview
+├── CONTRIBUTING.md           # This file
+└── package.json              # Dependencies and scripts
 ```
 
 ## Development Guidelines
 
 ### Code Style
 
-- Use ES6+ features and modules
+- **TypeScript** with strict mode — all new code must be `.ts`
+- Use `.js` extension for relative TypeScript imports (ESM convention)
 - Follow D3.js conventions and patterns
 - Use method chaining for API design
-- Include JSDoc comments for public methods
-- Maintain consistent indentation (2 spaces)
+- Double quotes, semicolons required
+- File naming: `kebab-case.ts` for modules
 
 ### Commit Messages
 
-Use conventional commit format:
+Use [Conventional Commits](https://www.conventionalcommits.org/):
 
 - `feat:` for new features
 - `fix:` for bug fixes
-- `docs:` for documentation changes
-- `style:` for code style changes
 - `refactor:` for code refactoring
+- `chore:` for build, deps, config
 - `test:` for test-related changes
+- `docs:` for documentation changes
 
 Examples:
 
@@ -95,8 +118,9 @@ docs: update API documentation with examples
    ```
 
 4. **Ensure CI passes**
-   - Linting checks pass
-   - No console errors in examples
+   - TypeScript type-check passes (`npm run build:ts`)
+   - Linting checks pass (`npm run lint`)
+   - Tests pass (`npm test`)
    - Documentation is updated
 
 ## Feature Development
@@ -156,13 +180,10 @@ For feature requests, please:
 - [ ] Stacked/waterfall mode toggle works
 - [ ] Data updates animate properly
 - [ ] Error handling works for invalid data
-- [ ] Events fire correctly
-- [ ] Responsive behavior works
+- [ ] Events fire correctly (barClick, barMouseover, etc.)
 - [ ] Console shows no errors
 
 ### Browser Testing
-
-Test in:
 
 - Chrome (latest)
 - Firefox (latest)
@@ -171,27 +192,18 @@ Test in:
 
 ## Documentation
 
-### API Documentation
-
-- Keep API.md up to date with all public methods
-- Include examples for complex features
+- Keep README.md up to date with current API
+- Include TypeScript examples for new features
 - Document all parameters and return values
-- Explain common use cases
-
-### Code Documentation
-
-- Use JSDoc comments for public methods
-- Explain complex algorithms or calculations
-- Document any D3.js-specific patterns used
-- Include usage examples in comments
+- AGENTS.md covers development conventions for AI tooling
 
 ## Release Process
 
-1. Update version in package.json
-2. Update CHANGELOG.md
-3. Create GitHub release
-4. Update live demo
-5. Announce in README
+1. Update version in `package.json`
+2. Update `CHANGELOG.md`
+3. Create git tag: `git tag v<version> && git push origin v<version>`
+4. Tag triggers `publish.yml` — builds, tests, publishes to npm, creates GitHub Release
+5. Update live demo if needed
 
 ## Community
 
@@ -205,6 +217,6 @@ Test in:
 - Check existing issues and documentation
 - Ask questions in issue comments
 - Reference D3.js documentation for general D3 questions
-- Look at the example file for usage patterns
+- See AGENTS.md for development conventions and commands
 
 Thank you for contributing to MintWaterfall!

@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-06-29
+
+### Changed
+
+- **TypeScript migration complete** — all source files now `.ts`, entry point is `src/index.ts`
+- **Module restructuring** — chart split into `src/chart/{config,chart,render,lifecycle}.ts`, data split into `src/data/{validation,transforms,advanced,pipeline}.ts`
+- **Merged enterprise scaffolding** — removed empty placeholder files (`src/enterprise/`, `src/features/`, `src/utils/`)
+- **Consolidated modules** — merged advanced variants into base modules, dropped `mintwaterfall-` prefix on all files
+- **Removed D3 namespace mutation** — `window.d3.waterfallChart` no longer set (UMD build still provides script-tag access)
+- **Demo replaced** — 4000-line demo → minimal working example
+- **CI/CD consolidated** — 8 workflows → 4, added TypeScript type-check step
+- **Added AGENTS.md** — development conventions, architecture, commands
+
+### Fixed
+
+- **Type declarations** — restored `index.d.ts` for downstream consumers
+- **Jest config** — updated `testMatch` for TS test files, fixed module paths
+- **CHANGELOG/README/CONTRIBUTING** — updated for v1.0.0 structure
+
+### Removed
+
+- **`mintwaterfall-chart-core.ts`** — duplicate chart implementation
+- **`mintwaterfall-advanced-data.ts`** — merged into `src/data/advanced.ts`
+- **`mintwaterfall-advanced-performance.ts`** — merged into `src/performance.ts`
+- **`mintwaterfall-advanced-interactions.ts`** → renamed to `src/interactions.ts`
+- **`mintwaterfall-hierarchical-layouts.ts`** → merged into `src/layouts.ts`
+- **Legacy test directories** — `tests/compatibility/`, `tests/enterprise/`
+
 ## [0.8.10] - 2026-02-09
 
 ### Changed
