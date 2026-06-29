@@ -1,31 +1,41 @@
-name: Node.js CI
+name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
-  build:
+  ci:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [20.x, 22.x]
 
     steps:
       - uses: actions/checkout@v4
+
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          cache: npm
+
       - run: npm ci
-      - run: npm run build
+
+      - name: TypeScript type-check
+        run: npm run build:ts
+
       - run: npm run lint
-      - run: npm test
-      - name: Upload coverage reports to Codecov
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Upload coverage to Codecov
         if: matrix.node-version == '22.x'
         uses: codecov/codecov-action@v5
         with:
