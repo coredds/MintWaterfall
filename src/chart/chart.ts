@@ -19,11 +19,15 @@ import { createExportSystem } from "../export.js";
 import { createZoomSystem } from "../zoom.js";
 import { createPerformanceManager } from "../performance.js";
 import { createShapeGenerators } from "../shapes.js";
+import { applyTheme } from "../themes.js";
 
 export function waterfallChart(): WaterfallChart {
     const config: ChartConfig = {
         ...defaultConfig,
         formattingRules: new Map(),
+        advancedColorConfig: { ...defaultConfig.advancedColorConfig },
+        confidenceBandConfig: { ...defaultConfig.confidenceBandConfig },
+        milestoneConfig: { ...defaultConfig.milestoneConfig, milestones: [...defaultConfig.milestoneConfig.milestones] },
     };
 
     let lastDataHash: string | null = null;
@@ -213,7 +217,14 @@ export function waterfallChart(): WaterfallChart {
     chart.duration = accessor(() => config.duration, v => { config.duration = v; });
     chart.ease = accessor(() => config.ease, v => { config.ease = v; });
     chart.formatNumber = accessor(() => config.formatNumber, v => { config.formatNumber = v; });
-    chart.theme = accessor(() => config.theme, v => { config.theme = v; });
+    chart.theme = accessor(() => config.theme, v => {
+        config.theme = v;
+        if (v) {
+            config.advancedColorConfig.enabled = true;
+            config.advancedColorConfig.themeName = v;
+            applyTheme(chart as any, v as any);
+        }
+    });
     chart.enableBrush = accessor(() => config.enableBrush, v => { config.enableBrush = v; });
     chart.brushOptions = accessor(() => config.brushOptions, v => { config.brushOptions = v; });
     chart.staggeredAnimations = accessor(() => config.staggeredAnimations, v => { config.staggeredAnimations = v; });

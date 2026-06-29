@@ -904,7 +904,7 @@ function drawValueLabels(barGroups, xScale, yScale, config, margins) {
     barGroups.each(function (d) {
         const group = d3.select(this);
         const barWidth = getBarWidth(xScale, barGroups.size(), config.width - margins.left - margins.right);
-        const labelData = [{
+        const labelData = d.barTotal === 0 ? [] : [{
                 value: d.barTotal,
                 formattedValue: config.formatNumber(d.barTotal),
                 parent: d
@@ -4002,6 +4002,9 @@ function waterfallChart() {
     const config = {
         ...defaultConfig,
         formattingRules: new Map(),
+        advancedColorConfig: { ...defaultConfig.advancedColorConfig },
+        confidenceBandConfig: { ...defaultConfig.confidenceBandConfig },
+        milestoneConfig: { ...defaultConfig.milestoneConfig, milestones: [...defaultConfig.milestoneConfig.milestones] },
     };
     let lastDataHash = null;
     let cachedProcessedData = null;
@@ -4172,7 +4175,14 @@ function waterfallChart() {
     chart.duration = accessor(() => config.duration, v => { config.duration = v; });
     chart.ease = accessor(() => config.ease, v => { config.ease = v; });
     chart.formatNumber = accessor(() => config.formatNumber, v => { config.formatNumber = v; });
-    chart.theme = accessor(() => config.theme, v => { config.theme = v; });
+    chart.theme = accessor(() => config.theme, v => {
+        config.theme = v;
+        if (v) {
+            config.advancedColorConfig.enabled = true;
+            config.advancedColorConfig.themeName = v;
+            applyTheme(chart, v);
+        }
+    });
     chart.enableBrush = accessor(() => config.enableBrush, v => { config.enableBrush = v; });
     chart.brushOptions = accessor(() => config.brushOptions, v => { config.brushOptions = v; });
     chart.staggeredAnimations = accessor(() => config.staggeredAnimations, v => { config.staggeredAnimations = v; });

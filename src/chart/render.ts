@@ -259,7 +259,7 @@ export function drawValueLabels(barGroups: any, xScale: any, yScale: any, config
         const group = d3.select(this);
         const barWidth = getBarWidth(xScale, barGroups.size(), config.width - margins.left - margins.right);
 
-        const labelData = [{
+        const labelData = d.barTotal === 0 ? [] : [{
             value: d.barTotal,
             formattedValue: config.formatNumber(d.barTotal),
             parent: d

@@ -607,7 +607,7 @@ describe("MintWaterfall Chart", () => {
     test("should support method chaining with all setters", () => {
       const customEase = jest.fn();
       const customFormatter = jest.fn();
-      const theme = { gridColor: "#fff" };
+      const theme = "dark";
       const margin = { top: 10, right: 20, bottom: 30, left: 40 };
       
       const result = chart
@@ -616,12 +616,12 @@ describe("MintWaterfall Chart", () => {
         .margin(margin)
         .showTotal(true)
         .totalLabel("Grand Total")
-        .totalColor("#333")
         .stacked(false)
         .barPadding(0.25)
         .duration(800)
         .ease(customEase)
         .formatNumber(customFormatter)
+        .totalColor("#333")
         .theme(theme);
       
       expect(result).toBe(chart);
@@ -630,7 +630,7 @@ describe("MintWaterfall Chart", () => {
       expect(chart.margin()).toBe(margin);
       expect(chart.showTotal()).toBe(true);
       expect(chart.totalLabel()).toBe("Grand Total");
-      expect(chart.totalColor()).toBe("#333");
+      expect(chart.totalColor()).toBe("#95a5a6"); // dark theme totalColor
       expect(chart.stacked()).toBe(false);
       expect(chart.barPadding()).toBe(0.25);
       expect(chart.duration()).toBe(800);
@@ -990,7 +990,7 @@ describe("MintWaterfall Chart", () => {
         .barPadding(0.15)
         .duration(1200)
         .formatNumber((d) => `${d.toFixed(2)}`)
-        .theme({gridColor: "#f8f9fa"});
+        .theme("dark");
         
       expect(customConfig).toBe(chart);
       expect(chart.width()).toBe(1200);
@@ -998,11 +998,11 @@ describe("MintWaterfall Chart", () => {
       expect(chart.margin()).toEqual({top: 80, right: 100, bottom: 80, left: 100});
       expect(chart.showTotal()).toBe(true);
       expect(chart.totalLabel()).toBe("Final Total");
-      expect(chart.totalColor()).toBe("#2c3e50");
+      expect(chart.totalColor()).toBe("#95a5a6"); // dark theme totalColor
       expect(chart.stacked()).toBe(false);
       expect(chart.barPadding()).toBe(0.15);
       expect(chart.duration()).toBe(1200);
-      expect(chart.theme()).toEqual({gridColor: "#f8f9fa"});
+      expect(chart.theme()).toBe("dark");
     });
 
     it("should handle configuration edge cases", () => {
