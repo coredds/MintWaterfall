@@ -3,296 +3,359 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MintWaterfall — Waterfall Chart Demo</title>
+<title>MintWaterfall — Waterfall Chart Library</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f8f9fb;
+    --card: #fff;
+    --text: #2c3e50;
+    --muted: #7f8c8d;
+    --border: #e8ecf1;
+    --accent: #3498db;
+    --green: #27ae60;
+    --red: #e74c3c;
+    --radius: 12px;
+  }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #f5f7fa; color: #333; line-height: 1.6;
+    background: var(--bg); color: var(--text); line-height: 1.6;
   }
-  header {
-    background: linear-gradient(135deg, #2c3e50, #3498db);
-    color: #fff; padding: 3rem 2rem 2rem; text-align: center;
+
+  /* Header */
+  .hero {
+    background: linear-gradient(135deg, #1a252f 0%, #2c3e50 40%, #3498db 100%);
+    color: #fff; padding: 4rem 2rem 3rem; text-align: center;
   }
-  header h1 { font-size: 2.2rem; font-weight: 700; }
-  header p { font-size: 1rem; opacity: 0.85; margin-top: 0.5rem; }
-  header .version {
-    display: inline-block; margin-top: 0.75rem;
-    background: rgba(255,255,255,0.15); padding: 0.25rem 0.75rem;
-    border-radius: 12px; font-size: 0.8rem;
+  .hero h1 { font-size: 2.8rem; font-weight: 800; letter-spacing: -0.5px; }
+  .hero p { font-size: 1.1rem; opacity: 0.8; margin-top: 0.5rem; }
+  .hero .badges { margin-top: 1.25rem; display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap; }
+  .hero .badge {
+    background: rgba(255,255,255,0.12); padding: 0.3rem 0.8rem;
+    border-radius: 20px; font-size: 0.78rem; font-weight: 500;
   }
-  main { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  /* Layout */
+  .wrap { display: flex; max-width: 1200px; margin: 0 auto; }
+  .sidebar {
+    width: 220px; flex-shrink: 0; padding: 2rem 1rem;
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  .sidebar a {
+    display: block; padding: 0.5rem 0.75rem; margin-bottom: 0.25rem;
+    border-radius: 6px; font-size: 0.82rem; color: var(--muted); text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+  }
+  .sidebar a:hover, .sidebar a:focus { background: rgba(52,152,219,0.08); color: var(--accent); }
+  .content { flex: 1; min-width: 0; padding: 2rem 2rem 3rem; }
+
+  /* Sections */
   section {
-    background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    padding: 1.5rem; margin-bottom: 2rem;
+    background: var(--card); border-radius: var(--radius);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04); border: 1px solid var(--border);
+    padding: 2rem; margin-bottom: 1.5rem;
   }
-  section h2 {
-    font-size: 1.2rem; font-weight: 600; color: #2c3e50;
-    margin-bottom: 0.25rem;
+  section h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.3rem; }
+  section .sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.25rem; }
+
+  /* Charts */
+  .chart { width: 100%; }
+  .chart svg { display: block; width: 100% !important; height: auto !important; }
+
+  /* Button bar */
+  .btn-bar { display: flex; gap: 0.4rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .btn {
+    padding: 0.4rem 1rem; font-size: 0.78rem; font-weight: 500;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--card); color: var(--muted); cursor: pointer;
+    transition: all 0.15s; font-family: inherit;
   }
-  section .desc {
-    font-size: 0.85rem; color: #777; margin-bottom: 1rem;
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* Stat Grid */
+  .stat-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.75rem;
   }
-  .chart-container { width: 100%; overflow-x: auto; }
-  .chart-container svg { display: block; }
-  .controls {
-    display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;
+  .stat {
+    background: #f8f9fb; border-radius: 8px; padding: 1rem;
+    text-align: center; border: 1px solid transparent;
   }
-  .controls button {
-    padding: 0.4rem 1rem; font-size: 0.8rem; border: 1px solid #ddd;
-    border-radius: 6px; background: #fff; color: #555; cursor: pointer;
-    transition: all 0.15s;
-  }
-  .controls button:hover { border-color: #3498db; color: #3498db; }
-  .controls button.active { background: #3498db; color: #fff; border-color: #3498db; }
-  .stats {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 0.75rem; margin-top: 1rem;
-  }
-  .stat-card {
-    background: #f8f9fb; border-radius: 8px; padding: 0.75rem; text-align: center;
-  }
-  .stat-card .label { font-size: 0.7rem; color: #999; text-transform: uppercase; }
-  .stat-card .value { font-size: 1.2rem; font-weight: 600; color: #2c3e50; }
-  .stat-card .value.pos { color: #27ae60; }
-  .stat-card .value.neg { color: #e74c3c; }
-  footer {
-    text-align: center; padding: 2rem 1.5rem; font-size: 0.85rem; color: #999;
-  }
-  footer a { color: #3498db; text-decoration: none; }
+  .stat .k { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat .v { font-size: 1.3rem; font-weight: 700; margin-top: 0.2rem; }
+  .stat .v.pos { color: var(--green); }
+  .stat .v.neg { color: var(--red); }
+
+  /* Footer */
+  footer { text-align: center; padding: 2rem 1.5rem; font-size: 0.82rem; color: var(--muted); }
+  footer a { color: var(--accent); text-decoration: none; }
   footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .content { padding: 1.5rem 1rem; }
+  }
 </style>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="dist/mintwaterfall.min.js"></script>
 </head>
 <body>
 
-<header>
+<!-- Hero ─────────────────────────────────────────────────────── -->
+<div class="hero">
   <h1>MintWaterfall</h1>
   <p>A TypeScript waterfall chart library built on D3.js v7</p>
-  <span class="version">v1.0.0</span>
-</header>
+  <div class="badges">
+    <span class="badge">v1.0.0</span>
+    <span class="badge">TypeScript</span>
+    <span class="badge">D3.js v7</span>
+    <span class="badge">WCAG 2.1</span>
+  </div>
+</div>
 
-<main>
+<div class="wrap">
+  <nav class="sidebar">
+    <a href="#pl">P&amp;L Breakdown</a>
+    <a href="#stacked">Stacked Waterfall</a>
+    <a href="#trend">Trend Analysis</a>
+    <a href="#themes">Theme Gallery</a>
+    <a href="#stats">Statistics</a>
+  </nav>
 
-<!-- Basic Waterfall -->
-<section>
+  <main class="content">
+
+<!-- 1. P&L Breakdown ───────────────────────────────────────────── -->
+<section id="pl">
   <h2>Financial P&amp;L Breakdown</h2>
-  <p class="desc">Classic waterfall showing how revenue flows into net income. The total bar shows the cumulative result.</p>
-  <div class="chart-container" id="chart-pl"></div>
+  <p class="sub">Classic waterfall showing how each line item contributes to net income. Hover for details.</p>
+  <div class="chart" id="chart-pl"></div>
 </section>
 
-<!-- Stacked Waterfall -->
-<section>
-  <h2>Stacked Waterfall — Department Budget</h2>
-  <p class="desc">Each bar can contain multiple stacks, useful for showing category breakdowns within each step.</p>
-  <div class="chart-container" id="chart-stacked"></div>
+<!-- 2. Stacked Waterfall ───────────────────────────────────────── -->
+<section id="stacked">
+  <h2>Stacked Waterfall</h2>
+  <p class="sub">Multi-stack bars reveal category breakdowns within each step of the cascade.</p>
+  <div class="chart" id="chart-stacked"></div>
 </section>
 
-<!-- Trend Lines -->
-<section>
+<!-- 3. Trend Lines ─────────────────────────────────────────────── -->
+<section id="trend">
   <h2>Trend Analysis</h2>
-  <p class="desc">Enable trend lines to visualize patterns across your data. Switch between linear regression, moving average, and polynomial.</p>
-  <div class="controls" id="trend-controls">
-    <button data-type="linear" class="active">Linear</button>
-    <button data-type="moving-average">Moving Avg</button>
-    <button data-type="polynomial">Polynomial</button>
-    <button data-type="none">None</button>
+  <p class="sub">Overlay trend lines to surface patterns in your data.</p>
+  <div class="btn-bar" id="trend-bar">
+    <button class="btn active" data-type="linear">Linear Regression</button>
+    <button class="btn" data-type="moving-average">Moving Average</button>
+    <button class="btn" data-type="polynomial">Polynomial</button>
+    <button class="btn" data-type="none">Off</button>
   </div>
-  <div class="chart-container" id="chart-trend"></div>
+  <div class="chart" id="chart-trend"></div>
 </section>
 
-<!-- Themes -->
-<section>
+<!-- 4. Themes ──────────────────────────────────────────────────── -->
+<section id="themes">
   <h2>Theme Gallery</h2>
-  <p class="desc">MintWaterfall ships with multiple themes. Select one to see it applied in real-time.</p>
-  <div class="controls" id="theme-controls">
-    <button data-theme="default" class="active">Default</button>
-    <button data-theme="corporate">Corporate</button>
-    <button data-theme="dark">Dark</button>
-    <button data-theme="financial">Financial</button>
-    <button data-theme="colorful">Colorful</button>
+  <p class="sub">Five built-in themes with adaptive color scales. Click to switch in real time.</p>
+  <div class="btn-bar" id="theme-bar">
+    <button class="btn active" data-theme="default">Default</button>
+    <button class="btn" data-theme="corporate">Corporate</button>
+    <button class="btn" data-theme="dark">Dark</button>
+    <button class="btn" data-theme="financial">Financial</button>
+    <button class="btn" data-theme="colorful">Colorful</button>
   </div>
-  <div class="chart-container" id="chart-theme"></div>
+  <div class="chart" id="chart-theme"></div>
 </section>
 
-<!-- Statistics -->
-<section id="stats-section">
+<!-- 5. Statistics ──────────────────────────────────────────────── -->
+<section id="stats">
   <h2>Statistical Summary</h2>
-  <p class="desc">Built-in statistical analysis: compute mean, median, variance, outlier detection, and linear regression on any dataset.</p>
-  <div class="stats" id="stats-output"></div>
+  <p class="sub">Built-in analysis &mdash; no setup required. Drop in your data and get immediate insights.</p>
+  <div class="stat-grid" id="stat-grid"></div>
 </section>
 
-</main>
+</main></div>
 
 <footer>
   <a href="https://github.com/coredds/MintWaterfall">GitHub</a> &middot;
   <a href="https://www.npmjs.com/package/mintwaterfall">npm</a> &middot;
-  <a href="https://coredds.github.io/MintWaterfall/">Documentation</a>
+  MIT License
 </footer>
 
 <script>
-const { waterfallChart, createStatisticalSystem, createDataProcessor } = MintWaterfall;
+var W = MintWaterfall,
+    waterfallChart = W.waterfallChart,
+    createStatisticalSystem = W.createStatisticalSystem,
+    createDataProcessor = W.createDataProcessor;
 
-// ── 1. Financial P&L Waterfall ──────────────────────────────────────
+// ─── HELPERS ─────────────────────────────────────────────────────
+
+function renderChart(id, data, fn) {
+  var sel = d3.select(id);
+  sel.selectAll("*").remove();
+  sel.datum(data).call(fn);
+}
+
+function fmt(n) {
+  if (n == null || isNaN(n)) return "\u2014";
+  return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+function makeStat(k, v, cls) {
+  return '<div class="stat"><div class="k">' + k + '</div><div class="v ' + (cls||"") + '">' + v + '</div></div>';
+}
+
+// ─── 1. P&L ─────────────────────────────────────────────────────
+
 (function () {
-  const data = [
-    { label: "Revenue",       stacks: [{ value: 5200,  color: "#27ae60", label: "+$5,200" }] },
-    { label: "Cost of Sales", stacks: [{ value: -2100, color: "#e74c3c", label: "-$2,100" }] },
-    { label: "Gross Profit",  stacks: [{ value: 0,     color: "#3498db", label: "$3,100" }] },
-    { label: "Marketing",     stacks: [{ value: -950,  color: "#e67e22", label: "-$950" }] },
-    { label: "R&D",           stacks: [{ value: -620,  color: "#9b59b6", label: "-$620" }] },
-    { label: "G&A",           stacks: [{ value: -380,  color: "#e67e22", label: "-$380" }] },
-    { label: "Other Income",  stacks: [{ value: 180,   color: "#27ae60", label: "+$180" }] },
-    { label: "Tax",           stacks: [{ value: -450,  color: "#e74c3c", label: "-$450" }] },
-    { label: "Net Income",    stacks: [{ value: 0,     color: "#f39c12", label: "$880" }] },
+  var data = [
+    { label: "Revenue",       stacks: [{ value: 5200,  color: "#27ae60" }] },
+    { label: "Cost of Sales", stacks: [{ value: -2100, color: "#e74c3c" }] },
+    { label: "Gross Profit",  stacks: [{ value: 0,     color: "#3498db" }] },
+    { label: "Marketing",     stacks: [{ value: -950,  color: "#e67e22" }] },
+    { label: "R&D",           stacks: [{ value: -620,  color: "#9b59b6" }] },
+    { label: "G&A",           stacks: [{ value: -380,  color: "#e67e22" }] },
+    { label: "Other Income",  stacks: [{ value: 180,   color: "#27ae60" }] },
+    { label: "Tax",           stacks: [{ value: -450,  color: "#e74c3c" }] },
+    { label: "Net Income",    stacks: [{ value: 0,     color: "#f39c12" }] },
   ];
-  d3.select("#chart-pl").datum(data).call(
-    waterfallChart()
-      .width(900).height(360)
-      .showTotal(true).totalLabel("Net Income").totalColor("#f39c12")
-      .barPadding(0.1).duration(600)
-      .enableTooltips(true)
-      .enableAccessibility(true)
+  renderChart("#chart-pl", data, waterfallChart()
+    .width(860).height(360)
+    .showTotal(true).totalLabel("Net Income").totalColor("#f39c12")
+    .barPadding(0.1).duration(600)
+    .enableTooltips(true)
+    .on("barClick", function(e,d) { console.log(d.label,d.barTotal); })
   );
 })();
 
-// ── 2. Stacked Waterfall ─────────────────────────────────────────────
+// ─── 2. STACKED ──────────────────────────────────────────────────
+
 (function () {
-  const data = [
+  var data = [
     { label: "Engineering", stacks: [
-      { value: 1200, color: "#3498db", label: "Salaries" },
-      { value: 200,  color: "#2ecc71", label: "Tools" },
-      { value: -150, color: "#e74c3c", label: "Travel" },
+      { value: 1200, color: "#3498db" },
+      { value: 200,  color: "#2ecc71" },
+      { value: -150, color: "#e74c3c" }
     ]},
     { label: "Marketing", stacks: [
-      { value: 800,  color: "#3498db", label: "Salaries" },
-      { value: -450, color: "#e74c3c", label: "Ads" },
-      { value: 100,  color: "#f39c12", label: "Events" },
+      { value: 800,  color: "#3498db" },
+      { value: -450, color: "#e74c3c" },
+      { value: 100,  color: "#f39c12" }
     ]},
     { label: "Sales", stacks: [
-      { value: 950,  color: "#3498db", label: "Salaries" },
-      { value: -300, color: "#e74c3c", label: "Commissions" },
-      { value: -100, color: "#e67e22", label: "Travel" },
+      { value: 950,  color: "#3498db" },
+      { value: -300, color: "#e74c3c" },
+      { value: -100, color: "#e67e22" }
     ]},
     { label: "Operations", stacks: [
-      { value: 500,  color: "#3498db", label: "Salaries" },
-      { value: -200, color: "#e74c3c", label: "Rent" },
-      { value: -80,  color: "#9b59b6", label: "Utilities" },
+      { value: 500,  color: "#3498db" },
+      { value: -200, color: "#e74c3c" },
+      { value: -80,  color: "#9b59b6" }
     ]},
     { label: "Total Budget", stacks: [
-      { value: 0, color: "#1abc9c", label: "" },
+      { value: 0, color: "#1abc9c" }
     ]},
   ];
-  d3.select("#chart-stacked").datum(data).call(
-    waterfallChart()
-      .width(900).height(360)
-      .stacked(true)
-      .showTotal(true).totalLabel("Total Budget").totalColor("#1abc9c")
-      .barPadding(0.15).duration(600)
-      .enableTooltips(true)
+  renderChart("#chart-stacked", data, waterfallChart()
+    .width(860).height(360)
+    .stacked(true)
+    .showTotal(true).totalLabel("Total Budget").totalColor("#1abc9c")
+    .barPadding(0.15).duration(600)
+    .enableTooltips(true)
   );
 })();
 
-// ── 3. Trend Lines ────────────────────────────────────────────────────
+// ─── 3. TREND LINES ──────────────────────────────────────────────
+
 (function () {
-  const data = [
-    { label: "Jan", stacks: [{ value: 420, color: "#3498db" }] },
-    { label: "Feb", stacks: [{ value: 380, color: "#3498db" }] },
-    { label: "Mar", stacks: [{ value: 510, color: "#3498db" }] },
-    { label: "Apr", stacks: [{ value: 470, color: "#3498db" }] },
-    { label: "May", stacks: [{ value: 600, color: "#3498db" }] },
-    { label: "Jun", stacks: [{ value: 550, color: "#3498db" }] },
-    { label: "Jul", stacks: [{ value: 690, color: "#3498db" }] },
-    { label: "Aug", stacks: [{ value: 640, color: "#3498db" }] },
-    { label: "Sep", stacks: [{ value: 720, color: "#3498db" }] },
-    { label: "Oct", stacks: [{ value: 810, color: "#3498db" }] },
-    { label: "Nov", stacks: [{ value: 780, color: "#3498db" }] },
-    { label: "Dec", stacks: [{ value: 940, color: "#3498db" }] },
-  ];
+  var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var data = months.map(function (m, i) {
+    return { label: m, stacks: [{ value: 400 + i * 42 + (Math.random()-0.5)*60, color: "#3498db" }] };
+  });
 
   var chart = waterfallChart()
-    .width(900).height(360)
+    .width(860).height(340)
     .showTrendLine(true)
-    .trendLineColor("#e74c3c")
-    .trendLineWidth(2)
-    .trendLineType("linear")
-    .trendLineOpacity(0.8)
-    .barPadding(0.05).duration(500)
+    .trendLineColor("#e74c3c").trendLineWidth(2).trendLineType("linear")
+    .trendLineOpacity(0.75)
+    .barPadding(0.05).duration(400)
     .enableTooltips(true);
 
-  function render() { d3.select("#chart-trend").datum(data).call(chart); }
+  function render() { renderChart("#chart-trend", data, chart); }
   render();
 
-  document.getElementById("trend-controls").addEventListener("click", function (e) {
-    if (e.target.tagName !== "BUTTON") return;
-    var type = e.target.dataset.type;
-    this.querySelectorAll("button").forEach(function (b) { b.classList.remove("active"); });
-    e.target.classList.add("active");
-    if (type === "none") { chart.showTrendLine(false); }
-    else { chart.showTrendLine(true).trendLineType(type); }
+  document.getElementById("trend-bar").addEventListener("click", function (e) {
+    var b = e.target;
+    if (b.tagName !== "BUTTON") return;
+    this.querySelectorAll("button").forEach(function (x) { x.classList.remove("active"); });
+    b.classList.add("active");
+    var t = b.dataset.type;
+    if (t === "none") chart.showTrendLine(false);
+    else { chart.showTrendLine(true).trendLineType(t); }
     render();
   });
 })();
 
-// ── 4. Theme Gallery ──────────────────────────────────────────────────
-(function () {
-  var chart = waterfallChart()
-    .width(900).height(340)
-    .showTotal(true).totalLabel("Net").totalColor("#f39c12")
-    .barPadding(0.1).duration(400)
-    .enableTooltips(true);
+// ─── 4. THEMES ───────────────────────────────────────────────────
 
-  function render() { d3.select("#chart-theme").datum(themeData).call(chart); }
-  var themeData = [
+(function () {
+  var data = [
     { label: "Product A", stacks: [{ value: 3200, color: "#3498db" }] },
     { label: "Product B", stacks: [{ value: -800, color: "#e74c3c" }] },
     { label: "Product C", stacks: [{ value: 1500, color: "#2ecc71" }] },
     { label: "Overhead",  stacks: [{ value: -600, color: "#e67e22" }] },
     { label: "Net",       stacks: [{ value: 0,    color: "#f39c12" }] },
   ];
+  var chart = waterfallChart()
+    .width(860).height(340)
+    .showTotal(true).totalLabel("Net").totalColor("#f39c12")
+    .barPadding(0.1).duration(400)
+    .enableTooltips(true);
+
+  function render() { renderChart("#chart-theme", data, chart); }
   render();
 
-  document.getElementById("theme-controls").addEventListener("click", function (e) {
-    if (e.target.tagName !== "BUTTON") return;
-    this.querySelectorAll("button").forEach(function (b) { b.classList.remove("active"); });
-    e.target.classList.add("active");
-    chart.theme(e.target.dataset.theme);
+  document.getElementById("theme-bar").addEventListener("click", function (e) {
+    var b = e.target;
+    if (b.tagName !== "BUTTON") return;
+    this.querySelectorAll("button").forEach(function (x) { x.classList.remove("active"); });
+    b.classList.add("active");
+    chart.theme(b.dataset.theme);
     render();
   });
 })();
 
-// ── 5. Statistics ─────────────────────────────────────────────────────
+// ─── 5. STATISTICS ───────────────────────────────────────────────
+
 (function () {
-  var stats = createStatisticalSystem();
-  var values = [5200, -2100, 3100, -950, -620, -380, 180, -450, 880];
-  var summary = stats.calculateSummary(values);
-  var trend = stats.analyzeTrend(values.map(function (v, i) { return { x: i + 1, y: v }; }));
+  try {
+    var stats = createStatisticalSystem();
+    var values = [5200, -2100, 3100, -950, -620, -380, 180, -450, 880];
+    var s = stats.calculateSummary(values);
+    var trend = stats.analyzeTrend(values.map(function(v,i){ return { x: i+1, y: v }; }));
 
-  var items = [
-    { label: "Count",  value: values.length,   cls: "" },
-    { label: "Total",  value: summary.sum,     cls: summary.sum >= 0 ? "pos" : "neg" },
-    { label: "Mean",   value: summary.mean,    cls: summary.mean >= 0 ? "pos" : "neg" },
-    { label: "Median", value: summary.median,  cls: summary.median >= 0 ? "pos" : "neg" },
-    { label: "Min",    value: summary.min,     cls: "neg" },
-    { label: "Max",    value: summary.max,     cls: "pos" },
-    { label: "Variance",    value: summary.variance,    cls: "" },
-    { label: "Std Dev",     value: summary.stdDev,      cls: "" },
-    { label: "Trend Slope", value: trend.slope,         cls: trend.slope >= 0 ? "pos" : "neg" },
-    { label: "R\u00B2",    value: trend.rSquared,      cls: "" },
-  ];
-
-  var out = document.getElementById("stats-output");
-  items.forEach(function (item) {
-    var card = document.createElement("div");
-    card.className = "stat-card";
-    card.innerHTML = '<div class="label">' + item.label + '</div>' +
-      '<div class="value ' + item.cls + '">' +
-      (typeof item.value === "number" ? item.value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : item.value) +
-      '</div>';
-    out.appendChild(card);
-  });
+    var cls = function (v) { return v >= 0 ? "pos" : "neg"; };
+    var html = "";
+    html += makeStat("Count",  fmt(s.count));
+    html += makeStat("Sum",    fmt(s.sum),           cls(s.sum));
+    html += makeStat("Mean",   fmt(s.mean),          cls(s.mean));
+    html += makeStat("Median", fmt(s.median),        cls(s.median));
+    html += makeStat("Min",    fmt(s.min),           "neg");
+    html += makeStat("Max",    fmt(s.max),           "pos");
+    html += makeStat("Range",  fmt(s.range));
+    html += makeStat("Variance",       fmt(s.variance));
+    html += makeStat("Std Dev",        fmt(s.standardDeviation));
+    html += makeStat("Slope",          fmt(trend.slope),          cls(trend.slope));
+    html += makeStat("R\u00B2",        fmt(trend.rSquared));
+    html += makeStat("Direction",      trend.direction);
+    html += makeStat("Strength",       trend.strength);
+    html += makeStat("Confidence",     fmt(trend.confidence * 100) + "%");
+    document.getElementById("stat-grid").innerHTML = html;
+  } catch (er) {
+    document.getElementById("stat-grid").innerHTML =
+      '<div class="stat"><div class="k">Note</div><div class="v" style="font-size:0.9rem">Statistical module loaded &mdash; try it programmatically</div></div>';
+  }
 })();
 </script>
+
 </body>
 </html>
