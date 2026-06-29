@@ -17,7 +17,7 @@ import { createAccessibilitySystem } from "../mintwaterfall-accessibility.js";
 import { createTooltipSystem } from "../mintwaterfall-tooltip.js";
 import { createExportSystem } from "../mintwaterfall-export.js";
 import { createZoomSystem } from "../mintwaterfall-zoom.js";
-import { createPerformanceManager } from "../mintwaterfall-performance.js";
+import { createPerformanceManager } from "../performance.js";
 import { createShapeGenerators } from "../mintwaterfall-shapes.js";
 
 export function waterfallChart(): WaterfallChart {

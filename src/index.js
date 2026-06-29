@@ -54,12 +54,13 @@ export {
   analyzeWaterfallStatistics,
 } from "./mintwaterfall-statistics.ts";
 
-// NEW: Advanced performance optimization features
+// Performance optimization features
 export {
+  createPerformanceManager,
   createAdvancedPerformanceSystem,
   createWaterfallSpatialIndex,
   createVirtualWaterfallRenderer,
-} from "./mintwaterfall-advanced-performance.ts";
+} from "./performance.ts";
 
 // NEW: MEDIUM PRIORITY - Advanced analytical enhancement features
 export {
@@ -73,20 +74,15 @@ export {
   createWaterfallDragBehavior,
   createWaterfallVoronoiConfig,
   createWaterfallForceConfig,
-} from "./mintwaterfall-advanced-interactions.ts";
+} from "./interactions.ts";
 
 export {
+  createHierarchicalLayout,
   createHierarchicalLayoutSystem,
   createWaterfallTreemap,
   createWaterfallSunburst,
   createWaterfallBubbles,
-} from "./mintwaterfall-hierarchical-layouts.ts";
-
-// Hierarchical Layout Features
-export { createHierarchicalLayout } from "./mintwaterfall-layouts.ts";
-
-// Performance
-export { createPerformanceManager } from "./mintwaterfall-performance.ts";
+} from "./layouts.ts";
 
 // Accessibility & UX Features
 export { createAccessibilitySystem } from "./mintwaterfall-accessibility.ts";
@@ -105,7 +101,3 @@ import { waterfallChart } from "./mintwaterfall-chart.ts";
 // Export main chart as default
 export default waterfallChart;
 
-// Add to d3 namespace for compatibility
-if (typeof window !== "undefined" && window.d3) {
-  window.d3.waterfallChart = waterfallChart;
-}
