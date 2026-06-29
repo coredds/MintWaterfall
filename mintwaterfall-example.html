@@ -1,44 +1,298 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MintWaterfall — Waterfall Chart Demo</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; color: #333; }
-        h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
-        h2 { font-size: 1rem; font-weight: 400; color: #666; margin-bottom: 2rem; }
-        #chart { width: 100%; height: 400px; }
-        footer { margin-top: 3rem; font-size: 0.85rem; color: #999; text-align: center; }
-        a { color: #3498db; }
-    </style>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="dist/mintwaterfall.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MintWaterfall — Waterfall Chart Demo</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f5f7fa; color: #333; line-height: 1.6;
+  }
+  header {
+    background: linear-gradient(135deg, #2c3e50, #3498db);
+    color: #fff; padding: 3rem 2rem 2rem; text-align: center;
+  }
+  header h1 { font-size: 2.2rem; font-weight: 700; }
+  header p { font-size: 1rem; opacity: 0.85; margin-top: 0.5rem; }
+  header .version {
+    display: inline-block; margin-top: 0.75rem;
+    background: rgba(255,255,255,0.15); padding: 0.25rem 0.75rem;
+    border-radius: 12px; font-size: 0.8rem;
+  }
+  main { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
+  section {
+    background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    padding: 1.5rem; margin-bottom: 2rem;
+  }
+  section h2 {
+    font-size: 1.2rem; font-weight: 600; color: #2c3e50;
+    margin-bottom: 0.25rem;
+  }
+  section .desc {
+    font-size: 0.85rem; color: #777; margin-bottom: 1rem;
+  }
+  .chart-container { width: 100%; overflow-x: auto; }
+  .chart-container svg { display: block; }
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;
+  }
+  .controls button {
+    padding: 0.4rem 1rem; font-size: 0.8rem; border: 1px solid #ddd;
+    border-radius: 6px; background: #fff; color: #555; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .controls button:hover { border-color: #3498db; color: #3498db; }
+  .controls button.active { background: #3498db; color: #fff; border-color: #3498db; }
+  .stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem; margin-top: 1rem;
+  }
+  .stat-card {
+    background: #f8f9fb; border-radius: 8px; padding: 0.75rem; text-align: center;
+  }
+  .stat-card .label { font-size: 0.7rem; color: #999; text-transform: uppercase; }
+  .stat-card .value { font-size: 1.2rem; font-weight: 600; color: #2c3e50; }
+  .stat-card .value.pos { color: #27ae60; }
+  .stat-card .value.neg { color: #e74c3c; }
+  footer {
+    text-align: center; padding: 2rem 1.5rem; font-size: 0.85rem; color: #999;
+  }
+  footer a { color: #3498db; text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="dist/mintwaterfall.min.js"></script>
 </head>
 <body>
-    <h1>MintWaterfall</h1>
-    <h2>A powerful D3.js waterfall chart component</h2>
-    <div id="chart"></div>
-    <footer>
-        <a href="https://github.com/coredds/MintWaterfall">GitHub</a> &middot;
-        <a href="https://coredds.github.io/MintWaterfall/">Full Documentation</a> &middot;
-        v1.0.0
-    </footer>
-    <script>
-        const data = [
-            { label: "Revenue",     stacks: [{ value: 5000,  color: "#27ae60" }] },
-            { label: "COGS",        stacks: [{ value: -2500, color: "#e74c3c" }] },
-            { label: "Marketing",   stacks: [{ value: -800,  color: "#e74c3c" }] },
-            { label: "R&D",         stacks: [{ value: -500,  color: "#e74c3c" }] },
-            { label: "Net Income",  stacks: [{ value: 0,     color: "#f39c12" }] },
-        ];
-        const chart = MintWaterfall.waterfallChart()
-            .width(860)
-            .height(400)
-            .showTotal(true)
-            .totalLabel("Net Income")
-            .totalColor("#f39c12");
-        d3.select("#chart").datum(data).call(chart);
-    </script>
+
+<header>
+  <h1>MintWaterfall</h1>
+  <p>A TypeScript waterfall chart library built on D3.js v7</p>
+  <span class="version">v1.0.0</span>
+</header>
+
+<main>
+
+<!-- Basic Waterfall -->
+<section>
+  <h2>Financial P&amp;L Breakdown</h2>
+  <p class="desc">Classic waterfall showing how revenue flows into net income. The total bar shows the cumulative result.</p>
+  <div class="chart-container" id="chart-pl"></div>
+</section>
+
+<!-- Stacked Waterfall -->
+<section>
+  <h2>Stacked Waterfall — Department Budget</h2>
+  <p class="desc">Each bar can contain multiple stacks, useful for showing category breakdowns within each step.</p>
+  <div class="chart-container" id="chart-stacked"></div>
+</section>
+
+<!-- Trend Lines -->
+<section>
+  <h2>Trend Analysis</h2>
+  <p class="desc">Enable trend lines to visualize patterns across your data. Switch between linear regression, moving average, and polynomial.</p>
+  <div class="controls" id="trend-controls">
+    <button data-type="linear" class="active">Linear</button>
+    <button data-type="moving-average">Moving Avg</button>
+    <button data-type="polynomial">Polynomial</button>
+    <button data-type="none">None</button>
+  </div>
+  <div class="chart-container" id="chart-trend"></div>
+</section>
+
+<!-- Themes -->
+<section>
+  <h2>Theme Gallery</h2>
+  <p class="desc">MintWaterfall ships with multiple themes. Select one to see it applied in real-time.</p>
+  <div class="controls" id="theme-controls">
+    <button data-theme="default" class="active">Default</button>
+    <button data-theme="corporate">Corporate</button>
+    <button data-theme="dark">Dark</button>
+    <button data-theme="financial">Financial</button>
+    <button data-theme="colorful">Colorful</button>
+  </div>
+  <div class="chart-container" id="chart-theme"></div>
+</section>
+
+<!-- Statistics -->
+<section id="stats-section">
+  <h2>Statistical Summary</h2>
+  <p class="desc">Built-in statistical analysis: compute mean, median, variance, outlier detection, and linear regression on any dataset.</p>
+  <div class="stats" id="stats-output"></div>
+</section>
+
+</main>
+
+<footer>
+  <a href="https://github.com/coredds/MintWaterfall">GitHub</a> &middot;
+  <a href="https://www.npmjs.com/package/mintwaterfall">npm</a> &middot;
+  <a href="https://coredds.github.io/MintWaterfall/">Documentation</a>
+</footer>
+
+<script>
+const { waterfallChart, createStatisticalSystem, createDataProcessor } = MintWaterfall;
+
+// ── 1. Financial P&L Waterfall ──────────────────────────────────────
+(function () {
+  const data = [
+    { label: "Revenue",       stacks: [{ value: 5200,  color: "#27ae60", label: "+$5,200" }] },
+    { label: "Cost of Sales", stacks: [{ value: -2100, color: "#e74c3c", label: "-$2,100" }] },
+    { label: "Gross Profit",  stacks: [{ value: 0,     color: "#3498db", label: "$3,100" }] },
+    { label: "Marketing",     stacks: [{ value: -950,  color: "#e67e22", label: "-$950" }] },
+    { label: "R&D",           stacks: [{ value: -620,  color: "#9b59b6", label: "-$620" }] },
+    { label: "G&A",           stacks: [{ value: -380,  color: "#e67e22", label: "-$380" }] },
+    { label: "Other Income",  stacks: [{ value: 180,   color: "#27ae60", label: "+$180" }] },
+    { label: "Tax",           stacks: [{ value: -450,  color: "#e74c3c", label: "-$450" }] },
+    { label: "Net Income",    stacks: [{ value: 0,     color: "#f39c12", label: "$880" }] },
+  ];
+  d3.select("#chart-pl").datum(data).call(
+    waterfallChart()
+      .width(900).height(360)
+      .showTotal(true).totalLabel("Net Income").totalColor("#f39c12")
+      .barPadding(0.1).duration(600)
+      .enableTooltips(true)
+      .enableAccessibility(true)
+  );
+})();
+
+// ── 2. Stacked Waterfall ─────────────────────────────────────────────
+(function () {
+  const data = [
+    { label: "Engineering", stacks: [
+      { value: 1200, color: "#3498db", label: "Salaries" },
+      { value: 200,  color: "#2ecc71", label: "Tools" },
+      { value: -150, color: "#e74c3c", label: "Travel" },
+    ]},
+    { label: "Marketing", stacks: [
+      { value: 800,  color: "#3498db", label: "Salaries" },
+      { value: -450, color: "#e74c3c", label: "Ads" },
+      { value: 100,  color: "#f39c12", label: "Events" },
+    ]},
+    { label: "Sales", stacks: [
+      { value: 950,  color: "#3498db", label: "Salaries" },
+      { value: -300, color: "#e74c3c", label: "Commissions" },
+      { value: -100, color: "#e67e22", label: "Travel" },
+    ]},
+    { label: "Operations", stacks: [
+      { value: 500,  color: "#3498db", label: "Salaries" },
+      { value: -200, color: "#e74c3c", label: "Rent" },
+      { value: -80,  color: "#9b59b6", label: "Utilities" },
+    ]},
+    { label: "Total Budget", stacks: [
+      { value: 0, color: "#1abc9c", label: "" },
+    ]},
+  ];
+  d3.select("#chart-stacked").datum(data).call(
+    waterfallChart()
+      .width(900).height(360)
+      .stacked(true)
+      .showTotal(true).totalLabel("Total Budget").totalColor("#1abc9c")
+      .barPadding(0.15).duration(600)
+      .enableTooltips(true)
+  );
+})();
+
+// ── 3. Trend Lines ────────────────────────────────────────────────────
+(function () {
+  const data = [
+    { label: "Jan", stacks: [{ value: 420, color: "#3498db" }] },
+    { label: "Feb", stacks: [{ value: 380, color: "#3498db" }] },
+    { label: "Mar", stacks: [{ value: 510, color: "#3498db" }] },
+    { label: "Apr", stacks: [{ value: 470, color: "#3498db" }] },
+    { label: "May", stacks: [{ value: 600, color: "#3498db" }] },
+    { label: "Jun", stacks: [{ value: 550, color: "#3498db" }] },
+    { label: "Jul", stacks: [{ value: 690, color: "#3498db" }] },
+    { label: "Aug", stacks: [{ value: 640, color: "#3498db" }] },
+    { label: "Sep", stacks: [{ value: 720, color: "#3498db" }] },
+    { label: "Oct", stacks: [{ value: 810, color: "#3498db" }] },
+    { label: "Nov", stacks: [{ value: 780, color: "#3498db" }] },
+    { label: "Dec", stacks: [{ value: 940, color: "#3498db" }] },
+  ];
+
+  var chart = waterfallChart()
+    .width(900).height(360)
+    .showTrendLine(true)
+    .trendLineColor("#e74c3c")
+    .trendLineWidth(2)
+    .trendLineType("linear")
+    .trendLineOpacity(0.8)
+    .barPadding(0.05).duration(500)
+    .enableTooltips(true);
+
+  function render() { d3.select("#chart-trend").datum(data).call(chart); }
+  render();
+
+  document.getElementById("trend-controls").addEventListener("click", function (e) {
+    if (e.target.tagName !== "BUTTON") return;
+    var type = e.target.dataset.type;
+    this.querySelectorAll("button").forEach(function (b) { b.classList.remove("active"); });
+    e.target.classList.add("active");
+    if (type === "none") { chart.showTrendLine(false); }
+    else { chart.showTrendLine(true).trendLineType(type); }
+    render();
+  });
+})();
+
+// ── 4. Theme Gallery ──────────────────────────────────────────────────
+(function () {
+  var chart = waterfallChart()
+    .width(900).height(340)
+    .showTotal(true).totalLabel("Net").totalColor("#f39c12")
+    .barPadding(0.1).duration(400)
+    .enableTooltips(true);
+
+  function render() { d3.select("#chart-theme").datum(themeData).call(chart); }
+  var themeData = [
+    { label: "Product A", stacks: [{ value: 3200, color: "#3498db" }] },
+    { label: "Product B", stacks: [{ value: -800, color: "#e74c3c" }] },
+    { label: "Product C", stacks: [{ value: 1500, color: "#2ecc71" }] },
+    { label: "Overhead",  stacks: [{ value: -600, color: "#e67e22" }] },
+    { label: "Net",       stacks: [{ value: 0,    color: "#f39c12" }] },
+  ];
+  render();
+
+  document.getElementById("theme-controls").addEventListener("click", function (e) {
+    if (e.target.tagName !== "BUTTON") return;
+    this.querySelectorAll("button").forEach(function (b) { b.classList.remove("active"); });
+    e.target.classList.add("active");
+    chart.theme(e.target.dataset.theme);
+    render();
+  });
+})();
+
+// ── 5. Statistics ─────────────────────────────────────────────────────
+(function () {
+  var stats = createStatisticalSystem();
+  var values = [5200, -2100, 3100, -950, -620, -380, 180, -450, 880];
+  var summary = stats.calculateSummary(values);
+  var trend = stats.analyzeTrend(values.map(function (v, i) { return { x: i + 1, y: v }; }));
+
+  var items = [
+    { label: "Count",  value: values.length,   cls: "" },
+    { label: "Total",  value: summary.sum,     cls: summary.sum >= 0 ? "pos" : "neg" },
+    { label: "Mean",   value: summary.mean,    cls: summary.mean >= 0 ? "pos" : "neg" },
+    { label: "Median", value: summary.median,  cls: summary.median >= 0 ? "pos" : "neg" },
+    { label: "Min",    value: summary.min,     cls: "neg" },
+    { label: "Max",    value: summary.max,     cls: "pos" },
+    { label: "Variance",    value: summary.variance,    cls: "" },
+    { label: "Std Dev",     value: summary.stdDev,      cls: "" },
+    { label: "Trend Slope", value: trend.slope,         cls: trend.slope >= 0 ? "pos" : "neg" },
+    { label: "R\u00B2",    value: trend.rSquared,      cls: "" },
+  ];
+
+  var out = document.getElementById("stats-output");
+  items.forEach(function (item) {
+    var card = document.createElement("div");
+    card.className = "stat-card";
+    card.innerHTML = '<div class="label">' + item.label + '</div>' +
+      '<div class="value ' + item.cls + '">' +
+      (typeof item.value === "number" ? item.value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : item.value) +
+      '</div>';
+    out.appendChild(card);
+  });
+})();
+</script>
 </body>
 </html>
