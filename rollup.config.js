@@ -53,7 +53,7 @@ const minifiedPlugins = [
 export default [
   // ES Module build
   {
-    input: "src/index.js",
+    input: "src/index.ts",
     external,
     output: {
       file: "dist/mintwaterfall.esm.js",
@@ -65,7 +65,7 @@ export default [
 
   // UMD build (for browser <script> tags)
   {
-    input: "src/index.js",
+    input: "src/index.ts",
     external,
     output: {
       file: "dist/mintwaterfall.umd.js",
@@ -80,7 +80,7 @@ export default [
 
   // Minified UMD build
   {
-    input: "src/index.js",
+    input: "src/index.ts",
     external,
     output: {
       file: "dist/mintwaterfall.min.js",
@@ -95,7 +95,7 @@ export default [
 
   // CommonJS build (for Node.js)
   {
-    input: "src/index.js",
+    input: "src/index.ts",
     external,
     output: {
       file: "dist/mintwaterfall.cjs.js",

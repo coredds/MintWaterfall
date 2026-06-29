@@ -18,7 +18,7 @@ const external = [
 ];
 
 export default {
-  input: "src/index.js",
+  input: "src/index.ts",
   external,
   output: {
     file: "dist/mintwaterfall.cjs.js",

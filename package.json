@@ -22,8 +22,6 @@
   "files": [
     "dist/",
     "src/",
-    "mintwaterfall-*.js",
-    "*.d.ts",
     "API.md",
     "CHANGELOG.md",
     "CONTRIBUTING.md",

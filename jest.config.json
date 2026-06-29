@@ -1,11 +1,8 @@
 {
   "testEnvironment": "jsdom",
   "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
-  "testMatch": ["<rootDir>/tests/**/*.test.js"],
-  "testPathIgnorePatterns": [
-    "<rootDir>/tests/compatibility/d3js-compatibility.test.js",
-    "<rootDir>/tests/enterprise/enterprise-features.test.js"
-  ],
+  "testMatch": ["<rootDir>/tests/**/*.test.{js,ts}"],
+  "testPathIgnorePatterns": [],
   "collectCoverage": true,
   "coverageDirectory": "coverage",
   "coverageReporters": ["text", "lcov", "html"],
@@ -30,10 +27,16 @@
   ],
   "moduleNameMapper": {
     "^d3$": "<rootDir>/tests/__mocks__/d3.js",
-    "^../dist/mintwaterfall\\.esm\\.js$": "<rootDir>/src/index.js",
-    "^../dist/mintwaterfall\\.cjs\\.js$": "<rootDir>/src/index.js",
-    "^../dist/mintwaterfall\\.umd\\.js$": "<rootDir>/src/index.js",
-    "^\\./mintwaterfall-(.+)\\.js$": "./mintwaterfall-$1.ts"
+    "^../dist/mintwaterfall\\.esm\\.js$": "<rootDir>/src/index.ts",
+    "^../dist/mintwaterfall\\.cjs\\.js$": "<rootDir>/src/index.ts",
+    "^../dist/mintwaterfall\\.umd\\.js$": "<rootDir>/src/index.ts",
+    "^\\./mintwaterfall-(.+)\\.js$": "./mintwaterfall-$1.ts",
+    "^\\.\\./mintwaterfall-(.+)\\.js$": "../mintwaterfall-$1.ts",
+    "^\\./chart/(chart|config|lifecycle|render)\\.js$": "./chart/$1.ts",
+    "^\\./data/(pipeline|advanced|transforms|validation)\\.js$": "./data/$1.ts",
+    "^\\./(animations|brush|scales|shapes|statistics|themes|interactions|layouts|performance)\\.js$": "./$1.ts",
+    "^\\.\\./(animations|brush|scales|shapes|statistics|themes|interactions|layouts|performance)\\.js$": "../$1.ts",
+    "^\\./(chart|config|lifecycle|render|pipeline|advanced|transforms|validation)\\.js$": "./$1.ts"
   },
   "globals": {
     "__DEV__": true
