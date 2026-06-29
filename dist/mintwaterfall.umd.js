@@ -1,5 +1,5 @@
 /*!
- * MintWaterfall v0.8.10
+ * MintWaterfall v1.0.0
  * D3.js-compatible waterfall chart component
  * (c) 2024-2026 David Duarte
  * Released under the MIT License
@@ -4045,7 +4045,7 @@ Performance Report:
                 const isValidData = data.every(item => item && typeof item.label === "string" && Array.isArray(item.stacks) &&
                     item.stacks.every(stack => typeof stack.value === "number" && typeof stack.color === "string"));
                 if (!isValidData) {
-                    console.error("MintWaterfall: Invalid data structure.");
+                    console.error("MintWaterfall: Invalid data structure. Each item must have a 'label' string and 'stacks' array with 'value' numbers and 'color' strings.");
                     return;
                 }
                 const element = d3__namespace.select(this);
@@ -4222,6 +4222,11 @@ Performance Report:
         chart.colorMode = accessor(() => config.colorMode, v => { config.colorMode = v; });
         chart.colorTheme = accessor(() => config.advancedColorConfig.themeName || "default", v => { config.advancedColorConfig.themeName = v; });
         chart.neutralThreshold = accessor(() => config.advancedColorConfig.neutralThreshold || 0, v => { config.advancedColorConfig.neutralThreshold = v; });
+        chart.data = function (value) {
+            if (arguments.length === 0)
+                return chart;
+            return chart;
+        };
         chart.on = function () {
             const value = listeners.on.apply(listeners, Array.from(arguments));
             return value === listeners ? chart : value;

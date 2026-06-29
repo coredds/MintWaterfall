@@ -1,5 +1,5 @@
 /*!
- * MintWaterfall v0.8.10 - FAST BUILD
+ * MintWaterfall v1.0.0
  * D3.js-compatible waterfall chart component
  * (c) 2024-2026 David Duarte
  * Released under the MIT License
