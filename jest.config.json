@@ -30,6 +30,7 @@
     "^../dist/mintwaterfall\\.esm\\.js$": "<rootDir>/src/index.ts",
     "^../dist/mintwaterfall\\.cjs\\.js$": "<rootDir>/src/index.ts",
     "^../dist/mintwaterfall\\.umd\\.js$": "<rootDir>/src/index.ts",
+    "^../src/(.+)\\.js$": "<rootDir>/src/$1.ts",
     "^\\./mintwaterfall-(.+)\\.js$": "./mintwaterfall-$1.ts",
     "^\\.\\./mintwaterfall-(.+)\\.js$": "../mintwaterfall-$1.ts",
     "^\\./chart/(chart|config|lifecycle|render)\\.js$": "./chart/$1.ts",
