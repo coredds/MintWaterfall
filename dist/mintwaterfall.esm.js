@@ -138,7 +138,7 @@ function calculateIntelligentMargins(processedData, baseMargin, width, height, f
     };
 }
 
-function prepareData(data, config, formattingRules, breakdownConfig) {
+function prepareData(data, config) {
     let workingData = [...data];
     let cumulativeTotal = 0;
     let prevCumulativeTotal = 0;
@@ -938,9 +938,7 @@ function drawValueLabels(barGroups, xScale, yScale, config, margins) {
             .style("visibility", "visible")
             .style("display", "block")
             .attr("clip-path", "none")
-            .text((labelD) => labelD.formattedValue)
-            .each(function (labelD) {
-        });
+            .text((labelD) => labelD.formattedValue);
         totalLabels.exit()
             .transition()
             .duration(config.duration)
@@ -4074,7 +4072,7 @@ function waterfallChart() {
                     processedData = cachedProcessedData;
                 }
                 else {
-                    processedData = prepareData(data, config, config.formattingRules, config.breakdownConfig);
+                    processedData = prepareData(data, config);
                     lastDataHash = dataHash;
                     cachedProcessedData = processedData;
                 }
@@ -4203,9 +4201,11 @@ function waterfallChart() {
     chart.colorMode = accessor(() => config.colorMode, v => { config.colorMode = v; });
     chart.colorTheme = accessor(() => config.advancedColorConfig.themeName || "default", v => { config.advancedColorConfig.themeName = v; });
     chart.neutralThreshold = accessor(() => config.advancedColorConfig.neutralThreshold || 0, v => { config.advancedColorConfig.neutralThreshold = v; });
+    let boundData = null;
     chart.data = function (value) {
         if (arguments.length === 0)
-            return chart;
+            return boundData;
+        boundData = value;
         return chart;
     };
     chart.on = function () {
@@ -4764,88 +4764,6 @@ function createBreakdownWaterfall(data, primaryKey, breakdownKey, valueKey) {
             stacks
         };
     });
-}
-// ============================================================================
-// SPECIALIZED WATERFALL UTILITIES
-// ============================================================================
-/**
- * Create sequence analysis specifically for waterfall data
- */
-function createWaterfallSequenceAnalyzer(data) {
-    const processor = createAdvancedDataProcessor();
-    const flowAnalysis = processor.analyzeSequence(data);
-    // Calculate cumulative flow
-    const cumulativeFlow = [];
-    let cumulative = 0;
-    data.forEach((item, index) => {
-        const value = extractValue(item);
-        cumulative += value;
-        cumulativeFlow.push({
-            step: index,
-            cumulative,
-            change: value
-        });
-    });
-    // Identify critical paths (large impact changes)
-    const criticalPaths = flowAnalysis
-        .filter((seq) => seq.magnitude === 'large')
-        .map((seq) => `${seq.from} ÔåÆ ${seq.to}`);
-    // Generate optimization suggestions
-    const optimizationSuggestions = processor.suggestDataOptimizations(data);
-    return {
-        flowAnalysis,
-        cumulativeFlow,
-        criticalPaths,
-        optimizationSuggestions
-    };
-    function extractValue(item) {
-        if (typeof item === 'number')
-            return item;
-        if (item.value !== undefined)
-            return item.value;
-        if (item.stacks && Array.isArray(item.stacks)) {
-            return item.stacks.reduce((sum, stack) => sum + (stack.value || 0), 0);
-        }
-        return 0;
-    }
-}
-/**
- * Create optimized tick generator for waterfall charts
- */
-function createWaterfallTickGenerator(domain, dataPoints) {
-    const processor = createAdvancedDataProcessor();
-    // Generate base ticks
-    const ticks = processor.generateCustomTicks(domain, {
-        count: 8,
-        nice: true,
-        includeZero: true,
-        threshold: Math.abs(domain[1] - domain[0]) / 100
-    });
-    // Generate labels
-    const labels = ticks.map((tick) => {
-        if (tick === 0)
-            return '0';
-        if (Math.abs(tick) >= 1000000)
-            return `${(tick / 1000000).toFixed(1)}M`;
-        if (Math.abs(tick) >= 1000)
-            return `${(tick / 1000).toFixed(1)}K`;
-        return tick.toFixed(0);
-    });
-    // Identify key markers (data points that align with ticks)
-    const keyMarkers = ticks.filter((tick) => {
-        return dataPoints.some(d => Math.abs(extractValue(d) - tick) < Math.abs(domain[1] - domain[0]) / 50);
-    });
-    return { ticks, labels, keyMarkers };
-    function extractValue(item) {
-        if (typeof item === 'number')
-            return item;
-        if (item.value !== undefined)
-            return item.value;
-        if (item.stacks && Array.isArray(item.stacks)) {
-            return item.stacks.reduce((sum, stack) => sum + (stack.value || 0), 0);
-        }
-        return 0;
-    }
 }
 // ============================================================================
 // MISSING ADVANCED DATA PROCESSOR FUNCTIONS
@@ -7428,6 +7346,6 @@ function createWaterfallBubbles(data, container, width, height) {
 // D3.js-compatible waterfall chart component library with enhanced features
 // Core chart functionality
 // Version information
-const version = "0.8.10";
+const version = "1.0.0";
 
-export { analyzeWaterfallStatistics, applyTheme, createAccessibilitySystem, createAdvancedDataProcessor, createAdvancedInteractionSystem, createAdvancedPerformanceSystem, createAnimationSystem, createBrushSystemFactory as createBrushSystem, createComparisonWaterfall, createDataProcessor, createDivergingScale, createExportSystem, createHierarchicalLayout, createHierarchicalLayoutSystem, createPerformanceManager, createRevenueWaterfall, createScaleSystem, createSequentialScale, createShapeGenerators, createStatisticalSystem, createTemporalWaterfall, createTooltipSystem, createVarianceWaterfall, createVirtualWaterfallRenderer, createWaterfallBubbles, createWaterfallColorScale, createWaterfallConfidenceBands, createWaterfallDragBehavior, createWaterfallForceConfig, createWaterfallMilestones, createWaterfallSequenceAnalyzer, createWaterfallSpatialIndex, createWaterfallSunburst, createWaterfallTickGenerator, createWaterfallTreemap, createWaterfallVoronoiConfig, createZoomSystem, d3DataUtils, dataProcessor, waterfallChart as default, financialReducers, getAdvancedBarColor, getConditionalColor, groupWaterfallData, interpolateThemeColor, themes, transformTransactionData, version, waterfallChart };
+export { analyzeWaterfallStatistics, applyTheme, createAccessibilitySystem, createAdvancedDataProcessor, createAdvancedInteractionSystem, createAdvancedPerformanceSystem, createAnimationSystem, createBrushSystemFactory as createBrushSystem, createComparisonWaterfall, createDataProcessor, createDivergingScale, createExportSystem, createHierarchicalLayout, createHierarchicalLayoutSystem, createPerformanceManager, createRevenueWaterfall, createScaleSystem, createSequentialScale, createShapeGenerators, createStatisticalSystem, createTemporalWaterfall, createTooltipSystem, createVarianceWaterfall, createVirtualWaterfallRenderer, createWaterfallBubbles, createWaterfallColorScale, createWaterfallConfidenceBands, createWaterfallDragBehavior, createWaterfallForceConfig, createWaterfallMilestones, createWaterfallSpatialIndex, createWaterfallSunburst, createWaterfallTreemap, createWaterfallVoronoiConfig, createZoomSystem, d3DataUtils, dataProcessor, waterfallChart as default, financialReducers, getAdvancedBarColor, getConditionalColor, groupWaterfallData, interpolateThemeColor, themes, transformTransactionData, version, waterfallChart };

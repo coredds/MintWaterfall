@@ -65,8 +65,6 @@ export {
 // Advanced analytical enhancement features
 export {
   createAdvancedDataProcessor,
-  createWaterfallSequenceAnalyzer,
-  createWaterfallTickGenerator,
 } from "./data/advanced.js";
 
 export {
@@ -85,15 +83,15 @@ export {
 } from "./layouts.js";
 
 // Accessibility & UX Features
-export { createAccessibilitySystem } from "./mintwaterfall-accessibility.js";
-export { createTooltipSystem } from "./mintwaterfall-tooltip.js";
-export { createExportSystem } from "./mintwaterfall-export.js";
+export { createAccessibilitySystem } from "./accessibility.js";
+export { createTooltipSystem } from "./tooltip.js";
+export { createExportSystem } from "./export.js";
 
 // Interactivity Features
-export { createZoomSystem } from "./mintwaterfall-zoom.js";
+export { createZoomSystem } from "./zoom.js";
 
 // Version information
-export const version = "0.8.10";
+export const version = "1.0.0";
 
 // Default export
 import { waterfallChart } from "./chart/chart.js";

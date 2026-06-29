@@ -13,10 +13,10 @@ import {
 } from "./render.js";
 import { createScaleSystem } from "../scales.js";
 import { createBrushSystem } from "../brush.js";
-import { createAccessibilitySystem } from "../mintwaterfall-accessibility.js";
-import { createTooltipSystem } from "../mintwaterfall-tooltip.js";
-import { createExportSystem } from "../mintwaterfall-export.js";
-import { createZoomSystem } from "../mintwaterfall-zoom.js";
+import { createAccessibilitySystem } from "../accessibility.js";
+import { createTooltipSystem } from "../tooltip.js";
+import { createExportSystem } from "../export.js";
+import { createZoomSystem } from "../zoom.js";
 import { createPerformanceManager } from "../performance.js";
 import { createShapeGenerators } from "../shapes.js";
 
@@ -108,9 +108,7 @@ export function waterfallChart(): WaterfallChart {
                 } else {
                     processedData = prepareData(
                         data,
-                        config,
-                        config.formattingRules,
-                        config.breakdownConfig
+                        config
                     );
                     lastDataHash = dataHash;
                     cachedProcessedData = processedData;
@@ -246,7 +244,7 @@ export function waterfallChart(): WaterfallChart {
     chart.neutralThreshold = accessor(() => config.advancedColorConfig.neutralThreshold || 0, v => { config.advancedColorConfig.neutralThreshold = v; });
     let boundData: any = null;
     chart.data = function (this: any, value?: any) {
-        if (arguments.length === 0) return chart;
+        if (arguments.length === 0) return boundData;
         boundData = value;
         return chart;
     } as any;

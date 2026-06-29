@@ -1,11 +1,9 @@
 // MintWaterfall Chart Lifecycle — data preparation
-import { ChartConfig, ProcessedData, ChartData, BreakdownConfig } from "./config.js";
+import { ChartConfig, ProcessedData, ChartData } from "./config.js";
 
 export function prepareData(
     data: ChartData[],
-    config: ChartConfig,
-    formattingRules: Map<string, any>,
-    breakdownConfig: BreakdownConfig | null
+    config: ChartConfig
 ): ProcessedData[] {
     let workingData = [...data];
 

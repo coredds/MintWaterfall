@@ -297,9 +297,7 @@ export function drawValueLabels(barGroups: any, xScale: any, yScale: any, config
             .style("visibility", "visible")
             .style("display", "block")
             .attr("clip-path", "none")
-            .text((labelD: any) => labelD.formattedValue)
-            .each(function(this: SVGTextElement, labelD: any) {
-            });
+            .text((labelD: any) => labelD.formattedValue);
 
         totalLabels.exit()
             .transition()

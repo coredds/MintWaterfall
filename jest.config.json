@@ -34,8 +34,8 @@
     "^\\.\\./mintwaterfall-(.+)\\.js$": "../mintwaterfall-$1.ts",
     "^\\./chart/(chart|config|lifecycle|render)\\.js$": "./chart/$1.ts",
     "^\\./data/(pipeline|advanced|transforms|validation)\\.js$": "./data/$1.ts",
-    "^\\./(animations|brush|scales|shapes|statistics|themes|interactions|layouts|performance)\\.js$": "./$1.ts",
-    "^\\.\\./(animations|brush|scales|shapes|statistics|themes|interactions|layouts|performance)\\.js$": "../$1.ts",
+    "^\\./(animations|brush|scales|shapes|statistics|themes|interactions|layouts|performance|accessibility|tooltip|export|zoom)\\.js$": "./$1.ts",
+    "^\\.\\./(animations|brush|scales|shapes|statistics|themes|interactions|layouts|performance|accessibility|tooltip|export|zoom)\\.js$": "../$1.ts",
     "^\\./(chart|config|lifecycle|render|pipeline|advanced|transforms|validation)\\.js$": "./$1.ts"
   },
   "globals": {

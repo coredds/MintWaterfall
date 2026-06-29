@@ -509,7 +509,7 @@ describe("MintWaterfall Chart", () => {
 
     test("should handle data method", () => {
       const result = chart.data();
-      expect(result).toBe(chart);
+      expect(result).toBeNull();
     });
 
     test("should handle negative duration values", () => {
