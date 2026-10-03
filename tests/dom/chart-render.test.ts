@@ -210,6 +210,19 @@ describe("rendering", () => {
         expect(el.querySelectorAll("text.stack-label")).toHaveLength(0);
     });
 
+    test("time scale positions bars by date without overlap", () => {
+        const data = ["2024-01-01", "2024-02-01", "2024-02-08", "2024-06-01"].map(label => ({ label, stacks: [{ value: 10 }] }));
+        const { el } = render(data, c => c.scaleType("time").showTrendLine(true));
+        const xs = bars(el).map(g => Number(g.getAttribute("transform")!.match(/translate\(([-\d.]+)/)![1]));
+        expect(xs.every(Number.isFinite)).toBe(true);
+        expect([...xs].sort((a, b) => a - b)).toEqual(xs); // chronological order
+        const width = Number(el.querySelector("rect.waterfall-bar")!.getAttribute("width"));
+        // Feb 1 → Feb 8 is the closest pair; bars must not overlap
+        expect(xs[1] + width).toBeLessThanOrEqual(xs[2] + 0.001);
+        expect(el.querySelector("path.trend-line")!.getAttribute("d")).not.toContain("NaN");
+        expect(el.querySelectorAll("line.connector")).toHaveLength(3);
+    });
+
     test("rotates x labels that cannot be wrapped", () => {
         const data = Array.from({ length: 10 }, (_, i) => ({ label: `Supercalifragilistic${i}`, stacks: [{ value: 10 }] }));
         const { el } = render(data);

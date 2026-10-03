@@ -4,7 +4,7 @@ import globals from "globals";
 
 export default tseslint.config(
   {
-    ignores: ["dist/**", "node_modules/**", "coverage/**", "build/**", "_site/**", ".codegraph/**", "test-results/**", "playwright-report/**", ".playwright-mcp/**"],
+    ignores: ["dist/**", "node_modules/**", "coverage/**", "build/**", "_site/**", ".codegraph/**", "test-results/**", "playwright-report/**", "api-docs/**", ".playwright-mcp/**"],
   },
   {
     files: ["src/**/*.ts"],

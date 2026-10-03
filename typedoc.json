@@ -1,0 +1,16 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.ts", "src/experimental.ts"],
+  "tsconfig": "tsconfig.build.json",
+  "out": "api-docs",
+  "name": "MintWaterfall",
+  "readme": "README.md",
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "navigationLinks": {
+    "Demo": "https://coredds.github.io/MintWaterfall/",
+    "GitHub": "https://github.com/coredds/MintWaterfall"
+  },
+  "validation": { "notExported": false, "invalidLink": true, "notDocumented": false },
+  "treatWarningsAsErrors": true
+}

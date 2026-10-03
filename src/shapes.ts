@@ -271,6 +271,20 @@ export function createShapeGenerators(): ShapeGeneratorSystem {
 // ============================================================================
 
 /**
+ * Horizontal position source: a band scale (bars centred in their band) or a function
+ * returning the centre x for a label (used by the chart for time scales).
+ */
+export type XPosition = d3.ScaleBand<string> | ((label: string) => number);
+
+function centerOf(x: XPosition, label: string): number {
+    if (typeof (x as d3.ScaleBand<string>).bandwidth === "function") {
+        const band = x as d3.ScaleBand<string>;
+        return (band(label) ?? 0) + band.bandwidth() / 2;
+    }
+    return (x as (label: string) => number)(label);
+}
+
+/**
  * Create confidence bands specifically for waterfall financial projections
  * Combines multiple projection scenarios into visual uncertainty bands
  */
@@ -280,7 +294,7 @@ export function createWaterfallConfidenceBands(
         optimistic: Array<{label: string, value: number}>,
         pessimistic: Array<{label: string, value: number}>
     },
-    xScale: d3.ScaleBand<string>,
+    xScale: XPosition,
     yScale: d3.ScaleLinear<number, number>
 ): {
     confidencePath: string,
@@ -296,10 +310,11 @@ export function createWaterfallConfidenceBands(
     
     const confidenceData: ConfidenceBandData[] = baselineData.map((item, i) => {
         baselineCumulative += item.value;
-        optimisticCumulative += scenarios.optimistic[i]?.value || item.value;
-        pessimisticCumulative += scenarios.pessimistic[i]?.value || item.value;
-        
-        const x = (xScale(item.label) || 0) + xScale.bandwidth() / 2;
+        // `??` so an explicit scenario value of 0 is respected
+        optimisticCumulative += scenarios.optimistic[i]?.value ?? item.value;
+        pessimisticCumulative += scenarios.pessimistic[i]?.value ?? item.value;
+
+        const x = centerOf(xScale, item.label);
         
         return {
             x,
@@ -345,7 +360,7 @@ export function createWaterfallMilestones(
         type: "target" | "threshold" | "alert" | "achievement",
         description?: string
     }>,
-    xScale: d3.ScaleBand<string>,
+    xScale: XPosition,
     yScale: d3.ScaleLinear<number, number>
 ): Array<{path: string, transform: string, config: SymbolConfig}> {
     const shapeGenerator = createShapeGenerators();
@@ -361,7 +376,7 @@ export function createWaterfallMilestones(
         const styling = typeMapping[milestone.type as keyof typeof typeMapping] || typeMapping.target;
         
         return {
-            x: (xScale(milestone.label) || 0) + xScale.bandwidth() / 2,
+            x: centerOf(xScale, milestone.label),
             y: yScale(milestone.value),
             type: styling.type,
             size: styling.size,

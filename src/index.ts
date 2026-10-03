@@ -70,9 +70,27 @@ export type {
   WaterfallChart,
   MarginConfig,
   ChartEventType,
+  ChartEventName,
+  ChartEventMap,
   ChartExportFormat,
+  ThemeName,
+  TrendLineType,
+  TrendLineStyle,
 } from "./chart/config.js";
 
+// Supporting types referenced by the public API
+export type { BrushOptions, TooltipConfig, ExportConfig, ZoomConfig } from "./chart/config.js";
+export type { Theme, ThemeCollection, ChartWithTheme } from "./themes.js";
+export type { XPosition, SymbolConfig, ShapeGeneratorSystem } from "./shapes.js";
+export type { StatisticalSystem, StatisticalSummary, DataQualityAssessment, VarianceAnalysis } from "./statistics.js";
+export type { DataProcessor } from "./data/pipeline.js";
+export type { DataItem } from "./data/validation.js";
+export type { GroupByFunction } from "./data/advanced.js";
+export type { AccessibilitySystem } from "./accessibility.js";
+export type { AnimationSystem } from "./animations.js";
+export type { ScaleFactory } from "./scales.js";
+export type { TooltipSystem } from "./tooltip.js";
+export type { ExportSystem } from "./export.js";
 // Brush/zoom systems, performance, interactions and layouts moved to
 // "mintwaterfall/experimental" in 2.0.0.
 

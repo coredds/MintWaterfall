@@ -26,12 +26,16 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: API reference
+        run: npm run docs:api
+
       - name: Assemble site
         run: |
           mkdir -p _site/dist
           cp mintwaterfall-example.html _site/index.html
           cp mintwaterfall-example.html _site/mintwaterfall-example.html
           cp dist/mintwaterfall.min.js dist/mintwaterfall.umd.js dist/mintwaterfall.esm.js _site/dist/
+          cp -r api-docs _site/api
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4

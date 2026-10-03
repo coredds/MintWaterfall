@@ -11,11 +11,13 @@ import {
     computeLayout,
     niceDomain,
     isAnchoredBar,
+    XScale,
 } from "./config.js";
 import { prepareData } from "./lifecycle.js";
 import { resolveStyle, ResolvedStyle } from "./style.js";
 import {
     RenderContext,
+    AnySelection,
     layer,
     barX,
     barWidth,
@@ -71,7 +73,7 @@ function isValidChartData(data: unknown): data is ChartData[] {
                 (item.subtotal === true ||
                     (Array.isArray(item.stacks) &&
                         item.stacks.every(
-                            (stack: any) =>
+                            (stack: { value?: unknown; color?: unknown } | null) =>
                                 stack &&
                                 typeof stack.value === "number" &&
                                 Number.isFinite(stack.value) &&
@@ -163,15 +165,15 @@ export function waterfallChart(): WaterfallChart {
         return html;
     }
 
-    function applyEmphasis(svg: any, labels: Set<string> | null): void {
+    function applyEmphasis(svg: AnySelection, labels: Set<string> | null): void {
         const dim = (label: string) => labels !== null && !labels.has(label);
-        svg.selectAll("g.bar-group").style("opacity", (d: ProcessedData) => (dim(d.label) ? 0.3 : 1));
-        svg.selectAll("text.total-label").attr("fill-opacity", (d: ProcessedData) => (dim(d.label) ? 0.3 : 1));
+        svg.selectAll<SVGGElement, ProcessedData>("g.bar-group").style("opacity", (d: ProcessedData) => (dim(d.label) ? 0.3 : 1));
+        svg.selectAll<SVGTextElement, ProcessedData>("text.total-label").attr("fill-opacity", (d: ProcessedData) => (dim(d.label) ? 0.3 : 1));
     }
 
     function renderElement(node: Element, data: ChartData[], durationOverride?: number): void {
         const element = d3.select(node);
-        let svg: any;
+        let svg: AnySelection;
         if (node.nodeName.toLowerCase() === "svg") {
             svg = element;
         } else {
@@ -247,8 +249,8 @@ export function waterfallChart(): WaterfallChart {
             .attr("preserveAspectRatio", "xMidYMid meet")
             .style("font-family", style.fontFamily)
             .style("overflow", "visible")
-            .style("width", config.responsive ? "100%" : null)
-            .style("height", config.responsive ? "auto" : null);
+            .style("width", config.responsive ? "100%" : "")
+            .style("height", config.responsive ? "auto" : "");
 
         const yScale = d3
             .scaleLinear()
@@ -258,7 +260,7 @@ export function waterfallChart(): WaterfallChart {
         const baseRange: [number, number] = [margins.left, width - margins.right];
         const t = config.enableZoom ? state.transform : d3.zoomIdentity;
         const range = baseRange.map(v => t.applyX(v)) as [number, number];
-        let xScale: any;
+        let xScale: XScale;
         if (config.scaleType === "time") {
             const dates = processed.map(d => new Date(d.label));
             xScale = d3.scaleTime().domain(d3.extent(dates) as [Date, Date]).range(range);
@@ -292,7 +294,7 @@ export function waterfallChart(): WaterfallChart {
         // Accessible name/description
         if (config.enableAccessibility) {
             const summary = describeChart(processed);
-            let title = svg.select(":scope > title");
+            let title: AnySelection = svg.select(":scope > title");
             if (title.empty()) title = svg.insert("title", ":first-child");
             title.text(summary);
             svg.attr("role", "group")
@@ -305,12 +307,12 @@ export function waterfallChart(): WaterfallChart {
 
         // Clip path (one per chart element, reused across renders)
         const defs = layer(svg, "mw-defs", "defs");
-        const clip = defs.selectAll("clipPath").data([state.clipId]);
+        const clip = defs.selectAll<SVGClipPathElement, string>("clipPath").data([state.clipId]);
         const clipRect = clip
             .enter()
             .append("clipPath")
             .attr("id", (id: string) => id)
-            .call((cp: any) => cp.append("rect"))
+            .call(cp => cp.append("rect"))
             .merge(clip)
             .select("rect");
         // Clip horizontally only when zooming (otherwise edge value labels may overhang the plot)
@@ -366,15 +368,15 @@ export function waterfallChart(): WaterfallChart {
         state.resize.observe(node);
     }
 
-    function bindBarInteractions(svg: any, barsLayer: any, bars: any, ctx: RenderContext): void {
+    function bindBarInteractions(svg: AnySelection, barsLayer: AnySelection, bars: AnySelection, ctx: RenderContext): void {
         const a11y = config.enableAccessibility;
-        const clickable = typeof (listeners as any).on("barClick") === "function";
+        const clickable = typeof listeners.on("barClick") === "function";
         barsLayer.attr("role", a11y ? "list" : null).attr("aria-label", a11y ? "Bars" : null);
 
         bars.attr("tabindex", a11y ? 0 : null)
             .attr("role", a11y ? "listitem" : null)
             .attr("aria-label", a11y ? (d: ProcessedData) => describeBar(d) : null)
-            .style("cursor", clickable ? "pointer" : null)
+            .style("cursor", clickable ? "pointer" : "")
             .style("outline", "none")
             .style("transition", "opacity 140ms ease")
             .on("mouseenter", function (this: SVGGElement, event: MouseEvent, d: ProcessedData) {
@@ -450,7 +452,7 @@ export function waterfallChart(): WaterfallChart {
             });
     }
 
-    function configureBrush(svg: any, brushLayer: any, ctx: RenderContext, state: ElementState): void {
+    function configureBrush(svg: AnySelection, brushLayer: AnySelection, ctx: RenderContext, state: ElementState): void {
         if (!config.enableBrush) {
             brushLayer.on(".brush", null).selectAll("*").remove();
             state.emphasis = null;
@@ -462,13 +464,13 @@ export function waterfallChart(): WaterfallChart {
         const brush = d3
             .brushX()
             // With zoom enabled, Shift+drag is reserved for panning
-            .filter((event: any) => !event.ctrlKey && !event.button && !(config.enableZoom && event.shiftKey))
+            .filter((event: MouseEvent) => !event.ctrlKey && !event.button && !(config.enableZoom && event.shiftKey))
             .keyModifiers(!config.enableZoom)
             .extent([
                 [margins.left, margins.top],
                 [width - margins.right, height - margins.bottom],
             ])
-            .on("end", (event: any) => {
+            .on("end", (event: d3.D3BrushEvent<unknown>) => {
                 if (!event.sourceEvent) return;
                 let selected: ProcessedData[] = [];
                 if (event.selection) {
@@ -495,7 +497,7 @@ export function waterfallChart(): WaterfallChart {
             .attr("rx", 4);
     }
 
-    function configureZoom(svg: any, ctx: RenderContext, state: ElementState): void {
+    function configureZoom(svg: AnySelection, ctx: RenderContext, state: ElementState): void {
         if (!config.enableZoom) {
             if (state.zoom) {
                 svg.on(".zoom", null);
@@ -535,9 +537,9 @@ export function waterfallChart(): WaterfallChart {
             svg.call(state.zoom);
         }
         // When brushing is on, plain drags belong to the brush; pan with Shift+drag (wheel always zooms)
-        state.zoom.filter((event: any) => {
+        state.zoom.filter((event: MouseEvent | WheelEvent | TouchEvent) => {
             if (event.type === "wheel") return true;
-            if (event.button) return false;
+            if ("button" in event && event.button) return false;
             if (config.enableBrush && (event.type === "mousedown" || event.type === "pointerdown")) return event.shiftKey;
             return !event.ctrlKey;
         });
@@ -566,11 +568,11 @@ export function waterfallChart(): WaterfallChart {
             }
             try {
                 renderElement(this, data);
-            } catch (error: any) {
+            } catch (error: unknown) {
                 console.error("MintWaterfall rendering error:", error);
                 if (!this || typeof this.nodeName !== "string") return;
                 const target = d3.select(this);
-                const svg: any = this.nodeName.toLowerCase() === "svg" ? target : target.select("svg");
+                const svg: AnySelection = this.nodeName.toLowerCase() === "svg" ? target : target.select("svg");
                 if (svg && !svg.empty()) {
                     svg.selectAll("*").remove();
                     svg.append("text")
@@ -579,7 +581,7 @@ export function waterfallChart(): WaterfallChart {
                         .attr("text-anchor", "middle")
                         .attr("fill", "#ef4444")
                         .style("font-size", "14px")
-                        .text(`Chart error: ${error?.message ?? error}`);
+                        .text(`Chart error: ${error instanceof Error ? error.message : String(error)}`);
                 }
             }
         });

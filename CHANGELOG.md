@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Typed events:** `chart.on("barClick", (event, d) => …)` now types `d` as `ProcessedData`
+  (and `chartUpdate` / `brushSelection` get their own signatures). Namespaced names such as
+  `"barClick.analytics"` keep the same types; unknown event names are a compile error.
+- Literal types for `theme()`, `trendLineType()` and `trendLineStyle()`.
+- Exported types: `ChartEventMap`, `ChartEventName`, `ThemeName`, `TrendLineType`, `TrendLineStyle`,
+  plus the option and system types referenced by the public API (`TooltipConfig`, `Theme`,
+  `StatisticalSystem`, `DataProcessor`, …).
+- API reference generated with TypeDoc (`npm run docs:api`), published at `/api/` on the demo site.
+- Compile-time tests for the public typings (`tests/types`, run by `npm run typecheck`).
+
+### Fixed
+
+- `scaleType("time")` rendered every bar at `NaN` (labels were passed to the time scale as strings).
+  Bars are now placed by date, sized by the smallest gap between dates so they never overlap, and
+  the axis uses date ticks. Trend lines, connectors, confidence bands and milestones work too.
+- Confidence-band scenario values of `0` were ignored (treated as missing).
+
+### Changed
+
+- Chart rendering code is typed (scales, data callbacks, selections): `any` in `src/chart`
+  dropped from 83 to 22, the remainder being the D3 reusable-chart accessor wiring.
+- `createWaterfallConfidenceBands` / `createWaterfallMilestones` also accept a function returning
+  a label's centre x, in addition to a band scale.
+
 ## [2.0.0] - 2026-10-03
 
 Scope cleanup: the package entry now contains the chart and the helpers it is built from.

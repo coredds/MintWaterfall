@@ -100,9 +100,31 @@ export interface MilestoneConfig {
     }>;
 }
 
-export interface BarEventHandler {
-    (event: Event, data: ProcessedData): void;
+/** Handler signatures for each chart event. `this` is the bar's `<g>` (bar events) or the `<svg>`. */
+export interface ChartEventMap {
+    barClick: (this: SVGGElement, event: MouseEvent | KeyboardEvent, datum: ProcessedData) => void;
+    barMouseover: (this: SVGGElement, event: MouseEvent, datum: ProcessedData) => void;
+    barMouseout: (this: SVGGElement, event: MouseEvent, datum: ProcessedData) => void;
+    barFocus: (this: SVGGElement, event: FocusEvent, datum: ProcessedData) => void;
+    chartUpdate: (this: SVGSVGElement, data: ProcessedData[]) => void;
+    brushSelection: (this: SVGSVGElement, event: unknown, selected: ProcessedData[]) => void;
 }
+
+/** An event name, optionally with a d3-dispatch namespace: `"barClick"` or `"barClick.analytics"`. */
+export type ChartEventName<K extends ChartEventType = ChartEventType> = K | `${K}.${string}`;
+
+export type ThemeName =
+    | "default"
+    | "dark"
+    | "corporate"
+    | "accessible"
+    | "colorful"
+    | "financial"
+    | "professional"
+    | "heatmap";
+
+export type TrendLineType = "linear" | "polynomial" | "moving-average";
+export type TrendLineStyle = "solid" | "dashed" | "dotted";
 
 export interface WaterfallChart {
     width(): number;
@@ -127,8 +149,8 @@ export interface WaterfallChart {
     ease(value: (t: number) => number): WaterfallChart;
     formatNumber(): (n: number) => string;
     formatNumber(value: (n: number) => string): WaterfallChart;
-    theme(): string | null;
-    theme(value: string | null): WaterfallChart;
+    theme(): ThemeName | null;
+    theme(value: ThemeName | null): WaterfallChart;
     enableBrush(): boolean;
     enableBrush(value: boolean): WaterfallChart;
     brushOptions(): BrushOptions;
@@ -153,12 +175,12 @@ export interface WaterfallChart {
     trendLineColor(value: string): WaterfallChart;
     trendLineWidth(): number;
     trendLineWidth(value: number): WaterfallChart;
-    trendLineStyle(): string;
-    trendLineStyle(value: string): WaterfallChart;
+    trendLineStyle(): TrendLineStyle;
+    trendLineStyle(value: TrendLineStyle): WaterfallChart;
     trendLineOpacity(): number;
     trendLineOpacity(value: number): WaterfallChart;
-    trendLineType(): string;
-    trendLineType(value: string): WaterfallChart;
+    trendLineType(): TrendLineType;
+    trendLineType(value: TrendLineType): WaterfallChart;
     trendLineWindow(): number;
     trendLineWindow(value: number): WaterfallChart;
     trendLineDegree(): number;
@@ -194,8 +216,8 @@ export interface WaterfallChart {
      * `chartUpdate` receives `(processedData)`; `brushSelection` receives `(event, selectedData)`.
      * Supports d3-dispatch namespaces, e.g. `"barClick.analytics"`.
      */
-    on(event: string, handler: ((...args: any[]) => void) | null): WaterfallChart;
-    on(event: string): ((...args: any[]) => void) | undefined;
+    on<K extends ChartEventType>(event: ChartEventName<K>, handler: ChartEventMap[K] | null): WaterfallChart;
+    on<K extends ChartEventType>(event: ChartEventName<K>): ChartEventMap[K] | undefined;
     data(): ChartData[] | null;
     data(value: ChartData[] | null): WaterfallChart;
     /** Export the most recently rendered chart. Requires `enableExport(true)` (default). */
@@ -217,7 +239,7 @@ export interface ChartConfig {
     duration: number;
     ease: (t: number) => number;
     formatNumber: (n: number) => string;
-    theme: string | null;
+    theme: ThemeName | null;
     enableBrush: boolean;
     brushOptions: BrushOptions;
     staggeredAnimations: boolean;
@@ -230,9 +252,9 @@ export interface ChartConfig {
     showTrendLine: boolean;
     trendLineColor: string;
     trendLineWidth: number;
-    trendLineStyle: string;
+    trendLineStyle: TrendLineStyle;
     trendLineOpacity: number;
-    trendLineType: string;
+    trendLineType: TrendLineType;
     trendLineWindow: number;
     trendLineDegree: number;
     enableAccessibility: boolean;
@@ -306,19 +328,46 @@ export const defaultConfig: ChartConfig = {
 };
 
 
-export function getBarWidth(scale: any, barCount: number, totalWidth: number): number {
-    if (scale.bandwidth) {
+/** Categorical (default) or time-based x scale. */
+export type XScale = d3.ScaleBand<string> | d3.ScaleTime<number, number>;
+export type YScale = d3.ScaleLinear<number, number>;
+
+export function isBandScale(scale: XScale): scale is d3.ScaleBand<string> {
+    return typeof (scale as d3.ScaleBand<string>).bandwidth === "function";
+}
+
+/** Centre x of a bar's label on either scale type. Time labels are parsed as dates. */
+export function getBarCenter(scale: XScale, label: string): number {
+    if (isBandScale(scale)) return (scale(label) ?? 0) + scale.bandwidth() / 2;
+    return scale(new Date(label));
+}
+
+/**
+ * Bar width. Band scales use their bandwidth; time scales use the smallest gap between
+ * consecutive dates (so bars never overlap), falling back to an even share of the width.
+ */
+export function getBarWidth(scale: XScale, labels: string[] | number, totalWidth: number): number {
+    if (isBandScale(scale)) {
         return scale.bandwidth();
     }
     const padding = 0.25;
-    return (totalWidth * (1 - padding)) / Math.max(1, barCount);
+    const count = typeof labels === "number" ? labels : labels.length;
+    let width = (totalWidth * (1 - padding)) / Math.max(1, count);
+    if (Array.isArray(labels) && labels.length > 1) {
+        const xs = labels.map(l => scale(new Date(l))).filter(Number.isFinite).sort((a, b) => a - b);
+        let gap = Infinity;
+        for (let i = 1; i < xs.length; i++) gap = Math.min(gap, xs[i] - xs[i - 1]);
+        if (Number.isFinite(gap) && gap > 0) width = Math.min(width, gap * (1 - padding));
+    }
+    return Math.max(1, width);
 }
 
-export function getBarPosition(scale: any, value: any, barWidth: number): number {
-    if (scale.bandwidth) {
-        return scale(value);
+/** Left x of a bar. */
+export function getBarPosition(scale: XScale, label: string, barWidth: number): number {
+    if (isBandScale(scale)) {
+        return scale(label) ?? 0;
     }
-    return scale(value) - barWidth / 2;
+    return scale(new Date(label)) - barWidth / 2;
 }
 
 /** True for bars that are drawn from zero (grand total and subtotals). */

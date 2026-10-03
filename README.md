@@ -7,7 +7,7 @@
 
 A TypeScript waterfall chart library built on D3.js v7 — subtotals, stacked segments, themes, tooltips, keyboard navigation, brushing, zooming and export, plus standalone data-processing and statistics helpers.
 
-**[Live demo](https://coredds.github.io/MintWaterfall/)**
+**[Live demo](https://coredds.github.io/MintWaterfall/)** · **[API reference](https://coredds.github.io/MintWaterfall/api/)**
 
 ## Installation
 
@@ -173,6 +173,7 @@ npm run test:e2e         # Playwright browser tests + screenshot comparisons (ne
 npm run test:e2e:update  # accept intended visual changes (regenerate screenshots)
 npm run check:size       # gzip size budgets for the bundles
 npm run check:package    # pack, install in a clean project, type-check and load via ESM/CJS
+npm run docs:api         # TypeDoc API reference into api-docs/
 ```
 
 Build output:
