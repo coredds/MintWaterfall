@@ -1,7 +1,7 @@
 // MintWaterfall Export System - TypeScript Version
 // Provides SVG, PNG, PDF, and data export capabilities with full type safety
 
-import * as d3 from 'd3';
+import * as d3 from "d3";
 
 // Type definitions for export system
 export interface ExportConfig {
@@ -36,13 +36,13 @@ export interface PNGExportOptions extends Partial<ExportConfig> {
 export interface PDFExportOptions extends Partial<ExportConfig> {
     width?: number;
     height?: number;
-    orientation?: 'portrait' | 'landscape';
-    pageFormat?: 'a4' | 'letter' | 'legal' | [number, number];
+    orientation?: "portrait" | "landscape";
+    pageFormat?: "a4" | "letter" | "legal" | [number, number];
     margin?: number | { top: number; right: number; bottom: number; left: number };
 }
 
 export interface DataExportOptions extends Partial<ExportConfig> {
-    dataFormat?: 'json' | 'csv' | 'tsv';
+    dataFormat?: "json" | "csv" | "tsv";
     includeMetadata?: boolean;
     delimiter?: string;
 }
@@ -61,7 +61,7 @@ export interface ExportSystem {
     downloadFile(content: string | Blob, filename: string, mimeType?: string): void;
 }
 
-export type ExportFormat = 'svg' | 'png' | 'pdf' | 'json' | 'csv';
+export type ExportFormat = "svg" | "png" | "pdf" | "json" | "csv";
 
 export function createExportSystem(): ExportSystem {
     
@@ -138,9 +138,11 @@ export function createExportSystem(): ExportSystem {
                 }
                 
                 const svgNode = svg.node() as SVGSVGElement;
-                const bbox = svgNode.getBBox();
-                const width = (bbox.width + opts.padding * 2) * opts.scale;
-                const height = (bbox.height + opts.padding * 2) * opts.scale;
+                const viewBox = svgNode.viewBox && svgNode.viewBox.baseVal;
+                const svgWidth = (viewBox && viewBox.width) || parseFloat(svgNode.getAttribute("width") || "") || svgNode.getBBox().width;
+                const svgHeight = (viewBox && viewBox.height) || parseFloat(svgNode.getAttribute("height") || "") || svgNode.getBBox().height;
+                const width = Math.round((svgWidth + opts.padding * 2) * opts.scale);
+                const height = Math.round((svgHeight + opts.padding * 2) * opts.scale);
                 
                 // Create high-DPI canvas
                 const canvas = document.createElement("canvas");
@@ -174,7 +176,13 @@ export function createExportSystem(): ExportSystem {
                 img.onload = () => {
                     try {
                         // Draw image with proper scaling and positioning
-                        ctx.drawImage(img, opts.padding * opts.scale, opts.padding * opts.scale);
+                        ctx.drawImage(
+                            img,
+                            opts.padding * opts.scale,
+                            opts.padding * opts.scale,
+                            svgWidth * opts.scale,
+                            svgHeight * opts.scale
+                        );
                         
                         // Convert to blob
                         canvas.toBlob((blob) => {
@@ -204,7 +212,8 @@ export function createExportSystem(): ExportSystem {
                 };
                 
                 // Load SVG as data URL
-                img.src = `data:image/svg+xml;base64,${btoa(svgExport.data as string)}`;
+                // encodeURIComponent keeps non-Latin-1 characters (e.g. "−", "€") intact
+                img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgExport.data as string)}`;
                 
             } catch (error) {
                 reject(new Error(`PNG export failed: ${error}`));
@@ -216,14 +225,14 @@ export function createExportSystem(): ExportSystem {
     function exportPDF(chartContainer: ChartContainer, options: PDFExportOptions = {}): Promise<ExportResult> {
         const opts: ExportConfig & PDFExportOptions = { 
             ...config, 
-            orientation: 'landscape',
-            pageFormat: 'a4',
+            orientation: "landscape",
+            pageFormat: "a4",
             ...options 
         };
         
         return new Promise((resolve, reject) => {
             // Check if jsPDF is available
-            if (typeof window === 'undefined' || !(window as any).jsPDF) {
+            if (typeof window === "undefined" || !(window as any).jsPDF) {
                 reject(new Error('jsPDF library is required for PDF export. Please include it: <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>'));
                 return;
             }
@@ -238,7 +247,7 @@ export function createExportSystem(): ExportSystem {
                     const jsPDF = (window as any).jsPDF;
                     const pdf = new jsPDF({
                         orientation: opts.orientation,
-                        unit: 'mm',
+                        unit: "mm",
                         format: opts.pageFormat
                     });
                     
@@ -268,10 +277,10 @@ export function createExportSystem(): ExportSystem {
                                 const x = (pdfWidth - width) / 2;
                                 const y = (pdfHeight - height) / 2;
                                 
-                                pdf.addImage(imgData, 'PNG', x, y, width, height);
+                                pdf.addImage(imgData, "PNG", x, y, width, height);
                                 
                                 // Generate PDF blob
-                                const pdfBlob = pdf.output('blob');
+                                const pdfBlob = pdf.output("blob");
                                 
                                 // Clean up
                                 URL.revokeObjectURL(pngResult.url);
@@ -309,9 +318,9 @@ export function createExportSystem(): ExportSystem {
     function exportData(data: any[], options: DataExportOptions = {}): ExportResult {
         const opts: ExportConfig & DataExportOptions = { 
             ...config, 
-            dataFormat: 'json',
+            dataFormat: "json",
             includeMetadata: true,
-            delimiter: ',',
+            delimiter: ",",
             ...options 
         };
         
@@ -321,7 +330,7 @@ export function createExportSystem(): ExportSystem {
             let extension: string;
             
             switch (opts.dataFormat) {
-                case 'json':
+                case "json": {
                     const jsonData = opts.includeMetadata 
                         ? { 
                             data, 
@@ -332,20 +341,21 @@ export function createExportSystem(): ExportSystem {
                         }
                         : data;
                     content = JSON.stringify(jsonData, null, 2);
-                    mimeType = 'application/json';
-                    extension = 'json';
+                    mimeType = "application/json";
+                    extension = "json";
+                    break;
+                }
+                    
+                case "csv":
+                    content = convertToCSV(data, opts.delimiter || ",");
+                    mimeType = "text/csv";
+                    extension = "csv";
                     break;
                     
-                case 'csv':
-                    content = convertToCSV(data, opts.delimiter || ',');
-                    mimeType = 'text/csv';
-                    extension = 'csv';
-                    break;
-                    
-                case 'tsv':
-                    content = convertToCSV(data, '\t');
-                    mimeType = 'text/tab-separated-values';
-                    extension = 'tsv';
+                case "tsv":
+                    content = convertToCSV(data, "\t");
+                    mimeType = "text/tab-separated-values";
+                    extension = "tsv";
                     break;
                     
                 default:
@@ -371,7 +381,7 @@ export function createExportSystem(): ExportSystem {
     function addInlineStyles(svgElement: SVGSVGElement): void {
         try {
             const styleSheets = Array.from(document.styleSheets);
-            let styles = '';
+            let styles = "";
             
             styleSheets.forEach(sheet => {
                 try {
@@ -380,41 +390,41 @@ export function createExportSystem(): ExportSystem {
                         if (rule.type === CSSRule.STYLE_RULE) {
                             const styleRule = rule as CSSStyleRule;
                             if (styleRule.selectorText && 
-                                (styleRule.selectorText.includes('.mintwaterfall') || 
-                                 styleRule.selectorText.includes('svg') ||
-                                 styleRule.selectorText.includes('chart'))) {
+                                (styleRule.selectorText.includes(".mintwaterfall") || 
+                                 styleRule.selectorText.includes("svg") ||
+                                 styleRule.selectorText.includes("chart"))) {
                                 styles += styleRule.cssText;
                             }
                         }
                     });
                 } catch (e) {
                     // Skip inaccessible stylesheets (CORS)
-                    console.warn('Could not access stylesheet:', e);
+                    console.warn("Could not access stylesheet:", e);
                 }
             });
             
             if (styles) {
-                const styleElement = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+                const styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style");
                 styleElement.textContent = styles;
                 svgElement.insertBefore(styleElement, svgElement.firstChild);
             }
         } catch (error) {
-            console.warn('Failed to add inline styles:', error);
+            console.warn("Failed to add inline styles:", error);
         }
     }
     
     // Helper function to add background to SVG
     function addBackground(svgElement: SVGSVGElement, backgroundColor: string): void {
-        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        rect.setAttribute('width', '100%');
-        rect.setAttribute('height', '100%');
-        rect.setAttribute('fill', backgroundColor);
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("width", "100%");
+        rect.setAttribute("height", "100%");
+        rect.setAttribute("fill", backgroundColor);
         svgElement.insertBefore(rect, svgElement.firstChild);
     }
     
     // Helper function to convert data to CSV
-    function convertToCSV(data: any[], delimiter: string = ','): string {
-        if (!data || data.length === 0) return '';
+    function convertToCSV(data: any[], delimiter: string = ","): string {
+        if (!data || data.length === 0) return "";
         
         // Get headers from first object
         const headers = Object.keys(data[0]);
@@ -426,14 +436,14 @@ export function createExportSystem(): ExportSystem {
                 headers.map(header => {
                     const value = row[header];
                     // Escape quotes and wrap in quotes if contains delimiter
-                    const stringValue = value != null ? String(value) : '';
-                    if (stringValue.includes(delimiter) || stringValue.includes('"') || stringValue.includes('\n')) {
+                    const stringValue = value != null ? String(value) : "";
+                    if (stringValue.includes(delimiter) || stringValue.includes('"') || stringValue.includes("\n")) {
                         return `"${stringValue.replace(/"/g, '""')}"`;
                     }
                     return stringValue;
                 }).join(delimiter)
             )
-        ].join('\n');
+        ].join("\n");
         
         return csvContent;
     }
@@ -441,7 +451,7 @@ export function createExportSystem(): ExportSystem {
     // Helper function to download blob
     function downloadBlob(blob: Blob, filename: string): void {
         const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = url;
         link.download = filename;
         document.body.appendChild(link);
@@ -457,7 +467,7 @@ export function createExportSystem(): ExportSystem {
     }
     
     // Download file utility
-    function downloadFile(content: string | Blob, filename: string, mimeType: string = 'text/plain'): void {
+    function downloadFile(content: string | Blob, filename: string, mimeType: string = "text/plain"): void {
         const blob = content instanceof Blob ? content : new Blob([content], { type: mimeType });
         downloadBlob(blob, filename);
     }

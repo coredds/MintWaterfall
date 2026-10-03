@@ -1,7 +1,7 @@
 // MintWaterfall Professional Tooltip System - TypeScript Version
 // Provides intelligent positioning, rich content, and customizable styling with full type safety
 
-import * as d3 from 'd3';
+import * as d3 from "d3";
 
 // Type definitions for tooltip system
 export interface TooltipOffset {
@@ -15,7 +15,7 @@ export interface TooltipAnimation {
 }
 
 export interface TooltipCollision {
-    boundary: 'viewport' | 'container';
+    boundary: "viewport" | "container";
     flip: boolean;
     shift: boolean;
 }
@@ -92,9 +92,19 @@ export interface TooltipSystem {
     getCurrentData(): TooltipData | null;
 }
 
-export type TooltipTheme = 'default' | 'light' | 'minimal' | 'corporate';
-export type TooltipPosition = 'smart' | 'top' | 'bottom' | 'left' | 'right' | 'follow';
+export type TooltipTheme = "default" | "light" | "minimal" | "corporate";
+export type TooltipPosition = "smart" | "top" | "bottom" | "left" | "right" | "follow";
 export type TooltipContentType = string | TooltipTemplateConfig | ((data: TooltipData | null) => string);
+
+/** Escape text for safe insertion into HTML. */
+export function escapeHtml(value: string): string {
+    return value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
 
 export function createTooltipSystem(): TooltipSystem {
     
@@ -145,24 +155,24 @@ export function createTooltipSystem(): TooltipSystem {
         
         const themes: Record<TooltipTheme, TooltipThemeStyles> = {
             default: {
-                background: "rgba(0, 0, 0, 0.9)",
-                color: "#ffffff",
-                border: "none",
-                borderRadius: "6px",
-                fontSize: "13px",
-                fontFamily: "system-ui, -apple-system, sans-serif",
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+                background: "rgba(15, 23, 42, 0.94)",
+                color: "#f8fafc",
+                border: "1px solid rgba(148, 163, 184, 0.18)",
+                borderRadius: "8px",
+                fontSize: "12px",
+                fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif",
+                boxShadow: "0 10px 30px -8px rgba(15, 23, 42, 0.45)",
                 maxWidth: `${config.content.maxWidth}px`,
                 padding: `${config.content.padding}px`
             },
             light: {
-                background: "rgba(255, 255, 255, 0.95)",
-                color: "#333333",
-                border: "1px solid rgba(0, 0, 0, 0.1)",
-                borderRadius: "6px",
-                fontSize: "13px",
-                fontFamily: "system-ui, -apple-system, sans-serif",
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+                background: "rgba(255, 255, 255, 0.98)",
+                color: "#0f172a",
+                border: "1px solid #e2e8f0",
+                borderRadius: "8px",
+                fontSize: "12px",
+                fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif",
+                boxShadow: "0 10px 30px -8px rgba(15, 23, 42, 0.25)",
                 maxWidth: `${config.content.maxWidth}px`,
                 padding: `${config.content.padding}px`
             },
@@ -259,7 +269,7 @@ export function createTooltipSystem(): TooltipSystem {
             return content;
         }
         
-        if (typeof content === "object" && content && 'template' in content) {
+        if (typeof content === "object" && content && "template" in content) {
             return renderTemplate(content.template, data, content.formatters);
         }
         
@@ -275,7 +285,7 @@ export function createTooltipSystem(): TooltipSystem {
     function generateDefaultContent(data: TooltipData): string {
         const formatNumber = config.formatNumber || ((n: number) => n.toLocaleString());
         
-        let html = `<div class="tooltip-header"><strong>${data.label}</strong></div>`;
+        let html = `<div class="tooltip-header"><strong>${escapeHtml(String(data.label))}</strong></div>`;
         
         if (data.stacks && data.stacks.length > 0) {
             const totalValue = data.stacks.reduce((sum, stack) => sum + stack.value, 0);
@@ -286,7 +296,7 @@ export function createTooltipSystem(): TooltipSystem {
                 html += "<div class=\"tooltip-stacks\">";
                 data.stacks.forEach(stack => {
                     const color = stack.color || "#666";
-                    const label = stack.label || formatNumber(stack.value);
+                    const label = escapeHtml(stack.label || formatNumber(stack.value));
                     html += `
                         <div class="tooltip-stack-item">
                             <span class="tooltip-color-indicator" style="background-color: ${color}"></span>
@@ -313,11 +323,11 @@ export function createTooltipSystem(): TooltipSystem {
             const value = getNestedValue(data, key);
             const formatter = formatters[key];
             
-            if (formatter && typeof formatter === 'function') {
+            if (formatter && typeof formatter === "function") {
                 return formatter(value);
             }
             
-            return value != null ? String(value) : '';
+            return value != null ? String(value) : "";
         });
         
         return rendered;
@@ -325,7 +335,7 @@ export function createTooltipSystem(): TooltipSystem {
     
     // Get nested value from object using dot notation
     function getNestedValue(obj: any, path: string): any {
-        return path.split('.').reduce((current, key) => current?.[key], obj);
+        return path.split(".").reduce((current, key) => current?.[key], obj);
     }
     
     // Position tooltip intelligently

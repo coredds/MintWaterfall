@@ -1,41 +1,55 @@
 // MintWaterfall Chart Lifecycle — data preparation
 import { ChartConfig, ProcessedData, ChartData } from "./config.js";
 
+/**
+ * Compute running totals for each bar.
+ *
+ * - Regular bars move the running total by the sum of their stack values.
+ * - `subtotal` bars show the running total at that point (drawn from zero) and do
+ *   not change it.
+ * - When `config.showTotal` is set, a final total bar is appended.
+ */
 export function prepareData(
     data: ChartData[],
-    config: ChartConfig
+    config: Pick<ChartConfig, "showTotal" | "totalLabel" | "totalColor">
 ): ProcessedData[] {
-    let workingData = [...data];
-
     let cumulativeTotal = 0;
-    let prevCumulativeTotal = 0;
 
-    const processedData: ProcessedData[] = workingData.map((bar, i) => {
-        const barTotal = bar.stacks.reduce((sum, stack) => sum + stack.value, 0);
-        prevCumulativeTotal = cumulativeTotal;
+    const processedData: ProcessedData[] = data.map(bar => {
+        if (bar.subtotal) {
+            const color = bar.stacks?.[0]?.color ?? config.totalColor;
+            return {
+                ...bar,
+                stacks: [{ value: cumulativeTotal, color, label: bar.stacks?.[0]?.label }],
+                barTotal: cumulativeTotal,
+                cumulativeTotal,
+                prevCumulativeTotal: 0,
+                isSubtotal: true,
+            };
+        }
+
+        const stacks = bar.stacks || [];
+        const barTotal = stacks.reduce((sum, stack) => sum + stack.value, 0);
+        const prevCumulativeTotal = cumulativeTotal;
         cumulativeTotal += barTotal;
 
-        let processedStacks = bar.stacks;
-
-        const result: ProcessedData = {
+        return {
             ...bar,
-            stacks: processedStacks,
+            stacks,
             barTotal,
             cumulativeTotal,
-            prevCumulativeTotal: i === 0 ? 0 : prevCumulativeTotal,
+            prevCumulativeTotal,
         };
-
-        return result;
     });
 
     if (config.showTotal && processedData.length > 0) {
-        const totalValue = cumulativeTotal;
         processedData.push({
             label: config.totalLabel,
-            stacks: [{ value: totalValue, color: config.totalColor }],
-            barTotal: totalValue,
-            cumulativeTotal: totalValue,
+            stacks: [{ value: cumulativeTotal, color: config.totalColor }],
+            barTotal: cumulativeTotal,
+            cumulativeTotal,
             prevCumulativeTotal: 0,
+            isTotal: true,
         });
     }
 

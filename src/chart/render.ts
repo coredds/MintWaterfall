@@ -1,627 +1,604 @@
 // MintWaterfall Chart Render Functions
 import * as d3 from "d3";
-import { ChartConfig, ProcessedData, MarginConfig, getBarWidth, getBarPosition } from "./config.js";
+import {
+    ChartConfig,
+    ProcessedData,
+    MarginConfig,
+    getBarWidth,
+    getBarPosition,
+    getBarExtent,
+    isAnchoredBar,
+} from "./config.js";
+import { ResolvedStyle } from "./style.js";
 import { createWaterfallConfidenceBands, createWaterfallMilestones } from "../shapes.js";
 import { getAdvancedBarColor, getThemeColorPalette, ThemeCollection } from "../themes.js";
 
-export function drawGrid(container: any, yScale: any, config: ChartConfig, margins: MarginConfig): void {
-    const gridGroup = container.selectAll(".grid-group").data([0]);
-    const gridGroupEnter = gridGroup.enter()
-        .append("g")
-        .attr("class", "grid-group");
-    const gridGroupUpdate = gridGroupEnter.merge(gridGroup);
+export interface RenderContext {
+    config: ChartConfig;
+    style: ResolvedStyle;
+    width: number;
+    height: number;
+    margins: MarginConfig;
+    xScale: any;
+    yScale: any;
+    data: ProcessedData[];
+    /** Effective animation duration (0 disables transitions). */
+    duration: number;
+    rotateXLabels: boolean;
+    wrappedXLabels: Map<string, string[]> | null;
+    xLabelEvery: number;
+    valueLabelFontSize: number;
+    yTickCount: number;
+}
 
-    const tickValues = yScale.ticks();
+const MINUS = "\u2212";
 
-    const gridLines = gridGroupUpdate.selectAll(".grid-line").data(tickValues);
+/** Apply a transition when animating, otherwise return the selection itself. */
+export function animate(selection: any, ctx: RenderContext, delay?: (d: any, i: number) => number): any {
+    if (ctx.duration <= 0) {
+        selection.interrupt();
+        return selection;
+    }
+    let t = selection.transition().duration(ctx.duration).ease(ctx.config.ease);
+    if (delay) t = t.delay(delay);
+    return t;
+}
 
-    const gridLinesEnter = gridLines.enter()
+/** Select a direct child layer by class, creating it if necessary. */
+export function layer(parent: any, className: string, tag = "g"): any {
+    let sel = parent.select(`:scope > ${tag}.${className}`);
+    if (sel.empty()) {
+        sel = parent.append(tag).attr("class", className);
+    }
+    return sel;
+}
+
+export function plotWidth(ctx: RenderContext): number {
+    return ctx.width - ctx.margins.left - ctx.margins.right;
+}
+
+export function barWidth(ctx: RenderContext): number {
+    return getBarWidth(ctx.xScale, ctx.data.length, plotWidth(ctx));
+}
+
+export function barX(ctx: RenderContext, d: ProcessedData): number {
+    return getBarPosition(ctx.xScale, d.label, barWidth(ctx));
+}
+
+/** Signed, human-friendly label for a bar: deltas get +/−, totals do not. */
+export function formatBarValue(d: ProcessedData, format: (n: number) => string): string {
+    if (isAnchoredBar(d)) return format(d.barTotal);
+    if (d.barTotal > 0) return `+${format(d.barTotal)}`;
+    if (d.barTotal < 0) return `${MINUS}${format(Math.abs(d.barTotal))}`;
+    return format(0);
+}
+
+/** Fill color for a whole (non-stacked) bar. */
+export function getBarColor(d: ProcessedData, i: number, ctx: RenderContext): string {
+    const { config, style } = ctx;
+    if (d.isTotal) return config.totalColor;
+    if (d.isSubtotal) {
+        // Subtotals: explicit color, otherwise a lighter shade of the total color
+        if (d.stacks[0]?.color && d.stacks[0].color !== config.totalColor) return d.stacks[0].color;
+        const shade = d3.color(config.totalColor);
+        return shade ? shade.brighter(0.7).formatHex() : config.totalColor;
+    }
+    if (config.advancedColorConfig.enabled) {
+        const themeName = (config.advancedColorConfig.themeName as keyof ThemeCollection) || "default";
+        if (config.colorMode === "sequential") {
+            const palette = getThemeColorPalette(themeName);
+            return palette[i % palette.length];
+        }
+        const fallback = d.barTotal >= 0 ? style.positive : style.negative;
+        return getAdvancedBarColor(d.barTotal, fallback, ctx.data, themeName, config.colorMode);
+    }
+    if (d.stacks.length === 1 && d.stacks[0].color) {
+        return d.stacks[0].color;
+    }
+    return d.barTotal >= 0 ? style.positive : style.negative;
+}
+
+export function drawBackground(svg: any, ctx: RenderContext): void {
+    const bg = svg.selectAll(":scope > rect.mw-background").data(ctx.style.background ? [ctx.style.background] : []);
+    bg.exit().remove();
+    bg.enter()
+        .insert("rect", ":first-child")
+        .attr("class", "mw-background")
+        .merge(bg)
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("width", ctx.width)
+        .attr("height", ctx.height)
+        .attr("rx", 8)
+        .attr("fill", (d: string) => d);
+}
+
+export function drawGrid(container: any, ctx: RenderContext): void {
+    const { yScale, margins, style } = ctx;
+    const gridGroup = layer(container, "grid-group").attr("aria-hidden", "true");
+    const tickValues = ctx.config.showGrid ? yScale.ticks(ctx.yTickCount) : [];
+
+    const lines = gridGroup.selectAll("line.grid-line").data(tickValues, (d: number) => d);
+    lines.exit().remove();
+
+    const entered = lines
+        .enter()
         .append("line")
         .attr("class", "grid-line")
+        .attr("y1", (d: number) => yScale(d))
+        .attr("y2", (d: number) => yScale(d));
+
+    animate(entered.merge(lines), ctx)
         .attr("x1", margins.left)
-        .attr("x2", config.width - margins.right)
-        .attr("stroke", "rgba(224, 224, 224, 0.5)")
+        .attr("x2", ctx.width - margins.right)
+        .attr("y1", (d: number) => yScale(d))
+        .attr("y2", (d: number) => yScale(d))
+        .attr("stroke", style.grid)
         .attr("stroke-width", 1)
-        .style("opacity", 0);
+        .attr("shape-rendering", "crispEdges");
 
-    gridLinesEnter.merge(gridLines)
-        .transition()
-        .duration(config.duration)
-        .ease(config.ease)
-        .attr("y1", (d: any) => yScale(d))
-        .attr("y2", (d: any) => yScale(d))
+    // Emphasised zero line whenever the domain crosses zero
+    const [d0, d1] = yScale.domain();
+    const zero = gridGroup.selectAll("line.zero-line").data(d0 < 0 && d1 > 0 ? [0] : []);
+    zero.exit().remove();
+    animate(zero.enter().append("line").attr("class", "zero-line").merge(zero), ctx)
         .attr("x1", margins.left)
-        .attr("x2", config.width - margins.right)
-        .style("opacity", 1);
-
-    gridLines.exit()
-        .transition()
-        .duration(config.duration)
-        .ease(config.ease)
-        .style("opacity", 0)
-        .remove();
+        .attr("x2", ctx.width - margins.right)
+        .attr("y1", yScale(0))
+        .attr("y2", yScale(0))
+        .attr("stroke", style.axis)
+        .attr("stroke-width", 1.5)
+        .attr("shape-rendering", "crispEdges");
 }
 
-export function drawAxes(container: any, xScale: any, yScale: any, config: ChartConfig, margins: MarginConfig): void {
-    const yAxisGroup = container.selectAll(".y-axis").data([0]);
-    const yAxisGroupEnter = yAxisGroup.enter()
-        .append("g")
-        .attr("class", "y-axis")
-        .attr("transform", `translate(${margins.left},0)`);
-
-    yAxisGroupEnter.merge(yAxisGroup)
-        .transition()
-        .duration(config.duration)
-        .ease(config.ease)
-        .call(d3.axisLeft(yScale).tickFormat((d: any) => config.formatNumber(d as number)));
-
-    const xAxisGroup = container.selectAll(".x-axis").data([0]);
-    const xAxisGroupEnter = xAxisGroup.enter()
-        .append("g")
-        .attr("class", "x-axis")
-        .attr("transform", `translate(0,${config.height - margins.bottom})`);
-
-    xAxisGroupEnter.merge(xAxisGroup)
-        .transition()
-        .duration(config.duration)
-        .ease(config.ease)
-        .call(d3.axisBottom(xScale));
+function styleAxisText(axisGroup: any, ctx: RenderContext): void {
+    axisGroup
+        .selectAll("text")
+        .attr("fill", ctx.style.mutedText)
+        .style("font-family", ctx.style.fontFamily)
+        .style("font-size", "12px")
+        .style("font-variant-numeric", "tabular-nums");
 }
 
-export function drawBars(container: any, processedData: ProcessedData[], xScale: any, yScale: any, config: ChartConfig, margins: MarginConfig): void {
-    const barsGroup = container.selectAll(".bars-group").data([0]);
-    const barsGroupEnter = barsGroup.enter()
-        .append("g")
-        .attr("class", "bars-group");
-    const barsGroupUpdate = barsGroupEnter.merge(barsGroup);
+export function drawAxes(container: any, ctx: RenderContext): void {
+    const { xScale, yScale, margins, config, style } = ctx;
 
-    const barGroups = barsGroupUpdate.selectAll(".bar-group").data(processedData, (d: any) => d.label);
+    const yAxisGroup = layer(container, "y-axis").attr("transform", `translate(${margins.left},0)`);
+    const yAxis = d3
+        .axisLeft(yScale)
+        .ticks(ctx.yTickCount)
+        .tickSize(0)
+        .tickPadding(10)
+        .tickFormat((d: any) => config.formatNumber(d as number));
+    animate(yAxisGroup, ctx).call(yAxis);
+    yAxisGroup.select(".domain").remove();
+    styleAxisText(yAxisGroup, ctx);
 
-    const barGroupsEnter = barGroups.enter()
-        .append("g")
-        .attr("class", "bar-group")
-        .attr("transform", (d: any) => {
-            if (xScale.bandwidth) {
-                return `translate(${xScale(d.label)}, 0)`;
-            } else {
-                const barWidth = getBarWidth(xScale, processedData.length, config.width - margins.left - margins.right);
-                const barX = getBarPosition(xScale, d.label, barWidth);
-                return `translate(${barX}, 0)`;
-            }
-        });
+    const xAxisGroup = layer(container, "x-axis").attr("transform", `translate(0,${ctx.height - margins.bottom})`);
+    const xAxis = d3.axisBottom(xScale).tickSize(0).tickSizeOuter(0).tickPadding(10);
+    // Not transitioned: d3-axis would re-apply text/dy at transition start and undo wrapping/rotation
+    xAxisGroup.interrupt().call(xAxis);
+    xAxisGroup
+        .select(".domain")
+        .attr("stroke", style.axis)
+        .attr("stroke-width", 1)
+        .attr("shape-rendering", "crispEdges");
+    styleAxisText(xAxisGroup, ctx);
+    xAxisGroup.selectAll(".tick text").style("font-weight", "500");
 
-    const barGroupsUpdate = barGroupsEnter.merge(barGroups)
-        .transition()
-        .duration(config.duration)
-        .ease(config.ease)
-        .attr("transform", (d: any) => {
-            if (xScale.bandwidth) {
-                return `translate(${xScale(d.label)}, 0)`;
-            } else {
-                const barWidth = getBarWidth(xScale, processedData.length, config.width - margins.left - margins.right);
-                const barX = getBarPosition(xScale, d.label, barWidth);
-                return `translate(${barX}, 0)`;
-            }
-        });
-
-    if (config.stacked) {
-        drawStackedBars(barGroupsUpdate, xScale, yScale, config, margins);
+    const tickText = xAxisGroup.selectAll(".tick text");
+    if (ctx.rotateXLabels) {
+        tickText
+            .attr("text-anchor", "end")
+            .attr("dx", "-0.5em")
+            .attr("dy", "0.4em")
+            .attr("transform", "rotate(-35)");
     } else {
-        drawWaterfallBars(barGroupsUpdate, xScale, yScale, config, margins, processedData);
+        tickText.attr("text-anchor", "middle").attr("dx", null).attr("transform", null);
     }
 
-    drawValueLabels(barGroupsUpdate, xScale, yScale, config, margins);
+    const every = Math.max(1, ctx.xLabelEvery);
+    tickText.attr("display", (_d: any, i: number) => (i % every === 0 ? null : "none"));
 
-    barGroups.exit()
-        .transition()
-        .duration(config.duration)
-        .ease(config.ease)
-        .style("opacity", 0)
-        .remove();
+    const wrapped = ctx.wrappedXLabels;
+    tickText.each(function (this: SVGTextElement, label: any) {
+        const text = d3.select(this);
+        const lines = wrapped ? wrapped.get(String(label)) : null;
+        if (lines && lines.length > 1) {
+            const y = text.attr("y");
+            text.text(null);
+            lines.forEach((line, i) => {
+                text.append("tspan")
+                    .attr("x", 0)
+                    .attr("y", y)
+                    .attr("dy", i === 0 ? "0.71em" : `${0.71 + i * 1.15}em`)
+                    .text(line);
+            });
+        } else if (!text.select("tspan").empty()) {
+            text.selectAll("tspan").remove();
+            text.text(String(label));
+        }
+    });
 }
 
-export function drawStackedBars(barGroups: any, xScale: any, yScale: any, config: ChartConfig, margins: MarginConfig): void {
-    barGroups.each(function(this: SVGGElement, d: any) {
+function roundedRadius(ctx: RenderContext, w: number, h: number): number {
+    return Math.max(0, Math.min(ctx.config.barRadius, w / 2, h / 2));
+}
+
+export function drawBars(container: any, ctx: RenderContext): any {
+    const { data } = ctx;
+    const barsGroup = layer(container, "bars-group");
+    const w = barWidth(ctx);
+    const stagger = ctx.config.staggeredAnimations ? (_d: any, i: number) => i * ctx.config.staggerDelay : undefined;
+
+    const barGroups = barsGroup.selectAll("g.bar-group").data(data, (d: any) => d.label);
+
+    barGroups.exit().remove();
+
+    const entered = barGroups
+        .enter()
+        .append("g")
+        .attr("class", "bar-group")
+        .attr("transform", (d: ProcessedData) => `translate(${barX(ctx, d)},0)`);
+
+    const merged = entered.merge(barGroups);
+    merged
+        .classed("is-total", (d: ProcessedData) => Boolean(d.isTotal))
+        .classed("is-subtotal", (d: ProcessedData) => Boolean(d.isSubtotal))
+        .classed("is-increase", (d: ProcessedData) => !isAnchoredBar(d) && d.barTotal >= 0)
+        .classed("is-decrease", (d: ProcessedData) => !isAnchoredBar(d) && d.barTotal < 0);
+
+    animate(merged, ctx, stagger).attr("transform", (d: ProcessedData) => `translate(${barX(ctx, d)},0)`);
+
+    merged.each(function (this: SVGGElement, d: ProcessedData, i: number) {
         const group = d3.select(this);
-        const stackData = d.stacks.map((stack: any, i: number) => ({
+        if (ctx.config.stacked && !isAnchoredBar(d) && d.stacks.length > 0) {
+            group.selectAll("rect.waterfall-bar").remove();
+            drawStackSegments(group, d, w, ctx, stagger ? stagger(d, i) : 0);
+        } else {
+            group.selectAll("rect.stack").remove();
+            group.selectAll("text.stack-label").remove();
+            drawSingleBar(group, d, i, w, ctx, stagger ? stagger(d, i) : 0);
+        }
+    });
+
+    return merged;
+}
+
+function drawSingleBar(group: any, d: ProcessedData, i: number, w: number, ctx: RenderContext, delay: number): void {
+    const { yScale } = ctx;
+    const [lo, hi] = getBarExtent(d);
+    const y = yScale(hi);
+    const h = Math.max(0, yScale(lo) - yScale(hi));
+    const color = getBarColor(d, i, ctx);
+    const start = yScale(isAnchoredBar(d) ? 0 : d.prevCumulativeTotal || 0);
+
+    const rect = group.selectAll("rect.waterfall-bar").data([d]);
+    const entered = rect
+        .enter()
+        .append("rect")
+        .attr("class", "waterfall-bar")
+        .attr("x", 0)
+        .attr("width", w)
+        .attr("y", start)
+        .attr("height", 0)
+        .attr("fill", color);
+
+    animate(entered.merge(rect), ctx, () => delay)
+        .attr("x", 0)
+        .attr("width", w)
+        .attr("y", y)
+        .attr("height", h)
+        .attr("rx", roundedRadius(ctx, w, h))
+        .attr("fill", color);
+}
+
+function drawStackSegments(group: any, d: ProcessedData, w: number, ctx: RenderContext, delay: number): void {
+    const { yScale, style } = ctx;
+    let running = d.prevCumulativeTotal || 0;
+    const segments = d.stacks.map((stack, i) => {
+        const start = running;
+        running += stack.value;
+        const lo = Math.min(start, running);
+        const hi = Math.max(start, running);
+        return {
             ...stack,
-            stackIndex: i,
-            parent: d
-        }));
+            index: i,
+            color: stack.color || style.palette[i % style.palette.length],
+            y: yScale(hi),
+            height: Math.max(0, yScale(lo) - yScale(hi)),
+            startY: yScale(start),
+        };
+    });
 
-        let cumulativeHeight = d.prevCumulativeTotal || 0;
-        stackData.forEach((stack: any) => {
-            stack.startY = cumulativeHeight;
-            stack.endY = cumulativeHeight + stack.value;
-            stack.y = yScale(Math.max(stack.startY, stack.endY));
-            stack.height = Math.abs(yScale(stack.startY) - yScale(stack.endY));
-            cumulativeHeight += stack.value;
-        });
+    const rects = group.selectAll("rect.stack").data(segments);
+    rects.exit().remove();
+    const entered = rects
+        .enter()
+        .append("rect")
+        .attr("class", "stack")
+        .attr("x", 0)
+        .attr("width", w)
+        .attr("y", (s: any) => s.startY)
+        .attr("height", 0);
 
-        const stacks = group.selectAll(".stack").data(stackData);
+    animate(entered.merge(rects), ctx, () => delay)
+        .attr("x", 0)
+        .attr("width", w)
+        .attr("y", (s: any) => s.y)
+        .attr("height", (s: any) => s.height)
+        .attr("fill", (s: any) => s.color)
+        .attr("stroke", style.surface)
+        .attr("stroke-width", 1);
 
-        const barWidth = xScale.bandwidth ? xScale.bandwidth() : getBarWidth(xScale, barGroups.size(), config.width - margins.left - margins.right);
-
-        const stacksEnter = stacks.enter()
-            .append("rect")
-            .attr("class", "stack")
-            .attr("x", 0)
-            .attr("width", barWidth)
-            .attr("y", yScale(0))
-            .attr("height", 0)
-            .attr("fill", (stack: any) => stack.color);
-
-        (stacksEnter as any).merge(stacks)
-            .transition()
-            .duration(config.duration)
-            .ease(config.ease)
-            .attr("y", (stack: any) => stack.y)
-            .attr("height", (stack: any) => stack.height)
-            .attr("fill", (stack: any) => stack.color)
-            .attr("width", barWidth);
-
-        stacks.exit()
-            .transition()
-            .duration(config.duration)
-            .ease(config.ease)
-            .attr("height", 0)
-            .attr("y", yScale(0))
-            .remove();
-
-        const stackLabels = group.selectAll(".stack-label").data(stackData.filter((s: any) => s.label));
-
-        const stackLabelsEnter = stackLabels.enter()
+    // Only label segments where the text (11px, ~6.2px/char) actually fits
+    const labeled = segments.filter(s => s.label && s.height >= 16 && String(s.label).length * 6.2 <= w - 6);
+    const labels = group.selectAll("text.stack-label").data(labeled);
+    labels.exit().remove();
+    animate(
+        labels
+            .enter()
             .append("text")
             .attr("class", "stack-label")
             .attr("text-anchor", "middle")
-            .attr("x", barWidth / 2)
-            .attr("y", yScale(0))
-            .style("opacity", 0);
-
-        (stackLabelsEnter as any).merge(stackLabels)
-            .transition()
-            .duration(config.duration)
-            .ease(config.ease)
-            .attr("y", (stack: any) => stack.y + stack.height / 2 + 4)
-            .attr("x", barWidth / 2)
-            .style("opacity", 1)
-            .text((stack: any) => stack.label);
-
-        stackLabels.exit()
-            .transition()
-            .duration(config.duration)
-            .ease(config.ease)
-            .style("opacity", 0)
-            .remove();
-    });
-}
-
-export function drawWaterfallBars(barGroups: any, xScale: any, yScale: any, config: ChartConfig, margins: MarginConfig, allData: ProcessedData[] = []): void {
-    barGroups.each(function(this: SVGGElement, d: any, i: number) {
-        const group = d3.select(this);
-
-        const barWidth = xScale.bandwidth ? xScale.bandwidth() : getBarWidth(xScale, barGroups.size(), config.width - margins.left - margins.right);
-
-        const defaultColor = d.stacks.length === 1 ? d.stacks[0].color : "#3498db";
-        let advancedColor = defaultColor;
-        if (config.advancedColorConfig.enabled) {
-            if (config.colorMode === 'conditional') {
-                advancedColor = getAdvancedBarColor(
-                    d.barTotal, defaultColor, allData,
-                    config.advancedColorConfig.themeName as keyof ThemeCollection || 'default',
-                    config.colorMode
-                );
-            } else {
-                const themeName = (config.advancedColorConfig.themeName as keyof ThemeCollection) || 'default';
-                const palette = getThemeColorPalette(themeName);
-                advancedColor = palette[i % palette.length];
-            }
-        }
-
-        const barData = [{
-            value: d.barTotal,
-            color: advancedColor,
-            y: d.isTotal ?
-                Math.min(yScale(0), yScale(d.cumulativeTotal)) :
-                yScale(Math.max(d.prevCumulativeTotal, d.cumulativeTotal)),
-            height: d.isTotal ?
-                Math.abs(yScale(0) - yScale(d.cumulativeTotal)) :
-                Math.abs(yScale(d.prevCumulativeTotal || 0) - yScale(d.cumulativeTotal)),
-            parent: d
-        }];
-
-        const bars = group.selectAll(".waterfall-bar").data(barData);
-
-        const barsEnter = bars.enter()
-            .append("rect")
-            .attr("class", "waterfall-bar")
-            .attr("x", 0)
-            .attr("width", barWidth)
-            .attr("y", yScale(0))
-            .attr("height", 0)
-            .attr("fill", (bar: any) => bar.color);
-
-        (barsEnter as any).merge(bars)
-            .transition()
-            .duration(config.duration)
-            .ease(config.ease)
-            .attr("y", (bar: any) => bar.y)
-            .attr("height", (bar: any) => bar.height)
-            .attr("fill", (bar: any) => bar.color)
-            .attr("width", barWidth);
-
-        bars.exit()
-            .transition()
-            .duration(config.duration)
-            .ease(config.ease)
-            .attr("height", 0)
-            .attr("y", yScale(0))
-            .remove();
-    });
-}
-
-export function drawValueLabels(barGroups: any, xScale: any, yScale: any, config: ChartConfig, margins: MarginConfig): void {
-    barGroups.each(function(this: SVGGElement, d: any) {
-        const group = d3.select(this);
-        const barWidth = getBarWidth(xScale, barGroups.size(), config.width - margins.left - margins.right);
-
-        const labelData = d.barTotal === 0 ? [] : [{
-            value: d.barTotal,
-            formattedValue: config.formatNumber(d.barTotal),
-            parent: d
-        }];
-
-        const totalLabels = group.selectAll(".total-label").data(labelData);
-
-        const totalLabelsEnter = totalLabels.enter()
-            .append("text")
-            .attr("class", "total-label")
-            .attr("text-anchor", "middle")
-            .attr("x", barWidth / 2)
-            .attr("y", yScale(0))
-            .style("opacity", 0)
-            .style("font-family", "Arial, sans-serif");
-
-        const labelUpdate = (totalLabelsEnter as any).merge(totalLabels);
-
-        labelUpdate
-            .transition()
-            .duration(config.duration)
-            .ease(config.ease)
-            .attr("y", (labelD: any) => {
-                const barTop = yScale(labelD.parent.cumulativeTotal);
-                const padding = 8;
-                const finalY = barTop - padding;
-                return finalY;
-            })
-            .attr("x", barWidth / 2)
-            .style("opacity", 1)
-            .style("fill", "#333")
-            .style("font-weight", "bold")
-            .style("font-size", "14px")
+            .attr("dominant-baseline", "central")
             .style("pointer-events", "none")
-            .style("visibility", "visible")
-            .style("display", "block")
-            .attr("clip-path", "none")
-            .text((labelD: any) => labelD.formattedValue);
-
-        totalLabels.exit()
-            .transition()
-            .duration(config.duration)
-            .ease(config.ease)
-            .style("opacity", 0)
-            .remove();
-    });
+            .merge(labels),
+        ctx,
+        () => delay
+    )
+        .attr("x", w / 2)
+        .attr("y", (s: any) => s.y + s.height / 2)
+        .attr("fill", "#ffffff")
+        .style("font-family", style.fontFamily)
+        .style("font-size", "11px")
+        .style("font-weight", "600")
+        .text((s: any) => s.label);
 }
 
-export function drawConnectors(container: any, processedData: ProcessedData[], xScale: any, yScale: any, config: ChartConfig): void {
-    if (config.stacked || processedData.length < 2) return;
+export function drawValueLabels(container: any, ctx: RenderContext): void {
+    const { yScale, style, config } = ctx;
+    const labelsGroup = layer(container, "labels-group").attr("aria-hidden", "true");
+    const w = barWidth(ctx);
+    const visible = config.showValueLabels && ctx.valueLabelFontSize > 0;
+    const data = visible ? ctx.data.filter(d => d.barTotal !== 0 || isAnchoredBar(d)) : [];
 
-    const connectorsGroup = container.selectAll(".connectors-group").data([0]);
-    const connectorsGroupEnter = connectorsGroup.enter()
-        .append("g")
-        .attr("class", "connectors-group");
-    const connectorsGroupUpdate = connectorsGroupEnter.merge(connectorsGroup);
+    const labels = labelsGroup.selectAll("text.total-label").data(data, (d: any) => d.label);
+    labels.exit().remove();
 
-    const connectorData: any[] = [];
-    for (let i = 0; i < processedData.length - 1; i++) {
-        const current = processedData[i];
-        const next = processedData[i + 1];
+    const position = (d: ProcessedData) => {
+        const [lo, hi] = getBarExtent(d);
+        if (hi <= 0 && lo < 0) return yScale(lo) + 16; // bar entirely below zero → label underneath
+        return yScale(hi) - 7;
+    };
 
-        const barWidth = getBarWidth(xScale, processedData.length, config.width - config.margin.left - config.margin.right);
-        const currentX = getBarPosition(xScale, current.label, barWidth);
-        const nextX = getBarPosition(xScale, next.label, barWidth);
+    const entered = labels
+        .enter()
+        .append("text")
+        .attr("class", "total-label")
+        .attr("text-anchor", "middle")
+        .attr("x", (d: ProcessedData) => barX(ctx, d) + w / 2)
+        .attr("y", position)
+        .style("opacity", 0);
 
-        connectorData.push({
-            x1: currentX + barWidth,
-            x2: nextX,
-            y: yScale(current.cumulativeTotal),
-            id: `${current.label}-${next.label}`
-        });
+    const fontSize = `${ctx.valueLabelFontSize}px`;
+    const delayFn = ctx.config.staggeredAnimations ? (_d: any, i: number) => i * ctx.config.staggerDelay : undefined;
+
+    animate(entered.merge(labels), ctx, delayFn)
+        .attr("x", (d: ProcessedData) => barX(ctx, d) + w / 2)
+        .attr("y", position)
+        .attr("fill", style.text)
+        .style("font-family", style.fontFamily)
+        .style("font-size", fontSize)
+        .style("font-weight", (d: ProcessedData) => (isAnchoredBar(d) ? "700" : "600"))
+        .style("font-variant-numeric", "tabular-nums")
+        .style("pointer-events", "none")
+        .style("opacity", 1)
+        .text((d: ProcessedData) => formatBarValue(d, config.formatNumber));
+}
+
+export function drawConnectors(container: any, ctx: RenderContext): void {
+    const { data, yScale, config, style } = ctx;
+    const group = layer(container, "connectors-group").attr("aria-hidden", "true");
+    const show = config.showConnectors && !config.stacked && data.length > 1;
+    const w = barWidth(ctx);
+
+    const connectorData: Array<{ id: string; x1: number; x2: number; y: number }> = [];
+    if (show) {
+        for (let i = 0; i < data.length - 1; i++) {
+            const current = data[i];
+            const next = data[i + 1];
+            connectorData.push({
+                id: `${current.label}\u2192${next.label}`,
+                x1: barX(ctx, current) + w,
+                x2: barX(ctx, next),
+                y: yScale(current.cumulativeTotal),
+            });
+        }
     }
 
-    const connectors = connectorsGroupUpdate.selectAll(".connector").data(connectorData, (d: any) => d.id);
-
-    const connectorsEnter = connectors.enter()
+    const connectors = group.selectAll("line.connector").data(connectorData, (d: any) => d.id);
+    connectors.exit().remove();
+    const entered = connectors
+        .enter()
         .append("line")
         .attr("class", "connector")
-        .attr("stroke", "#bdc3c7")
-        .attr("stroke-width", 1)
-        .attr("stroke-dasharray", "3,3")
-        .style("opacity", 0)
         .attr("x1", (d: any) => d.x1)
         .attr("x2", (d: any) => d.x1)
         .attr("y1", (d: any) => d.y)
         .attr("y2", (d: any) => d.y);
 
-    connectorsEnter.merge(connectors)
-        .transition()
-        .duration(config.duration)
-        .ease(config.ease)
-        .delay((d: any, i: number) => config.staggeredAnimations ? i * config.staggerDelay : 0)
+    animate(entered.merge(connectors), ctx)
         .attr("x1", (d: any) => d.x1)
         .attr("x2", (d: any) => d.x2)
         .attr("y1", (d: any) => d.y)
         .attr("y2", (d: any) => d.y)
-        .style("opacity", 0.6);
-
-    connectors.exit()
-        .transition()
-        .duration(config.duration)
-        .ease(config.ease)
-        .style("opacity", 0)
-        .remove();
+        .attr("stroke", style.connector)
+        .attr("stroke-width", 1)
+        .attr("stroke-dasharray", "3 3")
+        .attr("shape-rendering", "crispEdges");
 }
 
-export function drawTrendLine(container: any, processedData: ProcessedData[], xScale: any, yScale: any, config: ChartConfig): void {
-    if (!config.showTrendLine || processedData.length < 2) {
+/** Least-squares polynomial fit; returns coefficients [c0, c1, ..., cn]. */
+export function polynomialFit(xs: number[], ys: number[], degree: number): number[] {
+    const n = Math.max(1, Math.min(degree, xs.length - 1));
+    const size = n + 1;
+    const matrix: number[][] = Array.from({ length: size }, () => new Array(size + 1).fill(0));
+    for (let row = 0; row < size; row++) {
+        for (let col = 0; col < size; col++) {
+            matrix[row][col] = xs.reduce((s, x) => s + Math.pow(x, row + col), 0);
+        }
+        matrix[row][size] = xs.reduce((s, x, k) => s + Math.pow(x, row) * ys[k], 0);
+    }
+    // Gaussian elimination with partial pivoting
+    for (let col = 0; col < size; col++) {
+        let pivot = col;
+        for (let r = col + 1; r < size; r++) {
+            if (Math.abs(matrix[r][col]) > Math.abs(matrix[pivot][col])) pivot = r;
+        }
+        [matrix[col], matrix[pivot]] = [matrix[pivot], matrix[col]];
+        const p = matrix[col][col];
+        if (Math.abs(p) < 1e-12) continue;
+        for (let c = col; c <= size; c++) matrix[col][c] /= p;
+        for (let r = 0; r < size; r++) {
+            if (r === col) continue;
+            const factor = matrix[r][col];
+            for (let c = col; c <= size; c++) matrix[r][c] -= factor * matrix[col][c];
+        }
+    }
+    return matrix.map(row => row[size]);
+}
+
+/** Trend values (in data units) for each bar's running total. */
+export function computeTrendValues(values: number[], type: string, windowSize: number, degree: number): number[] {
+    const n = values.length;
+    if (type === "moving-average") {
+        // Centered window, truncated (not shifted) at the edges
+        const win = Math.max(1, Math.floor(windowSize));
+        const half = Math.floor(win / 2);
+        return values.map((_, i) => {
+            const start = Math.max(0, i - half);
+            const end = Math.min(n, i - half + win);
+            const slice = values.slice(start, end);
+            return slice.reduce((s, v) => s + v, 0) / slice.length;
+        });
+    }
+    const xs = values.map((_, i) => i);
+    const coeffs = polynomialFit(xs, values, type === "polynomial" ? Math.max(2, degree) : 1);
+    return xs.map(x => coeffs.reduce((s, c, k) => s + c * Math.pow(x, k), 0));
+}
+
+export function drawTrendLine(container: any, ctx: RenderContext): void {
+    const { config, data, yScale } = ctx;
+    if (!config.showTrendLine || data.length < 2) {
         container.selectAll(".trend-group").remove();
         return;
     }
+    const group = layer(container, "trend-group").attr("aria-hidden", "true");
+    const w = barWidth(ctx);
+    // Totals/subtotals repeat an existing running total, so they would double-weight the fit
+    const series = data.filter(d => !isAnchoredBar(d));
+    const values = computeTrendValues(
+        series.map(d => d.cumulativeTotal),
+        config.trendLineType,
+        config.trendLineWindow,
+        config.trendLineDegree
+    );
+    const points = series.map((d, i) => ({ x: barX(ctx, d) + w / 2, y: yScale(values[i]) }));
 
-    const trendGroup = container.selectAll(".trend-group").data([0]);
-    const trendGroupEnter = trendGroup.enter()
-        .append("g")
-        .attr("class", "trend-group");
-    const trendGroupUpdate = trendGroupEnter.merge(trendGroup);
+    const line = d3
+        .line<{ x: number; y: number }>()
+        .x(p => p.x)
+        .y(p => p.y)
+        .curve(config.trendLineType === "linear" ? d3.curveLinear : d3.curveMonotoneX);
 
-    const trendData: { x: number; y: number }[] = [];
+    const dash = config.trendLineStyle === "dashed" ? "6 4" : config.trendLineStyle === "dotted" ? "2 4" : null;
 
-    const dataPoints: { x: number; y: number; value: number }[] = [];
-    for (let i = 0; i < processedData.length; i++) {
-        const item = processedData[i];
-        const barWidth = getBarWidth(xScale, processedData.length, config.width - config.margin.left - config.margin.right);
-        const x = getBarPosition(xScale, item.label, barWidth) + barWidth / 2;
-        const actualY = yScale(item.cumulativeTotal);
-        dataPoints.push({ x, y: actualY, value: item.cumulativeTotal });
-    }
-
-    if (config.trendLineType === "linear") {
-        const n = dataPoints.length;
-        const sumX = dataPoints.reduce((sum, p, i) => sum + i, 0);
-        const sumY = dataPoints.reduce((sum, p) => sum + p.value, 0);
-        const sumXY = dataPoints.reduce((sum, p, i) => sum + (i * p.value), 0);
-        const sumXX = dataPoints.reduce((sum, p, i) => sum + (i * i), 0);
-
-        const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-        const intercept = (sumY - slope * sumX) / n;
-
-        dataPoints.forEach((point, i) => {
-            const trendValue = slope * i + intercept;
-            trendData.push({ x: point.x, y: yScale(trendValue) });
-        });
-    } else if (config.trendLineType === "moving-average") {
-        const window = config.trendLineWindow;
-        for (let i = 0; i < dataPoints.length; i++) {
-            const start = Math.max(0, i - Math.floor(window / 2));
-            const end = Math.min(dataPoints.length, start + window);
-            const windowData = dataPoints.slice(start, end);
-            const average = windowData.reduce((sum, p) => sum + p.value, 0) / windowData.length;
-            trendData.push({ x: dataPoints[i].x, y: yScale(average) });
-        }
-    } else if (config.trendLineType === "polynomial") {
-        const n = dataPoints.length;
-
-        if (n >= 3) {
-            const curvature = config.trendLineDegree / 10;
-
-            for (let i = 0; i < n; i++) {
-                const point = dataPoints[i];
-                let adjustedY = point.value;
-
-                if (n > 2) {
-                    const t = i / (n - 1);
-                    const mid = 0.5;
-
-                    const distFromMid = Math.abs(t - mid);
-                    const curveFactor = Math.sin(t * Math.PI) * curvature;
-
-                    const avgValue = dataPoints.reduce((sum, p) => sum + p.value, 0) / n;
-                    adjustedY = point.value + (point.value - avgValue) * curveFactor * 0.5;
-                }
-
-                trendData.push({ x: point.x, y: yScale(adjustedY) });
-            }
-        } else {
-            dataPoints.forEach(point => {
-                trendData.push({ x: point.x, y: point.y });
-            });
-        }
-    } else {
-        dataPoints.forEach(point => {
-            trendData.push({ x: point.x, y: point.y });
-        });
-    }
-
-    const line = d3.line<{ x: number; y: number }>()
-        .x(d => d.x)
-        .y(d => d.y)
-        .curve(config.trendLineType === "polynomial" ? d3.curveCardinal :
-               config.trendLineType === "moving-average" ? d3.curveMonotoneX :
-               d3.curveLinear);
-
-    const trendLine = trendGroupUpdate.selectAll(".trend-line").data([trendData]);
-
-    const trendLineEnter = trendLine.enter()
+    const path = group.selectAll("path.trend-line").data([points]);
+    const entered = path
+        .enter()
         .append("path")
         .attr("class", "trend-line")
         .attr("fill", "none")
-        .attr("stroke", config.trendLineColor)
-        .attr("stroke-width", config.trendLineWidth)
-        .attr("stroke-opacity", config.trendLineOpacity)
-        .style("opacity", 0);
+        .attr("d", line);
 
-    function applyStrokeStyle(selection: any) {
-        if (config.trendLineStyle === "dashed") {
-            selection.attr("stroke-dasharray", "5,5");
-        } else if (config.trendLineStyle === "dotted") {
-            selection.attr("stroke-dasharray", "2,3");
-        } else {
-            selection.attr("stroke-dasharray", null);
-        }
-    }
-
-    applyStrokeStyle(trendLineEnter);
-
-    const updatedTrendLine = trendLineEnter.merge(trendLine);
-    applyStrokeStyle(updatedTrendLine);
-
-    updatedTrendLine
-        .transition()
-        .duration(config.duration)
-        .ease(config.ease)
+    animate(entered.merge(path), ctx)
         .attr("d", line)
         .attr("stroke", config.trendLineColor)
         .attr("stroke-width", config.trendLineWidth)
         .attr("stroke-opacity", config.trendLineOpacity)
-        .style("opacity", 1);
+        .attr("stroke-linecap", "round")
+        .attr("stroke-dasharray", dash);
 
-    trendLine.exit()
-        .transition()
-        .duration(config.duration)
-        .ease(config.ease)
-        .style("opacity", 0)
-        .remove();
+    const dots = group.selectAll("circle.trend-point").data(points);
+    dots.exit().remove();
+    animate(dots.enter().append("circle").attr("class", "trend-point").merge(dots), ctx)
+        .attr("cx", (p: any) => p.x)
+        .attr("cy", (p: any) => p.y)
+        .attr("r", 2.5)
+        .attr("fill", config.trendLineColor)
+        .attr("fill-opacity", config.trendLineOpacity);
 }
 
-export function drawConfidenceBands(container: any, processedData: ProcessedData[], xScale: any, yScale: any, config: ChartConfig): void {
-    if (!config.confidenceBandConfig.enabled || !config.confidenceBandConfig.scenarios) return;
-
-    const confidenceGroup = container.selectAll(".confidence-bands-group").data([0]);
-    const confidenceGroupEnter = confidenceGroup.enter()
-        .append("g")
-        .attr("class", "confidence-bands-group");
-
-    const confidenceGroupUpdate = confidenceGroupEnter.merge(confidenceGroup);
-
-    const confidenceBandData = createWaterfallConfidenceBands(
-        processedData.map(d => ({ label: d.label, value: d.barTotal })),
+export function drawConfidenceBands(container: any, ctx: RenderContext): void {
+    const { config, data, xScale, yScale } = ctx;
+    if (!config.confidenceBandConfig.enabled || !config.confidenceBandConfig.scenarios) {
+        container.selectAll(".confidence-bands-group").remove();
+        return;
+    }
+    const group = layer(container, "confidence-bands-group").attr("aria-hidden", "true");
+    const bands = createWaterfallConfidenceBands(
+        data.map(d => ({ label: d.label, value: d.barTotal })),
         config.confidenceBandConfig.scenarios,
         xScale,
         yScale
     );
 
-    const confidencePath = confidenceGroupUpdate.selectAll(".confidence-band").data([confidenceBandData.confidencePath]);
+    const band = group.selectAll("path.confidence-band").data([bands.confidencePath]);
+    animate(band.enter().append("path").attr("class", "confidence-band").merge(band), ctx)
+        .attr("d", bands.confidencePath)
+        .attr("fill", ctx.style.accent)
+        .attr("fill-opacity", config.confidenceBandConfig.opacity ?? 0.2)
+        .attr("stroke", "none");
 
-    const confidencePathEnter = confidencePath.enter()
-        .append("path")
-        .attr("class", "confidence-band")
-        .attr("fill", `rgba(52, 152, 219, ${config.confidenceBandConfig.opacity || 0.3})`)
-        .attr("stroke", "none")
-        .style("opacity", 0);
-
-    confidencePathEnter.merge(confidencePath)
-        .transition()
-        .duration(config.duration)
-        .ease(config.ease)
-        .attr("d", confidenceBandData.confidencePath)
-        .style("opacity", 1);
-
-    if (config.confidenceBandConfig.showTrendLines) {
-        const optimisticPath = confidenceGroupUpdate.selectAll(".optimistic-trend").data([confidenceBandData.optimisticPath]);
-
-        const optimisticPathEnter = optimisticPath.enter()
+    const trends = config.confidenceBandConfig.showTrendLines
+        ? [
+              { cls: "optimistic-trend", d: bands.optimisticPath, color: ctx.style.positive },
+              { cls: "pessimistic-trend", d: bands.pessimisticPath, color: ctx.style.negative },
+          ]
+        : [];
+    const lines = group.selectAll("path.scenario-line").data(trends, (t: any) => t.cls);
+    lines.exit().remove();
+    animate(
+        lines
+            .enter()
             .append("path")
-            .attr("class", "optimistic-trend")
-            .attr("fill", "none")
-            .attr("stroke", "#27ae60")
-            .attr("stroke-width", 2)
-            .attr("stroke-dasharray", "5,5")
-            .style("opacity", 0);
-
-        optimisticPathEnter.merge(optimisticPath)
-            .transition()
-            .duration(config.duration)
-            .ease(config.ease)
-            .attr("d", confidenceBandData.optimisticPath)
-            .style("opacity", 0.8);
-
-        const pessimisticPath = confidenceGroupUpdate.selectAll(".pessimistic-trend").data([confidenceBandData.pessimisticPath]);
-
-        const pessimisticPathEnter = pessimisticPath.enter()
-            .append("path")
-            .attr("class", "pessimistic-trend")
-            .attr("fill", "none")
-            .attr("stroke", "#e74c3c")
-            .attr("stroke-width", 2)
-            .attr("stroke-dasharray", "5,5")
-            .style("opacity", 0);
-
-        pessimisticPathEnter.merge(pessimisticPath)
-            .transition()
-            .duration(config.duration)
-            .ease(config.ease)
-            .attr("d", confidenceBandData.pessimisticPath)
-            .style("opacity", 0.8);
-    }
-
-    confidencePath.exit()
-        .transition()
-        .duration(config.duration)
-        .style("opacity", 0)
-        .remove();
+            .attr("class", (t: any) => `scenario-line ${t.cls}`)
+            .merge(lines),
+        ctx
+    )
+        .attr("d", (t: any) => t.d)
+        .attr("fill", "none")
+        .attr("stroke", (t: any) => t.color)
+        .attr("stroke-width", 1.5)
+        .attr("stroke-dasharray", "5 4");
 }
 
-export function drawMilestones(container: any, processedData: ProcessedData[], xScale: any, yScale: any, config: ChartConfig): void {
-    if (!config.milestoneConfig.enabled || config.milestoneConfig.milestones.length === 0) return;
+export function drawMilestones(container: any, ctx: RenderContext): void {
+    const { config, xScale, yScale } = ctx;
+    if (!config.milestoneConfig.enabled || config.milestoneConfig.milestones.length === 0) {
+        container.selectAll(".milestones-group").remove();
+        return;
+    }
+    const group = layer(container, "milestones-group");
+    const markers = createWaterfallMilestones(config.milestoneConfig.milestones, xScale, yScale);
 
-    const milestonesGroup = container.selectAll(".milestones-group").data([0]);
-    const milestonesGroupEnter = milestonesGroup.enter()
-        .append("g")
-        .attr("class", "milestones-group");
-
-    const milestonesGroupUpdate = milestonesGroupEnter.merge(milestonesGroup);
-
-    const milestoneMarkers = createWaterfallMilestones(
-        config.milestoneConfig.milestones,
-        xScale,
-        yScale
-    );
-
-    const markers = milestonesGroupUpdate.selectAll(".milestone-marker").data(milestoneMarkers);
-
-    const markersEnter = markers.enter()
-        .append("path")
-        .attr("class", "milestone-marker")
+    const sel = group.selectAll("path.milestone-marker").data(markers);
+    sel.exit().remove();
+    animate(sel.enter().append("path").attr("class", "milestone-marker").merge(sel), ctx)
         .attr("transform", (d: any) => d.transform)
         .attr("d", (d: any) => d.path)
-        .attr("fill", (d: any) => d.config.fillColor || "#f39c12")
-        .attr("stroke", (d: any) => d.config.strokeColor || "#ffffff")
-        .attr("stroke-width", (d: any) => d.config.strokeWidth || 2)
-        .style("opacity", 0);
-
-    markersEnter.merge(markers)
-        .transition()
-        .duration(config.duration)
-        .ease(config.ease)
-        .attr("transform", (d: any) => d.transform)
-        .attr("d", (d: any) => d.path)
-        .attr("fill", (d: any) => d.config.fillColor || "#f39c12")
-        .style("opacity", 1);
-
-    markers.exit()
-        .transition()
-        .duration(config.duration)
-        .style("opacity", 0)
-        .remove();
+        .attr("fill", (d: any) => d.config.fillColor || "#f59e0b")
+        .attr("stroke", (d: any) => d.config.strokeColor || ctx.style.surface)
+        .attr("stroke-width", (d: any) => d.config.strokeWidth || 2);
 }
