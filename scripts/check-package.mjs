@@ -33,11 +33,13 @@ try {
     writeFileSync(
         join(dir, "consumer.ts"),
         [
-            'import { waterfallChart, themes, createStatisticalSystem } from "mintwaterfall";',
+            'import { waterfallChart, themes, createStatisticalSystem, type ChartData } from "mintwaterfall";',
+            'import { createHierarchicalLayout, createZoomSystem } from "mintwaterfall/experimental";',
+            'const data: ChartData[] = [{ label: "A", stacks: [{ value: 1 }] }, { label: "S", subtotal: true }];',
             "const chart = waterfallChart().width(400).showTotal(true).on(\"barClick\", (_e, d) => console.log(d));",
             "const width: number = chart.width();",
             "const background: string = themes.dark.background;",
-            "export { chart, width, background, createStatisticalSystem };",
+            "export { chart, width, background, data, createStatisticalSystem, createHierarchicalLayout, createZoomSystem };",
         ].join("\n")
     );
 
@@ -47,6 +49,11 @@ try {
     check("ESM import", () => {
         const out = run("node --input-type=module -e \"import('mintwaterfall').then(m => console.log(typeof m.waterfallChart))\"");
         if (out.trim() !== "function") throw new Error(`unexpected: ${out}`);
+    });
+    check("experimental entry (ESM + CJS)", () => {
+        const esm = run("node --input-type=module -e \"import('mintwaterfall/experimental').then(m => console.log(typeof m.createZoomSystem))\"");
+        const cjs = run("node -e \"console.log(typeof require('mintwaterfall/experimental').createZoomSystem)\"");
+        if (esm.trim() !== "function" || cjs.trim() !== "function") throw new Error(`unexpected: ${esm} ${cjs}`);
     });
     check("CommonJS require", () => {
         const out = run("node -e \"console.log(typeof require('mintwaterfall').waterfallChart)\"");

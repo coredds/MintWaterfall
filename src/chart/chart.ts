@@ -85,7 +85,6 @@ export function waterfallChart(): WaterfallChart {
     const config: ChartConfig = {
         ...defaultConfig,
         margin: { ...defaultConfig.margin },
-        formattingRules: new Map(),
         advancedColorConfig: { ...defaultConfig.advancedColorConfig },
         confidenceBandConfig: { ...defaultConfig.confidenceBandConfig },
         milestoneConfig: { ...defaultConfig.milestoneConfig, milestones: [...defaultConfig.milestoneConfig.milestones] },
@@ -646,10 +645,6 @@ export function waterfallChart(): WaterfallChart {
     chart.showConnectors = accessor(() => config.showConnectors, v => { config.showConnectors = v; });
     chart.showGrid = accessor(() => config.showGrid, v => { config.showGrid = v; });
     chart.barRadius = accessor(() => config.barRadius, v => { config.barRadius = v; });
-    chart.breakdownConfig = accessor(() => config.breakdownConfig, v => { config.breakdownConfig = v; });
-    chart.enablePerformanceOptimization = accessor(() => config.enablePerformanceOptimization, v => { config.enablePerformanceOptimization = v; });
-    chart.performanceDashboard = accessor(() => config.performanceDashboard, v => { config.performanceDashboard = v; });
-    chart.virtualizationThreshold = accessor(() => config.virtualizationThreshold, v => { config.virtualizationThreshold = v; });
     chart.enableAdvancedColors = accessor(() => config.advancedColorConfig.enabled, v => { config.advancedColorConfig.enabled = v; });
     chart.colorMode = accessor(() => config.colorMode, v => { config.colorMode = v; });
     chart.colorTheme = accessor(() => config.advancedColorConfig.themeName || "default", v => { config.advancedColorConfig.themeName = v; });

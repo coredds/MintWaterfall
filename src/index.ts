@@ -22,18 +22,14 @@ export {
   d3DataUtils,
 } from "./data/pipeline.js";
 
+
 // Animation system
 export { createAnimationSystem } from "./animations.js";
 
-// Themes
-export { themes, applyTheme } from "./themes.js";
-
-// Enhanced D3.js features
-export { createScaleSystem } from "./scales.js";
-export { createBrushSystemFactory as createBrushSystem } from "./brush.js";
-
-// Advanced color and shape features
+// Themes and color helpers
 export {
+  themes,
+  applyTheme,
   createSequentialScale,
   createDivergingScale,
   getConditionalColor,
@@ -42,56 +38,46 @@ export {
   getAdvancedBarColor,
 } from "./themes.js";
 
+// Scales
+export { createScaleSystem } from "./scales.js";
+
+// Shapes (confidence bands and milestones used by the chart)
 export {
   createShapeGenerators,
   createWaterfallConfidenceBands,
   createWaterfallMilestones,
 } from "./shapes.js";
 
-// Advanced statistical analysis features
+// Statistical analysis
 export {
   createStatisticalSystem,
   analyzeWaterfallStatistics,
 } from "./statistics.js";
 
-// Performance optimization features
-export {
-  createPerformanceManager,
-  createAdvancedPerformanceSystem,
-  createWaterfallSpatialIndex,
-  createVirtualWaterfallRenderer,
-} from "./performance.js";
+// Advanced data processing
+export { createAdvancedDataProcessor } from "./data/advanced.js";
 
-// Advanced analytical enhancement features
-export {
-  createAdvancedDataProcessor,
-} from "./data/advanced.js";
-
-export {
-  createAdvancedInteractionSystem,
-  createWaterfallDragBehavior,
-  createWaterfallVoronoiConfig,
-  createWaterfallForceConfig,
-} from "./interactions.js";
-
-export {
-  createHierarchicalLayout,
-  createHierarchicalLayoutSystem,
-  createWaterfallTreemap,
-  createWaterfallSunburst,
-  createWaterfallBubbles,
-} from "./layouts.js";
-
-// Accessibility & UX Features
+// Accessibility, tooltip and export building blocks
 export { createAccessibilitySystem } from "./accessibility.js";
 export { createTooltipSystem } from "./tooltip.js";
 export { createExportSystem } from "./export.js";
 
-// Interactivity Features
-export { createZoomSystem } from "./zoom.js";
+// Public chart types
+export type {
+  ChartData,
+  StackData,
+  ProcessedData,
+  WaterfallChart,
+  MarginConfig,
+  ChartEventType,
+  ChartExportFormat,
+} from "./chart/config.js";
+
+// Brush/zoom systems, performance, interactions and layouts moved to
+// "mintwaterfall/experimental" in 2.0.0.
 
 // Version information
-export const version = "1.1.0";
+export const version = "2.0.0";
 
 // Default export
 import { waterfallChart } from "./chart/chart.js";

@@ -1,6 +1,6 @@
 // Advanced Interactions Tests - Zero Coverage Critical Component
 // Tests drag behavior, force simulation, and enhanced hover detection
-import { createAdvancedInteractionSystem } from "../dist/mintwaterfall.esm.js";
+import { createAdvancedInteractionSystem } from "../dist/experimental.esm.js";
 
 // Mock D3 dependencies
 const mockD3 = {

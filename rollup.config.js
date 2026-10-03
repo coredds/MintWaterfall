@@ -108,4 +108,31 @@ export default [
     },
     plugins,
   },
+
+  // Experimental entry ("mintwaterfall/experimental"): ESM, CJS and a minified UMD
+  {
+    input: "src/experimental.ts",
+    external,
+    output: { file: "dist/experimental.esm.js", format: "es", banner },
+    plugins,
+  },
+  {
+    input: "src/experimental.ts",
+    external,
+    output: { file: "dist/experimental.cjs", format: "cjs", banner, exports: "named" },
+    plugins,
+  },
+  {
+    input: "src/experimental.ts",
+    external,
+    output: {
+      file: "dist/mintwaterfall-experimental.min.js",
+      format: "umd",
+      name: "MintWaterfallExperimental",
+      globals,
+      banner,
+      exports: "named",
+    },
+    plugins: minifiedPlugins,
+  },
 ];

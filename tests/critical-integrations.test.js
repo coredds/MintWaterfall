@@ -4,9 +4,9 @@ import {
   waterfallChart, 
   createDataProcessor, 
   themes, 
-  createAdvancedInteractionSystem,
   createAccessibilitySystem
 } from "../dist/mintwaterfall.esm.js";
+import { createAdvancedInteractionSystem } from "../dist/experimental.esm.js";
 
 describe("Critical Component Integrations", () => {
   let chart;

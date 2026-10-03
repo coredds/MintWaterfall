@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-10-03
+
+Scope cleanup: the package entry now contains the chart and the helpers it is built from.
+Modules unrelated to the chart move to a separate, explicitly unstable entry point.
+
+### Breaking changes
+
+- **Moved to `mintwaterfall/experimental`:** `createBrushSystem`, `createZoomSystem`,
+  `createPerformanceManager`, `createAdvancedPerformanceSystem`, `createWaterfallSpatialIndex`,
+  `createVirtualWaterfallRenderer`, `createAdvancedInteractionSystem`, `createWaterfallDragBehavior`,
+  `createWaterfallVoronoiConfig`, `createWaterfallForceConfig`, `createHierarchicalLayout`,
+  `createHierarchicalLayoutSystem`, `createWaterfallTreemap`, `createWaterfallSunburst`,
+  `createWaterfallBubbles`. These are not used by the chart, have limited test coverage and are
+  not covered by semver guarantees. Script-tag users: load `dist/mintwaterfall-experimental.min.js`
+  (global `MintWaterfallExperimental`).
+- **Removed chart settings** that never had any effect: `breakdownConfig`,
+  `enablePerformanceOptimization`, `performanceDashboard`, `virtualizationThreshold`.
+
+### Migration
+
+```diff
+- import { waterfallChart, createHierarchicalLayout } from "mintwaterfall";
++ import { waterfallChart } from "mintwaterfall";
++ import { createHierarchicalLayout } from "mintwaterfall/experimental";
+```
+
+Delete any calls to the four removed settings; they did nothing. For brushing and zooming a chart,
+prefer the built-in `chart.enableBrush(true)` / `chart.enableZoom(true)`.
+
+### Added
+
+- Public chart types are exported: `ChartData`, `StackData`, `ProcessedData`, `WaterfallChart`,
+  `MarginConfig`, `ChartEventType`, `ChartExportFormat`.
+
+### Changed
+
+- Main bundle is ~25% smaller (minified UMD 36.4 → 27.3 KB gzip); size budgets tightened accordingly.
+- CI runs on Node 20, 22 and 24; actions updated to Node 24 runtimes. Publishing is gated on the
+  size and package checks and uses npm provenance.
+
 ## [1.1.0] - 2026-10-03
 
 ### Added

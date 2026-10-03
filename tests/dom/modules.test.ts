@@ -108,3 +108,31 @@ describe("zoom system", () => {
         zoom.enable().detach();
     });
 });
+
+describe("entry points", () => {
+    test("experimental modules live only in mintwaterfall/experimental", async () => {
+        const main = await import("../../src/index.js");
+        const experimental = await import("../../src/experimental.js");
+        const moved = [
+            "createBrushSystem",
+            "createZoomSystem",
+            "createPerformanceManager",
+            "createAdvancedInteractionSystem",
+            "createHierarchicalLayout",
+            "createWaterfallTreemap",
+        ];
+        for (const name of moved) {
+            expect(main).not.toHaveProperty(name);
+            expect(typeof (experimental as any)[name]).toBe("function");
+        }
+        expect(typeof main.waterfallChart).toBe("function");
+        expect(main.version).toBe("2.0.0");
+    });
+
+    test("removed no-op chart settings are gone", () => {
+        const chart = waterfallChart() as any;
+        for (const name of ["breakdownConfig", "enablePerformanceOptimization", "performanceDashboard", "virtualizationThreshold"]) {
+            expect(chart[name]).toBeUndefined();
+        }
+    });
+});

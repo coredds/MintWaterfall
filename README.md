@@ -127,8 +127,9 @@ These are exported for use alongside (or without) the chart:
 | `createDataProcessor`, `createAdvancedDataProcessor`, `createRevenueWaterfall`, `createTemporalWaterfall`, `createVarianceWaterfall`, `transformTransactionData`, … | Shape raw records into chart data (grouping, rollups, temporal aggregation). |
 | `createStatisticalSystem`, `analyzeWaterfallStatistics` | Summaries, outliers, trend analysis, data quality. |
 | `themes`, `applyTheme`, `getConditionalColor`, `createSequentialScale`, `createDivergingScale`, … | Theme definitions and color helpers. |
-| `createTooltipSystem`, `createExportSystem`, `createZoomSystem`, `createBrushSystem`, `createAccessibilitySystem` | Lower-level building blocks used by or alongside the chart. |
-| `createAdvancedInteractionSystem`, `createHierarchicalLayout`, `createShapeGenerators`, `createPerformanceManager`, … | Experimental helpers (drag, force layouts, treemaps, spatial indexing). Less tested than the chart. |
+| `createTooltipSystem`, `createExportSystem`, `createAccessibilitySystem`, `createShapeGenerators`, `createScaleSystem`, `createAnimationSystem` | Lower-level building blocks used by or alongside the chart. |
+
+TypeScript types for chart data and the chart API are exported too: `ChartData`, `StackData`, `ProcessedData`, `WaterfallChart`, `ChartEventType`, `ChartExportFormat`.
 
 ```javascript
 import { createStatisticalSystem } from "mintwaterfall";
@@ -137,6 +138,23 @@ const stats = createStatisticalSystem();
 const summary = stats.calculateSummary([4200, 3800, 5100, 4700]);
 const trend = stats.analyzeTrend([{ x: 1, y: 10 }, { x: 2, y: 20 }]);
 ```
+
+### Experimental (`mintwaterfall/experimental`)
+
+Helpers that aren't used by the chart and have limited test coverage live in a separate entry point. They are **not covered by semver**: breaking changes may land in minor releases.
+
+```javascript
+import { createHierarchicalLayout, createAdvancedInteractionSystem } from "mintwaterfall/experimental";
+```
+
+| Export | Purpose |
+| --- | --- |
+| `createHierarchicalLayout`, `createHierarchicalLayoutSystem`, `createWaterfallTreemap`, `createWaterfallSunburst`, `createWaterfallBubbles` | Treemap, sunburst, pack and other hierarchical layouts. |
+| `createAdvancedInteractionSystem`, `createWaterfallDragBehavior`, `createWaterfallVoronoiConfig`, `createWaterfallForceConfig` | Drag, Voronoi hover and force simulation. |
+| `createPerformanceManager`, `createAdvancedPerformanceSystem`, `createWaterfallSpatialIndex`, `createVirtualWaterfallRenderer` | Spatial indexing and virtualised rendering. |
+| `createBrushSystem`, `createZoomSystem` | Standalone brush/zoom building blocks. For a chart, use `enableBrush` / `enableZoom` instead. |
+
+Script tag: `dist/mintwaterfall-experimental.min.js` (global `MintWaterfallExperimental`). Upgrading from 1.x? See the [2.0.0 migration notes](CHANGELOG.md#200---2026-10-03).
 
 ## Development
 
@@ -162,6 +180,7 @@ Build output:
 - `dist/mintwaterfall.esm.js` — ES module
 - `dist/mintwaterfall.cjs` — CommonJS
 - `dist/mintwaterfall.umd.js`, `dist/mintwaterfall.min.js` — UMD for script tags
+- `dist/experimental.esm.js`, `dist/experimental.cjs`, `dist/mintwaterfall-experimental.min.js` — `mintwaterfall/experimental`
 - `dist/types/` — TypeScript declarations
 
 D3 is a peer dependency and is not bundled.

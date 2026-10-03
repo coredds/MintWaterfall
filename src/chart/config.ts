@@ -71,16 +71,6 @@ export interface ZoomConfig {
     [key: string]: any;
 }
 
-export interface BreakdownConfig {
-    enabled: boolean;
-    levels: number;
-    field?: string;
-    minGroupSize?: number;
-    sortStrategy?: string;
-    showOthers?: boolean;
-    othersLabel?: string;
-    maxGroups?: number;
-}
 
 export interface AdvancedColorConfig {
     enabled: boolean;
@@ -199,22 +189,6 @@ export interface WaterfallChart {
     /** Corner radius for bars, in pixels. */
     barRadius(): number;
     barRadius(value: number): WaterfallChart;
-    /** @deprecated Has no effect. Will be removed in 2.0. */
-    breakdownConfig(): BreakdownConfig | null;
-    /** @deprecated Has no effect. Will be removed in 2.0. */
-    breakdownConfig(value: BreakdownConfig | null): WaterfallChart;
-    /** @deprecated Has no effect. Will be removed in 2.0. */
-    enablePerformanceOptimization(): boolean;
-    /** @deprecated Has no effect. Will be removed in 2.0. */
-    enablePerformanceOptimization(value: boolean): WaterfallChart;
-    /** @deprecated Has no effect. Will be removed in 2.0. */
-    performanceDashboard(): boolean;
-    /** @deprecated Has no effect. Will be removed in 2.0. */
-    performanceDashboard(value: boolean): WaterfallChart;
-    /** @deprecated Has no effect. Will be removed in 2.0. */
-    virtualizationThreshold(): number;
-    /** @deprecated Has no effect. Will be removed in 2.0. */
-    virtualizationThreshold(value: number): WaterfallChart;
     /**
      * Register an event listener. Bar events receive `(event, datum)`;
      * `chartUpdate` receives `(processedData)`; `brushSelection` receives `(event, selectedData)`.
@@ -268,11 +242,6 @@ export interface ChartConfig {
     exportConfig: ExportConfig;
     enableZoom: boolean;
     zoomConfig: ZoomConfig;
-    breakdownConfig: BreakdownConfig | null;
-    formattingRules: Map<string, any>;
-    enablePerformanceOptimization: boolean;
-    performanceDashboard: boolean;
-    virtualizationThreshold: number;
     responsive: boolean;
     showValueLabels: boolean;
     showConnectors: boolean;
@@ -329,11 +298,6 @@ export const defaultConfig: ChartConfig = {
     exportConfig: {},
     enableZoom: false,
     zoomConfig: {},
-    breakdownConfig: null,
-    formattingRules: new Map(),
-    enablePerformanceOptimization: false,
-    performanceDashboard: false,
-    virtualizationThreshold: 10000,
     responsive: false,
     showValueLabels: true,
     showConnectors: true,

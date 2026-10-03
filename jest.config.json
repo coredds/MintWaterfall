@@ -23,6 +23,7 @@
       "moduleNameMapper": {
         "^d3$": "<rootDir>/tests/__mocks__/d3.js",
         "^\\.\\./dist/mintwaterfall\\.(esm\\.js|cjs|umd\\.js)$": "<rootDir>/src/index.ts",
+        "^\\.\\./dist/experimental\\.(esm\\.js|cjs)$": "<rootDir>/src/experimental.ts",
         "^(\\.{1,2}/.*)\\.js$": "$1"
       }
     },

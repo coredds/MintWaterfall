@@ -34,7 +34,8 @@ Contributions welcome! This document provides guidelines for contributing to the
 ```
 MintWaterfall/
 ├── src/
-│   ├── index.ts              # Entry point — re-exports all public API
+│   ├── index.ts              # Main entry — chart + supported helpers
+│   ├── experimental.ts       # "mintwaterfall/experimental" — brush, zoom, performance, interactions, layouts (no semver guarantees)
 │   ├── chart/
 │   │   ├── config.ts         # Types, interfaces, defaults, utilities
 │   │   ├── chart.ts          # Chart factory (getter/setters, render orchestration, events)

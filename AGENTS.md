@@ -14,7 +14,8 @@ MintWaterfall is a TypeScript waterfall chart library built on D3.js v7. It prov
 
 ```
 src/
-├── index.ts              # Entry point — re-exports all public API
+├── index.ts              # Main entry — chart + supported helpers
+├── experimental.ts       # "mintwaterfall/experimental" — brush, zoom, performance, interactions, layouts (no semver guarantees)
 ├── chart/
 │   ├── config.ts         # Types, defaults, y-domain + layout/margin helpers
 │   ├── chart.ts          # Chart factory: getter/setters, render orchestration, events, tooltip, brush, zoom, export

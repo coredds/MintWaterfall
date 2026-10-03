@@ -1,7 +1,7 @@
 {
   "name": "mintwaterfall",
-  "version": "1.1.0",
-  "description": "A powerful, D3.js-compatible waterfall chart component with enterprise features including breakdown analysis, conditional formatting, stacking capabilities, animations, and extensive customization options",
+  "version": "2.0.0",
+  "description": "Accessible, themeable waterfall charts for D3.js v7 — subtotals, stacked segments, tooltips, keyboard navigation, brush/zoom and SVG/PNG/CSV export. Written in TypeScript.",
   "main": "dist/mintwaterfall.cjs",
   "module": "dist/mintwaterfall.esm.js",
   "browser": "dist/mintwaterfall.min.js",
@@ -16,6 +16,11 @@
       "import": "./dist/mintwaterfall.esm.js",
       "require": "./dist/mintwaterfall.cjs",
       "browser": "./dist/mintwaterfall.min.js"
+    },
+    "./experimental": {
+      "types": "./dist/types/experimental.d.ts",
+      "import": "./dist/experimental.esm.js",
+      "require": "./dist/experimental.cjs"
     },
     "./package.json": "./package.json"
   },

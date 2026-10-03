@@ -33,8 +33,6 @@ function makeConfig(overrides: Partial<ChartConfig> = {}): ChartConfig {
     enableTooltips: false, tooltipConfig: {},
     enableExport: true, exportConfig: {},
     enableZoom: false, zoomConfig: {},
-    breakdownConfig: null, formattingRules: new Map(),
-    enablePerformanceOptimization: false, performanceDashboard: false, virtualizationThreshold: 10000,
     ...overrides,
   };
 }
