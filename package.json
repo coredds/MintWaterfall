@@ -2,37 +2,33 @@
   "name": "mintwaterfall",
   "version": "1.0.0",
   "description": "A powerful, D3.js-compatible waterfall chart component with enterprise features including breakdown analysis, conditional formatting, stacking capabilities, animations, and extensive customization options",
-  "main": "dist/mintwaterfall.cjs.js",
+  "main": "dist/mintwaterfall.cjs",
   "module": "dist/mintwaterfall.esm.js",
   "browser": "dist/mintwaterfall.min.js",
   "unpkg": "dist/mintwaterfall.min.js",
   "jsdelivr": "dist/mintwaterfall.min.js",
-  "types": "dist/index.d.ts",
-  "typings": "dist/index.d.ts",
+  "types": "dist/types/index.d.ts",
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/types/index.d.ts",
       "import": "./dist/mintwaterfall.esm.js",
-      "require": "./dist/mintwaterfall.cjs.js",
+      "require": "./dist/mintwaterfall.cjs",
       "browser": "./dist/mintwaterfall.min.js"
     },
     "./package.json": "./package.json"
   },
   "files": [
     "dist/",
-    "src/",
-    "API.md",
     "CHANGELOG.md",
     "CONTRIBUTING.md",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "start": "python -m http.server 8080",
-    "dev": "python -m http.server 8080",
-    "demo": "python -m http.server 8080",
-    "demo:breakdown": "python -m http.server 8080 && echo \"Demo available at: http://localhost:8080/breakdown-feature-demo.html\"",
+    "start": "node scripts/serve.mjs 8080",
+    "demo": "npm run build && node scripts/serve.mjs 8080",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "jest --passWithNoTests",
@@ -45,11 +41,15 @@
     "build:fast": "rollup -c rollup.config.fast.js && npm run build:types",
     "build:full": "npm run build:ts && rollup -c && npm run build:types",
     "build:ts": "tsc --noEmit",
-    "build:types": "cp index.d.ts dist/index.d.ts || copy index.d.ts dist\\index.d.ts",
+    "build:types": "tsc -p tsconfig.build.json",
     "build:watch": "rollup -c -w",
-    "build:analyze": "rollup -c --environment ANALYZE",
-    "format": "prettier --write \"src/**/*.js\" \"*.js\" \"*.md\"",
-    "format:check": "prettier --check \"src/**/*.js\" \"*.js\" \"*.md\""
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "test:e2e:update": "playwright test --update-snapshots",
+    "check:size": "node scripts/check-size.mjs",
+    "check:package": "node scripts/check-package.mjs",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.{js,ts}\" \"*.{js,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.{js,ts}\" \"*.{js,json,md}\""
   },
   "keywords": [
     "d3js",
@@ -80,12 +80,20 @@
     "node": ">=18.0.0"
   },
   "peerDependencies": {
+    "@types/d3": "^7.0.0",
     "d3": "^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@types/d3": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@babel/core": "^7.28.5",
     "@babel/preset-env": "^7.28.5",
     "@babel/preset-typescript": "^7.28.5",
+    "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.63.0",
     "@rollup/plugin-babel": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-terser": "^0.4.4",
@@ -93,6 +101,7 @@
     "@types/d3": "^7.4.3",
     "babel-jest": "^30.0.5",
     "eslint": "^9.39.1",
+    "globals": "^17.13.0",
     "husky": "^9.1.7",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
@@ -103,7 +112,8 @@
     "rollup": "^4.53.3",
     "rollup-plugin-cleanup": "^3.2.1",
     "tslib": "^2.8.1",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.71.0"
   },
   "lint-staged": {
     "*.js": [
@@ -118,8 +128,7 @@
     "d3-array": "^3.2.4",
     "d3-color": "^3.1.0",
     "d3-drag": "^3.0.0",
-    "d3-force": "^3.0.0",
-    "d3-selection": "^3.0.0"
+    "d3-force": "^3.0.0"
   },
   "overrides": {
     "js-yaml": "^4.1.1"

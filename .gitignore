@@ -1,8 +1,8 @@
 # Node modules
 node_modules/
 
-# Build outputs (comment out to track dist files for now)
-# dist/
+# Build outputs (built in CI; GitHub Pages workflow builds before deploying)
+dist/
 
 # Logs
 npm-debug.log*
@@ -26,8 +26,11 @@ __pycache__/
 # Coverage
 coverage/
 
+# Playwright output
+test-results/
+playwright-report/
+
 # Build output
-# dist/ - Commented out for GitHub Pages deployment
 build/
 
 # Misc
@@ -46,3 +49,16 @@ build/
 # Local dev tooling (not project code)
 .superpowers/
 docs/superpowers/
+docs/plans/
+.opencode/
+.claude/
+.cursor/
+.continue/
+.windsurf/
+.agents/
+.aider*
+CLAUDE.local.md
+.playwright-mcp/
+
+# CodeGraph index
+.codegraph/

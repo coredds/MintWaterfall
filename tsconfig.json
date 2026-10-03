@@ -26,9 +26,7 @@
     "strictFunctionTypes": true
   },
   "include": [
-    "src/**/*",
-    "mintwaterfall-*.ts",
-    "*.ts"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
