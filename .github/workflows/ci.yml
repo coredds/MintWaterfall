@@ -25,12 +25,19 @@ jobs:
       - run: npm ci
 
       - name: TypeScript type-check
-        run: npm run build:ts
+        run: npm run typecheck
 
       - run: npm run lint
 
       - name: Build
         run: npm run build
+
+      - name: Bundle size budget
+        run: npm run check:size
+
+      - name: Package check (types, ESM, CJS from a packed tarball)
+        if: matrix.node-version == '22.x'
+        run: npm run check:package
 
       - name: Test
         run: npm test
@@ -44,3 +51,36 @@ jobs:
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Build
+        run: npm run build
+
+      # Functional browser tests always run. Screenshot tests skip until Linux baselines
+      # exist — create them with the "Update visual baselines" workflow.
+      - name: Browser tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
