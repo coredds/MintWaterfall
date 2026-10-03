@@ -17,15 +17,15 @@ Contributions welcome! This document provides guidelines for contributing to the
    npm install
    ```
 
-3. **Start development server**
+3. **Build and serve the demo** (http://localhost:8080/mintwaterfall-example.html)
 
    ```bash
-   npm start
+   npm run demo
    ```
 
 4. **Run type-checking and linting**
    ```bash
-   npm run build:ts
+   npm run typecheck
    npm run lint
    ```
 
@@ -37,8 +37,9 @@ MintWaterfall/
 │   ├── index.ts              # Entry point — re-exports all public API
 │   ├── chart/
 │   │   ├── config.ts         # Types, interfaces, defaults, utilities
-│   │   ├── chart.ts          # Chart factory (getter/setters, rendering)
-│   │   ├── render.ts         # Grid, axes, bars, connectors, trend lines
+│   │   ├── chart.ts          # Chart factory (getter/setters, render orchestration, events)
+│   │   ├── render.ts         # Grid, axes, bars, labels, connectors, trend lines
+│   │   ├── style.ts          # Theme → visual style tokens
 │   │   └── lifecycle.ts      # Data preparation, cumulative totals
 │   ├── data/
 │   │   ├── validation.ts     # Types, validateData(), getDataSummary()
@@ -58,7 +59,8 @@ MintWaterfall/
 │   ├── tooltip.ts            # Tooltip system
 │   ├── zoom.ts               # Zoom/pan
 │   └── shapes.ts             # Shape generators
-├── tests/                    # Test suites (Jest + jsdom)
+├── tests/                    # "unit" Jest project (mocked D3)
+│   └── dom/                  # "dom" Jest project (real D3 in jsdom) — rendering tests go here
 ├── docs/superpowers/         # Design specs and implementation plans
 ├── AGENTS.md                 # AI tooling conventions
 ├── README.md                 # Project overview
@@ -118,7 +120,7 @@ docs: update API documentation with examples
    ```
 
 4. **Ensure CI passes**
-   - TypeScript type-check passes (`npm run build:ts`)
+   - TypeScript type-check passes (`npm run typecheck`)
    - Linting checks pass (`npm run lint`)
    - Tests pass (`npm test`)
    - Documentation is updated

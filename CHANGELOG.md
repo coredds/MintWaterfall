@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Subtotal bars** — `{ label, subtotal: true }` draws the running total from zero without changing it.
+- **Optional stack colors** — omit `color` and bars are colored as increase / decrease / total (or from the theme palette when stacked).
+- **Interaction wiring** — `barClick`, `barMouseover`, `barMouseout`, `barFocus`, `chartUpdate` and `brushSelection` events now actually fire.
+- **Tooltips** — `enableTooltips(true)` shows change, running total and stack breakdown (HTML-escaped).
+- **Keyboard & screen-reader support in the chart** — focusable bars (`role="listitem"`, descriptive `aria-label`), arrow/Home/End navigation, Enter/Space to activate, and a generated chart summary (`<title>` + `aria-label`).
+- **Brush** — `enableBrush(true)` adds an x-brush; selected bars are emphasised and emitted via `brushSelection`.
+- **Zoom** — `enableZoom(true)` adds horizontal zoom/pan (`zoomConfig({ scaleExtent })`). With the brush also enabled, drag selects, Shift+drag pans and the wheel zooms; zooming clears a stale brush selection. Zoom renders are coalesced to one per animation frame.
+- **`chart.export(format)`** — `"svg" | "png" | "json" | "csv"` export of the last render.
+- **`chart.destroy()`** — removes the tooltip and detaches zoom/brush listeners.
+- New accessors: `responsive`, `showValueLabels`, `showConnectors`, `showGrid`, `barRadius`.
+- Real-D3 DOM test suite (`tests/dom/`) and a coverage threshold.
+- Playwright browser tests (`e2e/`): functional checks plus screenshot comparisons; CI also enforces bundle-size budgets and verifies the packed tarball (types under `nodenext`/`bundler`, ESM and CJS loading).
+- `npm run demo` / `npm start` use a small Node static server (`scripts/serve.mjs`) instead of Python.
+
+### Changed
+
+- **Visual refresh** — new default palette, rounded bars, signed value labels (`+1,200` / `−450`), lighter subtotal bars, subtle grid with an emphasised zero line, cleaner axes, wrapped (or rotated) x labels, hover emphasis, modern tooltip styling.
+- **Themes** restyle the whole chart (background, grid, axes, text) and color bars by increase/decrease; palettes modernised (`accessible` now uses Okabe–Ito).
+- Defaults: `margin` `{32,24,48,56}` (left margin auto-grows for tick labels), `barPadding` `0.24`, `duration` `650`, `ease` `easeCubicOut`, `formatNumber` `",.0f"`, `totalColor` `#475569`.
+- Polynomial trend lines are now a real least-squares fit; moving averages use a centered window.
+- Animations are disabled when the user prefers reduced motion.
+- `responsive(true)` now lays the chart out at the container's real width (re-rendering on resize via `ResizeObserver`) instead of scaling a fixed drawing, so text stays readable on phones.
+- Crowded charts degrade gracefully: value labels shrink to 10px or hide when they don't fit, rotated x labels are thinned, and stack segment labels only show when they fit.
+- Exports pad with the theme background instead of white.
+- The y axis only rounds out to a "nice" tick when that wastes ≤10% of the range (a running total dipping to −8 no longer adds a whole empty −1,000 band).
+- Trend lines ignore total/subtotal bars, which repeated running totals and skewed the fit.
+- CommonJS bundle renamed to `dist/mintwaterfall.cjs` so `require()` works with `"type": "module"`.
+- `dist/` is no longer committed; the Pages workflow builds and publishes only the demo and bundles.
+
+### Fixed
+
+- **Published types** — `dist/index.d.ts` pointed at a non-existent path; declarations are now emitted by `tsc` to `dist/types/`.
+- **Y axis did not include zero** for all-positive data, so bars were drawn with misleading lengths.
+- Stale renders: the data cache only compared the first 100 characters of the data.
+- Each re-render appended a new `<defs>`/`<clipPath>`.
+- Rendering overwrote the configured `width`/`height`.
+- Value labels for decreases were placed inside the bar; labels below zero overlapped the axis.
+- Confidence bands, milestones and trend lines were not removed when disabled.
+- Tooltip default content inserted labels as raw HTML (XSS).
+- PNG export failed on non-Latin-1 text and ignored the scale factor.
+- Moving-average edge values were biased.
+
+### Deprecated
+
+- `breakdownConfig`, `enablePerformanceOptimization`, `performanceDashboard`, `virtualizationThreshold` have never had any effect; they remain as no-op accessors and will be removed in 2.0.
+
 ## [1.0.0] - 2026-06-29
 
 ### Changed
