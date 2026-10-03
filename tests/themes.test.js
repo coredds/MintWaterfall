@@ -16,7 +16,7 @@ describe("MintWaterfall Theme System", () => {
     test("should have dark theme", () => {
       expect(themes.dark).toBeDefined();
       expect(themes.dark.name).toBe("Dark");
-      expect(themes.dark.background).toBe("#1a252f");
+      expect(themes.dark.background).toBe("#0f172a");
     });
 
     test("should have corporate theme", () => {

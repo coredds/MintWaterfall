@@ -88,7 +88,7 @@ describe("MintWaterfall Chart", () => {
       expect(chart.height()).toBe(400);
       expect(chart.showTotal()).toBe(false);
       expect(chart.stacked()).toBe(false);
-      expect(chart.duration()).toBe(750);
+      expect(chart.duration()).toBe(650);
     });
   });
 
@@ -275,7 +275,7 @@ describe("MintWaterfall Chart", () => {
       chart(mockSvgForError);
       
       expect(consoleSpy).toHaveBeenCalledWith(
-        "MintWaterfall: Invalid data structure. Each item must have a 'label' string and 'stacks' array with 'value' numbers and 'color' strings."
+        "MintWaterfall: Invalid data structure. Each item needs a 'label' string and either a 'stacks' array of { value: number, color?: string } or 'subtotal: true'."
       );
       
       consoleSpy.mockRestore();
@@ -299,7 +299,7 @@ describe("MintWaterfall Chart", () => {
       chart(mockSvgForError);
       
       expect(consoleSpy).toHaveBeenCalledWith(
-        "MintWaterfall: Invalid data structure. Each item must have a 'label' string and 'stacks' array with 'value' numbers and 'color' strings."
+        "MintWaterfall: Invalid data structure. Each item needs a 'label' string and either a 'stacks' array of { value: number, color?: string } or 'subtotal: true'."
       );
       
       consoleSpy.mockRestore();
@@ -324,16 +324,16 @@ describe("MintWaterfall Chart", () => {
       chart(mockSvgForError);
       
       expect(consoleSpy).toHaveBeenCalledWith(
-        "MintWaterfall: Invalid data structure. Each item must have a 'label' string and 'stacks' array with 'value' numbers and 'color' strings."
+        "MintWaterfall: Invalid data structure. Each item needs a 'label' string and either a 'stacks' array of { value: number, color?: string } or 'subtotal: true'."
       );
       
       consoleSpy.mockRestore();
     });
 
-    test("should handle invalid stack structure - missing color", () => {
+    test("accepts stacks without a color (color is optional)", () => {
       const consoleSpy = jest.spyOn(console, "error").mockImplementation();
       
-      const invalidData = [
+      const data = [
         {
           label: "Test",
           stacks: [{ value: 100, label: "100" }]
@@ -342,14 +342,14 @@ describe("MintWaterfall Chart", () => {
       
       const mockSvgForError = {
         each: jest.fn((callback) => {
-          callback.call(mockSvgForError, invalidData);
+          callback.call(mockSvgForError, data);
         })
       };
       
       chart(mockSvgForError);
       
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "MintWaterfall: Invalid data structure. Each item must have a 'label' string and 'stacks' array with 'value' numbers and 'color' strings."
+      expect(consoleSpy).not.toHaveBeenCalledWith(
+        "MintWaterfall: Invalid data structure. Each item needs a 'label' string and either a 'stacks' array of { value: number, color?: string } or 'subtotal: true'."
       );
       
       consoleSpy.mockRestore();
@@ -630,7 +630,7 @@ describe("MintWaterfall Chart", () => {
       expect(chart.margin()).toBe(margin);
       expect(chart.showTotal()).toBe(true);
       expect(chart.totalLabel()).toBe("Grand Total");
-      expect(chart.totalColor()).toBe("#7f8c8d"); // dark theme totalColor
+      expect(chart.totalColor()).toBe("#94a3b8"); // dark theme totalColor
       expect(chart.stacked()).toBe(false);
       expect(chart.barPadding()).toBe(0.25);
       expect(chart.duration()).toBe(800);
@@ -700,7 +700,7 @@ describe("MintWaterfall Chart", () => {
       });
       
       chart(svg);
-      expect(console.error).toHaveBeenCalledWith("MintWaterfall: Invalid data structure. Each item must have a 'label' string and 'stacks' array with 'value' numbers and 'color' strings.");
+      expect(console.error).toHaveBeenCalledWith("MintWaterfall: Invalid data structure. Each item needs a 'label' string and either a 'stacks' array of { value: number, color?: string } or 'subtotal: true'.");
     });
 
     it("should validate individual data items", () => {
@@ -723,7 +723,7 @@ describe("MintWaterfall Chart", () => {
       });
       
       // Should be called multiple times for each test case
-      expect(console.error).toHaveBeenCalledWith("MintWaterfall: Invalid data structure. Each item must have a 'label' string and 'stacks' array with 'value' numbers and 'color' strings.");
+      expect(console.error).toHaveBeenCalledWith("MintWaterfall: Invalid data structure. Each item needs a 'label' string and either a 'stacks' array of { value: number, color?: string } or 'subtotal: true'.");
     });
   });
 
@@ -888,7 +888,7 @@ describe("MintWaterfall Chart", () => {
 
       // Should not call console.error for valid data structure
       chart(svg);
-      expect(console.error).not.toHaveBeenCalledWith("MintWaterfall: Invalid data structure. Each item must have a 'label' string and 'stacks' array with 'value' numbers and 'color' strings.");
+      expect(console.error).not.toHaveBeenCalledWith("MintWaterfall: Invalid data structure. Each item needs a 'label' string and either a 'stacks' array of { value: number, color?: string } or 'subtotal: true'.");
     });
 
     it("should handle edge case data validation", () => {
@@ -909,7 +909,7 @@ describe("MintWaterfall Chart", () => {
           return svg;
         });
         chart(svg);
-        expect(console.error).toHaveBeenCalledWith("MintWaterfall: Invalid data structure. Each item must have a 'label' string and 'stacks' array with 'value' numbers and 'color' strings.");
+        expect(console.error).toHaveBeenCalledWith("MintWaterfall: Invalid data structure. Each item needs a 'label' string and either a 'stacks' array of { value: number, color?: string } or 'subtotal: true'.");
       });
     });
 
@@ -929,7 +929,7 @@ describe("MintWaterfall Chart", () => {
 
       // Should not call console.error for valid (if extreme) data
       chart(svg);
-      expect(console.error).not.toHaveBeenCalledWith("MintWaterfall: Invalid data structure. Each item must have a 'label' string and 'stacks' array with 'value' numbers and 'color' strings.");
+      expect(console.error).not.toHaveBeenCalledWith("MintWaterfall: Invalid data structure. Each item needs a 'label' string and either a 'stacks' array of { value: number, color?: string } or 'subtotal: true'.");
     });
 
     it("should validate color format variations", () => {
@@ -950,7 +950,7 @@ describe("MintWaterfall Chart", () => {
 
       // Should not call console.error for valid color formats
       chart(svg);
-      expect(console.error).not.toHaveBeenCalledWith("MintWaterfall: Invalid data structure. Each item must have a 'label' string and 'stacks' array with 'value' numbers and 'color' strings.");
+      expect(console.error).not.toHaveBeenCalledWith("MintWaterfall: Invalid data structure. Each item needs a 'label' string and either a 'stacks' array of { value: number, color?: string } or 'subtotal: true'.");
     });
 
     it("should handle mixed positive and negative stack validation", () => {
@@ -973,7 +973,7 @@ describe("MintWaterfall Chart", () => {
 
       // Should not call console.error for valid mixed stack data
       chart(svg);
-      expect(console.error).not.toHaveBeenCalledWith("MintWaterfall: Invalid data structure. Each item must have a 'label' string and 'stacks' array with 'value' numbers and 'color' strings.");
+      expect(console.error).not.toHaveBeenCalledWith("MintWaterfall: Invalid data structure. Each item needs a 'label' string and either a 'stacks' array of { value: number, color?: string } or 'subtotal: true'.");
     });
   });
 
@@ -998,7 +998,7 @@ describe("MintWaterfall Chart", () => {
       expect(chart.margin()).toEqual({top: 80, right: 100, bottom: 80, left: 100});
       expect(chart.showTotal()).toBe(true);
       expect(chart.totalLabel()).toBe("Final Total");
-      expect(chart.totalColor()).toBe("#7f8c8d"); // dark theme totalColor
+      expect(chart.totalColor()).toBe("#94a3b8"); // dark theme totalColor
       expect(chart.stacked()).toBe(false);
       expect(chart.barPadding()).toBe(0.15);
       expect(chart.duration()).toBe(1200);

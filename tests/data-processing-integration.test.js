@@ -4,7 +4,7 @@
  * Focuses on high-value data transformation and validation
  */
 
-const { createDataProcessor } = require("../dist/mintwaterfall.cjs.js");
+const { createDataProcessor } = require("../dist/mintwaterfall.cjs");
 
 describe("Data Processing Integration - Critical Business Logic", () => {
     let processor;

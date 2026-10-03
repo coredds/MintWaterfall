@@ -62,7 +62,7 @@ describe("MintWaterfall Core API", () => {
 
     test("margin getter/setter", () => {
       const defaultMargin = chart.margin();
-      expect(defaultMargin).toEqual({ top: 60, right: 80, bottom: 60, left: 80 }); // actual defaults
+      expect(defaultMargin).toEqual({ top: 32, right: 24, bottom: 48, left: 56 }); // actual defaults
       
       const newMargin = { top: 20, right: 30, bottom: 40, left: 50 };
       chart.margin(newMargin);

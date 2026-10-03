@@ -1,7 +1,7 @@
 // MintWaterfall Lifecycle Tests
 // Test prepareData — cumulative totals, total bar, edge cases
 import { prepareData } from "../src/chart/lifecycle.js";
-import { ChartConfig, ChartData, ProcessedData } from "../src/chart/config.js";
+import { ChartConfig, ChartData } from "../src/chart/config.js";
 
 // Minimal config for testing
 function makeConfig(overrides: Partial<ChartConfig> = {}): ChartConfig {

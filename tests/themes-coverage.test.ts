@@ -36,28 +36,28 @@ describe("themes", () => {
 
 describe("getConditionalColor", () => {
   test("returns positive color for positive values", () => {
-    expect(getConditionalColor(100)).toBe("#2ecc71");
-    expect(getConditionalColor(0.01)).toBe("#2ecc71");
+    expect(getConditionalColor(100)).toBe(themes.default.conditionalFormatting!.positive);
+    expect(getConditionalColor(0.01)).toBe(themes.default.conditionalFormatting!.positive);
   });
 
   test("returns negative color for negative values", () => {
-    expect(getConditionalColor(-100)).toBe("#e74c3c");
-    expect(getConditionalColor(-0.01)).toBe("#e74c3c");
+    expect(getConditionalColor(-100)).toBe(themes.default.conditionalFormatting!.negative);
+    expect(getConditionalColor(-0.01)).toBe(themes.default.conditionalFormatting!.negative);
   });
 
   test("returns neutral color for zero", () => {
-    expect(getConditionalColor(0)).toBe("#95a5a6");
+    expect(getConditionalColor(0)).toBe(themes.default.conditionalFormatting!.neutral);
   });
 
   test("uses theme-specific conditional formatting", () => {
     // Corporate theme uses different colors
-    expect(getConditionalColor(100, "corporate")).toBe("#27ae60");
-    expect(getConditionalColor(-100, "corporate")).toBe("#c0392b");
+    expect(getConditionalColor(100, "corporate")).toBe(themes.corporate.conditionalFormatting!.positive);
+    expect(getConditionalColor(-100, "corporate")).toBe(themes.corporate.conditionalFormatting!.negative);
   });
 
   test("accessible theme returns colorblind-safe colors", () => {
-    expect(getConditionalColor(100, "accessible")).toBe("#1f77b4");
-    expect(getConditionalColor(-100, "accessible")).toBe("#d62728");
+    expect(getConditionalColor(100, "accessible")).toBe(themes.accessible.conditionalFormatting!.positive);
+    expect(getConditionalColor(-100, "accessible")).toBe(themes.accessible.conditionalFormatting!.negative);
   });
 });
 
@@ -99,7 +99,7 @@ describe("applyTheme", () => {
       },
     };
     applyTheme(chart, "dark");
-    expect(stored).toBe("#7f8c8d");
+    expect(stored).toBe(themes.dark.totalColor);
   });
 
   test("returns the theme object", () => {
