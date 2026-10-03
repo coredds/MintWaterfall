@@ -1,8 +1,8 @@
 // MintWaterfall Accessibility System - TypeScript Version
 // Provides WCAG 2.1 AA compliance features for screen readers and keyboard navigation with full type safety
 
-import * as d3 from 'd3';
-import { rgb } from 'd3-color';
+import * as d3 from "d3";
+import { rgb } from "d3-color";
 
 // Type definitions for accessibility system
 export interface AccessibilityConfig {
@@ -211,7 +211,7 @@ export function createAccessibilitySystem(): AccessibilitySystem {
         });
         
         // Store focusable elements
-        focusableElements = bars && bars.nodes && typeof bars.nodes === 'function' 
+        focusableElements = bars && bars.nodes && typeof bars.nodes === "function" 
             ? bars.nodes().filter(node => node !== null) 
             : [];
         

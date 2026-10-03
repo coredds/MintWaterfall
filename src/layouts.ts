@@ -1,7 +1,7 @@
 // MintWaterfall - D3.js compatible hierarchical layout system - TypeScript Version
 // Implements d3.hierarchy, d3.treemap, d3.partition, and other layout algorithms with full type safety
 
-import * as d3 from 'd3';
+import * as d3 from "d3";
 
 // Type definitions for hierarchical layout system
 export interface HierarchicalData {
@@ -162,11 +162,11 @@ export function createHierarchicalLayout(): HierarchicalLayout {
     let ratio = 1.618033988749895; // Golden ratio by default
     
     // Additional layout-specific options
-    let partitionOptions: PartitionOptions = {
+    const partitionOptions: PartitionOptions = {
         orientation: "horizontal"
     };
     
-    let treeOptions: TreeOptions = {
+    const treeOptions: TreeOptions = {
         nodeSize: null,
         separation: null
     };
@@ -265,10 +265,10 @@ export function createHierarchicalLayout(): HierarchicalLayout {
      * @returns {LayoutNode} Processed layout data
      */
     function applyPackLayout(root: d3.HierarchyNode<any>): LayoutNode {
-        return d3.pack()
+        const packLayout = d3.pack()
             .size(size)
-            .padding(padding)
-            (root) as LayoutNode;
+            .padding(padding);
+        return packLayout(root) as LayoutNode;
     }
     
     /**
@@ -678,7 +678,7 @@ export interface PartitionConfig {
     height: number;
     innerRadius?: number;
     outerRadius?: number;
-    type: 'sunburst' | 'icicle';
+    type: "sunburst" | "icicle";
     colorScale?: d3.ScaleOrdinal<string, string>;
     onNodeClick?: (node: d3.HierarchyRectangularNode<AdvancedHierarchicalData>) => void;
 }
@@ -758,12 +758,12 @@ export function createHierarchicalLayoutSystem(): HierarchicalLayoutSystem {
         const colorScale = config.colorScale || d3.scaleOrdinal(d3.schemeCategory10);
         
         // Create treemap group
-        const treemapGroup = container.selectAll('.treemap-group')
+        const treemapGroup = container.selectAll(".treemap-group")
             .data([0]);
         
         const treemapGroupEnter = treemapGroup.enter()
-            .append('g')
-            .attr('class', 'treemap-group');
+            .append("g")
+            .attr("class", "treemap-group");
         
         const treemapGroupMerged = treemapGroupEnter.merge(treemapGroup as any);
         
@@ -771,85 +771,85 @@ export function createHierarchicalLayoutSystem(): HierarchicalLayoutSystem {
         const leaves = layout.leaves();
         
         // Create rectangles for leaf nodes
-        const cells = treemapGroupMerged.selectAll('.treemap-cell')
+        const cells = treemapGroupMerged.selectAll(".treemap-cell")
             .data(leaves, (d: any) => d.data.name);
         
         const cellsEnter = cells.enter()
-            .append('g')
-            .attr('class', 'treemap-cell');
+            .append("g")
+            .attr("class", "treemap-cell");
         
         // Add rectangles
-        cellsEnter.append('rect')
-            .attr('class', 'treemap-rect');
+        cellsEnter.append("rect")
+            .attr("class", "treemap-rect");
         
         // Add labels
-        cellsEnter.append('text')
-            .attr('class', 'treemap-label');
+        cellsEnter.append("text")
+            .attr("class", "treemap-label");
         
         // Add value labels
-        cellsEnter.append('text')
-            .attr('class', 'treemap-value');
+        cellsEnter.append("text")
+            .attr("class", "treemap-value");
         
         const cellsMerged = cellsEnter.merge(cells as any);
         
         // Update rectangles
-        cellsMerged.select('.treemap-rect')
+        cellsMerged.select(".treemap-rect")
             .transition()
             .duration(750)
-            .attr('x', d => d.x0)
-            .attr('y', d => d.y0)
-            .attr('width', d => d.x1 - d.x0)
-            .attr('height', d => d.y1 - d.y0)
-            .attr('fill', d => colorScale(d.data.category || d.data.name))
-            .attr('stroke', '#fff')
-            .attr('stroke-width', 1)
-            .attr('opacity', 0.8);
+            .attr("x", d => d.x0)
+            .attr("y", d => d.y0)
+            .attr("width", d => d.x1 - d.x0)
+            .attr("height", d => d.y1 - d.y0)
+            .attr("fill", d => colorScale(d.data.category || d.data.name))
+            .attr("stroke", "#fff")
+            .attr("stroke-width", 1)
+            .attr("opacity", 0.8);
         
         // Update labels
-        cellsMerged.select('.treemap-label')
-            .attr('x', d => (d.x0 + d.x1) / 2)
-            .attr('y', d => (d.y0 + d.y1) / 2 - 8)
-            .attr('text-anchor', 'middle')
-            .attr('font-size', d => Math.min(12, (d.x1 - d.x0) / 8))
-            .attr('fill', '#333')
+        cellsMerged.select(".treemap-label")
+            .attr("x", d => (d.x0 + d.x1) / 2)
+            .attr("y", d => (d.y0 + d.y1) / 2 - 8)
+            .attr("text-anchor", "middle")
+            .attr("font-size", d => Math.min(12, (d.x1 - d.x0) / 8))
+            .attr("fill", "#333")
             .text(d => d.data.name);
         
         // Update value labels
-        cellsMerged.select('.treemap-value')
-            .attr('x', d => (d.x0 + d.x1) / 2)
-            .attr('y', d => (d.y0 + d.y1) / 2 + 8)
-            .attr('text-anchor', 'middle')
-            .attr('font-size', d => Math.min(10, (d.x1 - d.x0) / 10))
-            .attr('fill', '#666')
+        cellsMerged.select(".treemap-value")
+            .attr("x", d => (d.x0 + d.x1) / 2)
+            .attr("y", d => (d.y0 + d.y1) / 2 + 8)
+            .attr("text-anchor", "middle")
+            .attr("font-size", d => Math.min(10, (d.x1 - d.x0) / 10))
+            .attr("fill", "#666")
             .text(d => formatValue(d.value || 0));
         
         // Add interaction
         cellsMerged
-            .style('cursor', 'pointer')
-            .on('click', (event, d) => {
+            .style("cursor", "pointer")
+            .on("click", (event, d) => {
                 if (config.onNodeClick) {
                     config.onNodeClick(d);
                 }
             })
-            .on('mouseenter', (event, d) => {
-                d3.select(event.currentTarget).select('.treemap-rect')
-                    .attr('opacity', 1)
-                    .attr('stroke-width', 2);
+            .on("mouseenter", (event, d) => {
+                d3.select(event.currentTarget).select(".treemap-rect")
+                    .attr("opacity", 1)
+                    .attr("stroke-width", 2);
                 
                 if (config.onNodeHover) {
                     config.onNodeHover(d);
                 }
             })
-            .on('mouseleave', (event, d) => {
-                d3.select(event.currentTarget).select('.treemap-rect')
-                    .attr('opacity', 0.8)
-                    .attr('stroke-width', 1);
+            .on("mouseleave", (event, _d) => {
+                d3.select(event.currentTarget).select(".treemap-rect")
+                    .attr("opacity", 0.8)
+                    .attr("stroke-width", 1);
             });
         
         cells.exit()
             .transition()
             .duration(300)
-            .attr('opacity', 0)
+            .attr("opacity", 0)
             .remove();
     }
     
@@ -880,17 +880,17 @@ export function createHierarchicalLayoutSystem(): HierarchicalLayoutSystem {
         const innerRadius = config.innerRadius || 0;
         
         // Create partition group
-        const partitionGroup = container.selectAll('.partition-group')
+        const partitionGroup = container.selectAll(".partition-group")
             .data([0]);
         
         const partitionGroupEnter = partitionGroup.enter()
-            .append('g')
-            .attr('class', 'partition-group')
-            .attr('transform', `translate(${config.width / 2}, ${config.height / 2})`);
+            .append("g")
+            .attr("class", "partition-group")
+            .attr("transform", `translate(${config.width / 2}, ${config.height / 2})`);
         
         const partitionGroupMerged = partitionGroupEnter.merge(partitionGroup as any);
         
-        if (config.type === 'sunburst') {
+        if (config.type === "sunburst") {
             renderSunburst(partitionGroupMerged, layout, colorScale, radius, innerRadius, config);
         } else {
             renderIcicle(partitionGroupMerged, layout, colorScale, config);
@@ -913,25 +913,25 @@ export function createHierarchicalLayoutSystem(): HierarchicalLayoutSystem {
         
         const descendants = layout.descendants().filter(d => d.depth > 0);
         
-        const paths = container.selectAll('.partition-arc')
+        const paths = container.selectAll(".partition-arc")
             .data(descendants, (d: any) => d.data.name);
         
         const pathsEnter = paths.enter()
-            .append('path')
-            .attr('class', 'partition-arc')
-            .attr('fill', d => colorScale(d.data.category || d.data.name))
-            .attr('stroke', '#fff')
-            .attr('stroke-width', 1)
-            .style('cursor', 'pointer');
+            .append("path")
+            .attr("class", "partition-arc")
+            .attr("fill", d => colorScale(d.data.category || d.data.name))
+            .attr("stroke", "#fff")
+            .attr("stroke-width", 1)
+            .style("cursor", "pointer");
         
         pathsEnter.merge(paths as any)
             .transition()
             .duration(750)
-            .attr('d', arc);
+            .attr("d", arc);
         
         // Add interaction
         pathsEnter.merge(paths as any)
-            .on('click', (event, d) => {
+            .on("click", (event, d) => {
                 if (config.onNodeClick) {
                     config.onNodeClick(d);
                 }
@@ -940,7 +940,7 @@ export function createHierarchicalLayoutSystem(): HierarchicalLayoutSystem {
         paths.exit()
             .transition()
             .duration(300)
-            .attr('opacity', 0)
+            .attr("opacity", 0)
             .remove();
     }
     
@@ -952,28 +952,28 @@ export function createHierarchicalLayoutSystem(): HierarchicalLayoutSystem {
     ): void {
         const descendants = layout.descendants();
         
-        const rects = container.selectAll('.partition-rect')
+        const rects = container.selectAll(".partition-rect")
             .data(descendants, (d: any) => d.data.name);
         
         const rectsEnter = rects.enter()
-            .append('rect')
-            .attr('class', 'partition-rect')
-            .attr('fill', d => colorScale(d.data.category || d.data.name))
-            .attr('stroke', '#fff')
-            .attr('stroke-width', 1)
-            .style('cursor', 'pointer');
+            .append("rect")
+            .attr("class", "partition-rect")
+            .attr("fill", d => colorScale(d.data.category || d.data.name))
+            .attr("stroke", "#fff")
+            .attr("stroke-width", 1)
+            .style("cursor", "pointer");
         
         rectsEnter.merge(rects as any)
             .transition()
             .duration(750)
-            .attr('x', d => d.y0)
-            .attr('y', d => d.x0)
-            .attr('width', d => d.y1 - d.y0)
-            .attr('height', d => d.x1 - d.x0);
+            .attr("x", d => d.y0)
+            .attr("y", d => d.x0)
+            .attr("width", d => d.y1 - d.y0)
+            .attr("height", d => d.x1 - d.x0);
         
         // Add interaction
         rectsEnter.merge(rects as any)
-            .on('click', (event, d) => {
+            .on("click", (event, d) => {
                 if (config.onNodeClick) {
                     config.onNodeClick(d);
                 }
@@ -982,7 +982,7 @@ export function createHierarchicalLayoutSystem(): HierarchicalLayoutSystem {
         rects.exit()
             .transition()
             .duration(300)
-            .attr('opacity', 0)
+            .attr("opacity", 0)
             .remove();
     }
     
@@ -1012,12 +1012,12 @@ export function createHierarchicalLayoutSystem(): HierarchicalLayoutSystem {
         config: ClusterConfig
     ): void {
         // Create cluster group
-        const clusterGroup = container.selectAll('.cluster-group')
+        const clusterGroup = container.selectAll(".cluster-group")
             .data([0]);
         
         const clusterGroupEnter = clusterGroup.enter()
-            .append('g')
-            .attr('class', 'cluster-group');
+            .append("g")
+            .attr("class", "cluster-group");
         
         const clusterGroupMerged = clusterGroupEnter.merge(clusterGroup as any);
         
@@ -1025,40 +1025,40 @@ export function createHierarchicalLayoutSystem(): HierarchicalLayoutSystem {
         const links = layout.links();
         
         // Render links
-        const linkSelection = clusterGroupMerged.selectAll('.cluster-link')
+        const linkSelection = clusterGroupMerged.selectAll(".cluster-link")
             .data(links, (d: any) => `${d.source.data.name}-${d.target.data.name}`);
         
         linkSelection.enter()
-            .append('path')
-            .attr('class', 'cluster-link')
-            .attr('fill', 'none')
-            .attr('stroke', config.linkColor || '#999')
-            .attr('stroke-width', 1)
+            .append("path")
+            .attr("class", "cluster-link")
+            .attr("fill", "none")
+            .attr("stroke", config.linkColor || "#999")
+            .attr("stroke-width", 1)
             .merge(linkSelection as any)
             .transition()
             .duration(750)
-            .attr('d', d3.linkHorizontal<d3.HierarchyPointLink<AdvancedHierarchicalData>, d3.HierarchyPointNode<AdvancedHierarchicalData>>()
+            .attr("d", d3.linkHorizontal<d3.HierarchyPointLink<AdvancedHierarchicalData>, d3.HierarchyPointNode<AdvancedHierarchicalData>>()
                 .x(d => d.y || 0)
                 .y(d => d.x || 0));
         
         linkSelection.exit().remove();
         
         // Render nodes
-        const nodeSelection = clusterGroupMerged.selectAll('.cluster-node')
+        const nodeSelection = clusterGroupMerged.selectAll(".cluster-node")
             .data(descendants, (d: any) => d.data.name);
         
         const nodeEnter = nodeSelection.enter()
-            .append('g')
-            .attr('class', 'cluster-node');
+            .append("g")
+            .attr("class", "cluster-node");
         
-        nodeEnter.append('circle')
-            .attr('r', 5)
-            .attr('fill', config.nodeColor || '#69b3a2');
+        nodeEnter.append("circle")
+            .attr("r", 5)
+            .attr("fill", config.nodeColor || "#69b3a2");
         
-        nodeEnter.append('text')
-            .attr('dy', 3)
-            .attr('x', 8)
-            .style('font-size', '12px')
+        nodeEnter.append("text")
+            .attr("dy", 3)
+            .attr("x", 8)
+            .style("font-size", "12px")
             .text(d => d.data.name);
         
         const nodeMerged = nodeEnter.merge(nodeSelection as any);
@@ -1066,12 +1066,12 @@ export function createHierarchicalLayoutSystem(): HierarchicalLayoutSystem {
         nodeMerged
             .transition()
             .duration(750)
-            .attr('transform', d => `translate(${d.y},${d.x})`);
+            .attr("transform", d => `translate(${d.y},${d.x})`);
         
         nodeSelection.exit()
             .transition()
             .duration(300)
-            .attr('opacity', 0)
+            .attr("opacity", 0)
             .remove();
     }
     
@@ -1101,38 +1101,38 @@ export function createHierarchicalLayoutSystem(): HierarchicalLayoutSystem {
         const colorScale = config.colorScale || d3.scaleOrdinal(d3.schemeCategory10);
         
         // Create pack group
-        const packGroup = container.selectAll('.pack-group')
+        const packGroup = container.selectAll(".pack-group")
             .data([0]);
         
         const packGroupEnter = packGroup.enter()
-            .append('g')
-            .attr('class', 'pack-group');
+            .append("g")
+            .attr("class", "pack-group");
         
         const packGroupMerged = packGroupEnter.merge(packGroup as any);
         
         const descendants = layout.descendants().filter(d => d.depth > 0);
         
         // Create circles for nodes
-        const nodes = packGroupMerged.selectAll('.pack-node')
+        const nodes = packGroupMerged.selectAll(".pack-node")
             .data(descendants, (d: any) => d.data.name);
         
         const nodesEnter = nodes.enter()
-            .append('g')
-            .attr('class', 'pack-node');
+            .append("g")
+            .attr("class", "pack-node");
         
         // Add circles
-        nodesEnter.append('circle')
-            .attr('class', 'pack-circle')
-            .style('cursor', 'pointer');
+        nodesEnter.append("circle")
+            .attr("class", "pack-circle")
+            .style("cursor", "pointer");
         
         // Add labels
-        nodesEnter.append('text')
-            .attr('class', 'pack-label')
-            .attr('text-anchor', 'middle')
-            .attr('dy', '0.3em')
-            .style('font-size', '10px')
-            .style('fill', '#333')
-            .style('pointer-events', 'none');
+        nodesEnter.append("text")
+            .attr("class", "pack-label")
+            .attr("text-anchor", "middle")
+            .attr("dy", "0.3em")
+            .style("font-size", "10px")
+            .style("fill", "#333")
+            .style("pointer-events", "none");
         
         const nodesMerged = nodesEnter.merge(nodes as any);
         
@@ -1140,43 +1140,43 @@ export function createHierarchicalLayoutSystem(): HierarchicalLayoutSystem {
         nodesMerged
             .transition()
             .duration(750)
-            .attr('transform', d => `translate(${d.x},${d.y})`);
+            .attr("transform", d => `translate(${d.x},${d.y})`);
         
-        nodesMerged.select('.pack-circle')
+        nodesMerged.select(".pack-circle")
             .transition()
             .duration(750)
-            .attr('r', d => d.r)
-            .attr('fill', d => colorScale(d.data.category || d.data.name))
-            .attr('stroke', '#fff')
-            .attr('stroke-width', 1)
-            .attr('opacity', 0.7);
+            .attr("r", d => d.r)
+            .attr("fill", d => colorScale(d.data.category || d.data.name))
+            .attr("stroke", "#fff")
+            .attr("stroke-width", 1)
+            .attr("opacity", 0.7);
         
-        nodesMerged.select('.pack-label')
-            .text(d => d.r > 15 ? d.data.name : '')
-            .attr('font-size', d => Math.min(d.r / 3, 12));
+        nodesMerged.select(".pack-label")
+            .text(d => d.r > 15 ? d.data.name : "")
+            .attr("font-size", d => Math.min(d.r / 3, 12));
         
         // Add interaction
         nodesMerged
-            .on('click', (event, d) => {
+            .on("click", (event, d) => {
                 if (config.onNodeClick) {
                     config.onNodeClick(d);
                 }
             })
-            .on('mouseenter', (event, d) => {
-                d3.select(event.currentTarget).select('.pack-circle')
-                    .attr('opacity', 1)
-                    .attr('stroke-width', 2);
+            .on("mouseenter", (event, _d) => {
+                d3.select(event.currentTarget).select(".pack-circle")
+                    .attr("opacity", 1)
+                    .attr("stroke-width", 2);
             })
-            .on('mouseleave', (event, d) => {
-                d3.select(event.currentTarget).select('.pack-circle')
-                    .attr('opacity', 0.7)
-                    .attr('stroke-width', 1);
+            .on("mouseleave", (event, _d) => {
+                d3.select(event.currentTarget).select(".pack-circle")
+                    .attr("opacity", 0.7)
+                    .attr("stroke-width", 1);
             });
         
         nodes.exit()
             .transition()
             .duration(300)
-            .attr('opacity', 0)
+            .attr("opacity", 0)
             .remove();
     }
     
@@ -1186,7 +1186,7 @@ export function createHierarchicalLayoutSystem(): HierarchicalLayoutSystem {
     
     function transformWaterfallToHierarchy(waterfallData: any[]): AdvancedHierarchicalData {
         // Group data by categories if available
-        const grouped = d3.group(waterfallData, d => d.category || 'Default');
+        const grouped = d3.group(waterfallData, d => d.category || "Default");
         
         const children: AdvancedHierarchicalData[] = [];
         
@@ -1207,7 +1207,7 @@ export function createHierarchicalLayoutSystem(): HierarchicalLayoutSystem {
         }
         
         return {
-            name: 'Root',
+            name: "Root",
             children,
             value: d3.sum(children, d => d.value || 0)
         };
@@ -1251,7 +1251,7 @@ export function createHierarchicalLayoutSystem(): HierarchicalLayoutSystem {
     
     // Helper functions
     function extractValue(item: any): number {
-        if (typeof item === 'number') return item;
+        if (typeof item === "number") return item;
         if (item.value !== undefined) return item.value;
         if (item.stacks && Array.isArray(item.stacks)) {
             return item.stacks.reduce((sum: number, stack: any) => sum + (stack.value || 0), 0);
@@ -1260,10 +1260,10 @@ export function createHierarchicalLayoutSystem(): HierarchicalLayoutSystem {
     }
     
     function getLabel(item: any): string {
-        if (typeof item === 'string') return item;
+        if (typeof item === "string") return item;
         if (item.label !== undefined) return item.label;
         if (item.name !== undefined) return item.name;
-        return 'Unnamed';
+        return "Unnamed";
     }
     
     function formatValue(value: number): string {
@@ -1336,7 +1336,7 @@ export function createWaterfallSunburst(
         width,
         height,
         innerRadius: 40,
-        type: 'sunburst',
+        type: "sunburst",
         colorScale: d3.scaleOrdinal(d3.schemeCategory10)
     };
     

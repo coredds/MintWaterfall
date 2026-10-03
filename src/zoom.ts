@@ -1,7 +1,7 @@
 // MintWaterfall Zoom & Pan System - TypeScript Version
 // Provides interactive zoom and pan functionality with smooth performance and full type safety
 
-import * as d3 from 'd3';
+import * as d3 from "d3";
 
 // Type definitions for zoom system
 export interface ZoomConfig {
@@ -62,7 +62,7 @@ export interface ZoomSystem {
     off(type: string, callback?: (event: ZoomEventData) => void): ZoomSystem;
 }
 
-export type ZoomEventType = 'zoomstart' | 'zoom' | 'zoomend' | 'reset';
+export type ZoomEventType = "zoomstart" | "zoom" | "zoomend" | "reset";
 
 export function createZoomSystem(): ZoomSystem {
     

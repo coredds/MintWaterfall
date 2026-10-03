@@ -1,22 +1,49 @@
-// Basic ESLint configuration for ES2021 and browser
-export default [
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+import globals from "globals";
+
+export default tseslint.config(
   {
-    ignores: ["dist/**", "node_modules/**", "coverage/**", "build/**"],
+    ignores: ["dist/**", "node_modules/**", "coverage/**", "build/**", "_site/**", ".codegraph/**", "test-results/**", "playwright-report/**", ".playwright-mcp/**"],
   },
   {
-    files: ["**/*.js"],
+    files: ["src/**/*.ts"],
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
     languageOptions: {
-      ecmaVersion: 2021,
+      ecmaVersion: 2022,
       sourceType: "module",
-      globals: {
-        window: "readonly",
-        document: "readonly",
-      },
+      globals: { ...globals.browser },
     },
     rules: {
       semi: ["error", "always"],
-      quotes: ["error", "double"],
-      "no-unused-vars": "warn",
+      quotes: ["error", "double", { avoidEscape: true }],
+      // The D3 selection-heavy code relies on `any`; tighten incrementally.
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrors: "none" }],
     },
   },
-];
+  {
+    files: ["tests/**/*.ts", "e2e/**/*.ts", "playwright.config.ts"],
+    extends: [...tseslint.configs.recommended],
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.jest, ...globals.node },
+    },
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-non-null-assertion": "off",
+    },
+  },
+  {
+    files: ["**/*.js", "**/*.mjs"],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: "module",
+      globals: { ...globals.browser, ...globals.node, ...globals.jest },
+    },
+    rules: {
+      semi: ["error", "always"],
+      quotes: ["error", "double", { avoidEscape: true }],
+      "no-unused-vars": "warn",
+    },
+  }
+);

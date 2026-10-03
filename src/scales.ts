@@ -1,7 +1,7 @@
 // MintWaterfall Enhanced Scales System - TypeScript Version
 // Provides advanced D3.js scale support including time and ordinal scales with full type safety
 
-import * as d3 from 'd3';
+import * as d3 from "d3";
 
 // Type definitions for scale systems
 export interface ScaleSystemOptions {
@@ -13,7 +13,7 @@ export interface ScaleSystemOptions {
 export interface TimeScaleOptions {
     range?: [number, number];
     nice?: boolean;
-    tickFormat?: string | 'auto';
+    tickFormat?: string | "auto";
 }
 
 export interface OrdinalScaleOptions {
@@ -36,8 +36,8 @@ export interface LinearScaleOptions {
     clamp?: boolean;
 }
 
-export type ScaleType = 'linear' | 'band' | 'time' | 'ordinal' | 'adaptive';
-export type DimensionType = 'x' | 'y';
+export type ScaleType = "linear" | "band" | "time" | "ordinal" | "adaptive";
+export type DimensionType = "x" | "y";
 
 // Scale factory interface
 export interface ScaleFactory {
@@ -200,7 +200,7 @@ export function createScaleSystem(): ScaleFactory {
     
     function getScaleInfo(scale: any): ScaleInfo {
         const info: ScaleInfo = {
-            type: 'unknown',
+            type: "unknown",
             domain: [],
             range: []
         };
@@ -210,25 +210,25 @@ export function createScaleSystem(): ScaleFactory {
             info.range = scale.range();
             
             // Detect scale type
-            if (typeof scale.bandwidth === 'function') {
-                info.type = 'band';
+            if (typeof scale.bandwidth === "function") {
+                info.type = "band";
                 info.bandwidth = scale.bandwidth();
-                if (typeof scale.step === 'function') {
+                if (typeof scale.step === "function") {
                     info.step = scale.step();
                 }
-            } else if (typeof scale.nice === 'function') {
+            } else if (typeof scale.nice === "function") {
                 // Check if it's a time scale by testing if domain contains dates
                 if (info.domain.length > 0 && info.domain[0] instanceof Date) {
-                    info.type = 'time';
+                    info.type = "time";
                 } else {
-                    info.type = 'linear';
+                    info.type = "linear";
                 }
-            } else if (typeof scale.unknown === 'function') {
-                info.type = 'ordinal';
+            } else if (typeof scale.unknown === "function") {
+                info.type = "ordinal";
             }
         } catch (e) {
             // Fallback for scales that don't support these methods
-            console.warn('Could not extract complete scale info:', e);
+            console.warn("Could not extract complete scale info:", e);
         }
         
         return info;
@@ -318,19 +318,19 @@ export interface ScaleUtilities {
     createColorScale(domain: any[], scheme?: readonly string[]): d3.ScaleOrdinal<any, string, string>;
     invertScale(scale: any, pixel: number): any;
     detectScaleType(values: any[]): ScaleType;
-    createAxis(scale: any, orientation?: 'top' | 'bottom' | 'left' | 'right'): any;
+    createAxis(scale: any, orientation?: "top" | "bottom" | "left" | "right"): any;
 }
 
 export function createScaleUtilities(): ScaleUtilities {
     
     function formatTickValue(scale: any, value: any): string {
-        if (typeof scale.tickFormat === 'function') {
+        if (typeof scale.tickFormat === "function") {
             // Time scales
             return scale.tickFormat()(value);
         } else if (scale.tickFormat) {
             // Scales with custom formatters
             return scale.tickFormat(value);
-        } else if (typeof value === 'number') {
+        } else if (typeof value === "number") {
             // Default number formatting
             if (Math.abs(value) >= 1000000) {
                 return `${(value / 1000000).toFixed(1)}M`;
@@ -344,7 +344,7 @@ export function createScaleUtilities(): ScaleUtilities {
         }
     }
     
-    function getTickCount(scale: any, targetSize: number): number {
+    function getTickCount(scale: any, _targetSize: number): number {
         const range = scale.range();
         const rangeSize = Math.abs(range[1] - range[0]);
         
@@ -362,14 +362,14 @@ export function createScaleUtilities(): ScaleUtilities {
     }
     
     function invertScale(scale: any, pixel: number): any {
-        if (typeof scale.invert === 'function') {
+        if (typeof scale.invert === "function") {
             // Linear and time scales
             return scale.invert(pixel);
-        } else if (typeof scale.bandwidth === 'function') {
+        } else if (typeof scale.bandwidth === "function") {
             // Band scales - find the band that contains the pixel
             const domain = scale.domain();
             const bandwidth = scale.bandwidth();
-            const step = scale.step();
+            scale.step();
             
             for (let i = 0; i < domain.length; i++) {
                 const bandStart = scale(domain[i]);
@@ -390,30 +390,30 @@ export function createScaleUtilities(): ScaleUtilities {
     
     function detectScaleType(values: any[]): ScaleType {
         if (values.every(v => v instanceof Date)) {
-            return 'time';
+            return "time";
         } else if (values.every(v => typeof v === "string" || isNaN(v))) {
-            return 'band';
+            return "band";
         } else if (values.every(v => typeof v === "number")) {
-            return 'linear';
+            return "linear";
         } else {
-            return 'adaptive';
+            return "adaptive";
         }
     }
     
-    function createAxis(scale: any, orientation: 'top' | 'bottom' | 'left' | 'right' = 'bottom'): any {
+    function createAxis(scale: any, orientation: "top" | "bottom" | "left" | "right" = "bottom"): any {
         let axis;
         
         switch (orientation) {
-            case 'top':
+            case "top":
                 axis = d3.axisTop(scale);
                 break;
-            case 'bottom':
+            case "bottom":
                 axis = d3.axisBottom(scale);
                 break;
-            case 'left':
+            case "left":
                 axis = d3.axisLeft(scale);
                 break;
-            case 'right':
+            case "right":
                 axis = d3.axisRight(scale);
                 break;
             default:

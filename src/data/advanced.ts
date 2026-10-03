@@ -188,7 +188,7 @@ export function indexBy<T>(data: T[], ...keys: GroupByKeys<T>): IndexMap<T> | Ne
  * Groups data by time intervals and aggregates values
  */
 export function aggregateByTime(data: any[], options: TemporalOptions): DataItem[] {
-    const { timeAccessor, valueAccessor, interval, aggregation = 'sum' } = options;
+    const { timeAccessor, valueAccessor, interval, aggregation = "sum" } = options;
 
     if (!Array.isArray(data)) {
         throw new Error("Data must be an array");
@@ -203,13 +203,13 @@ export function aggregateByTime(data: any[], options: TemporalOptions): DataItem
         data,
         (values) => {
             switch (aggregation) {
-                case 'sum':
+                case "sum":
                     return d3.sum(values, valueAccessor);
-                case 'average':
+                case "average":
                     return d3.mean(values, valueAccessor) || 0;
-                case 'max':
+                case "max":
                     return d3.max(values, valueAccessor) || 0;
-                case 'min':
+                case "min":
                     return d3.min(values, valueAccessor) || 0;
                 default:
                     return d3.sum(values, valueAccessor);
@@ -370,13 +370,13 @@ export interface SequenceAnalysis {
     to: string;
     change: number;
     changePercent: number;
-    changeDirection: 'increase' | 'decrease' | 'neutral';
-    magnitude: 'small' | 'medium' | 'large';
+    changeDirection: "increase" | "decrease" | "neutral";
+    magnitude: "small" | "medium" | "large";
 }
 
 export interface DataMergeOptions {
-    mergeStrategy: 'combine' | 'override' | 'average' | 'sum';
-    conflictResolution: 'first' | 'last' | 'max' | 'min';
+    mergeStrategy: "combine" | "override" | "average" | "sum";
+    conflictResolution: "first" | "last" | "max" | "min";
     keyField: string;
     valueField: string;
 }
@@ -392,8 +392,8 @@ export interface TickGenerationOptions {
 
 export interface DataOrderingOptions {
     field: string;
-    direction: 'ascending' | 'descending';
-    strategy: 'value' | 'cumulative' | 'magnitude' | 'alphabetical';
+    direction: "ascending" | "descending";
+    strategy: "value" | "cumulative" | "magnitude" | "alphabetical";
     groupBy?: string;
 }
 
@@ -491,7 +491,7 @@ export function createAdvancedDataProcessor() {
     function aggregateByTime<T>(
         data: T[], 
         timeAccessor: (d: T) => Date, 
-        granularity: 'day' | 'week' | 'month' | 'year',
+        granularity: "day" | "week" | "month" | "year",
         reducer: (values: T[]) => any
     ): any[] {
         if (!data || !Array.isArray(data) || !timeAccessor || !reducer) {
@@ -500,21 +500,22 @@ export function createAdvancedDataProcessor() {
         
         const timeGroups = group(data, (d: T) => {
             const date = timeAccessor(d);
-            if (!date || !(date instanceof Date)) return 'invalid';
+            if (!date || !(date instanceof Date)) return "invalid";
             
             switch (granularity) {
-                case 'day':
-                    return date.toISOString().split('T')[0];
-                case 'week':
+                case "day":
+                    return date.toISOString().split("T")[0];
+                case "week": {
                     const week = new Date(date);
                     week.setDate(date.getDate() - date.getDay());
-                    return week.toISOString().split('T')[0];
-                case 'month':
-                    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-                case 'year':
+                    return week.toISOString().split("T")[0];
+                }
+                case "month":
+                    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+                case "year":
                     return String(date.getFullYear());
                 default:
-                    return date.toISOString().split('T')[0];
+                    return date.toISOString().split("T")[0];
             }
         });
         
@@ -529,15 +530,15 @@ export function createAdvancedDataProcessor() {
     function createMultiDimensionalWaterfall(
         multiData: Record<string, any[]>,
         options: {
-            aggregationMethod?: 'sum' | 'average' | 'count' | 'max' | 'min';
+            aggregationMethod?: "sum" | "average" | "count" | "max" | "min";
             includeRegionalTotals?: boolean;
             includeGrandTotal?: boolean;
         }
     ): any[] {
         const result: any[] = [];
-        const { aggregationMethod = 'sum' } = options;
+        const { aggregationMethod = "sum" } = options;
         
-        if (!multiData || typeof multiData !== 'object') {
+        if (!multiData || typeof multiData !== "object") {
             return result;
         }
         
@@ -566,19 +567,19 @@ export function createAdvancedDataProcessor() {
                 });
                 
                 switch (aggregationMethod) {
-                    case 'sum':
+                    case "sum":
                         regionTotal += value;
                         break;
-                    case 'average':
+                    case "average":
                         regionTotal += value;
                         break;
-                    case 'count':
+                    case "count":
                         regionTotal += 1;
                         break;
-                    case 'max':
+                    case "max":
                         regionTotal = Math.max(regionTotal, value);
                         break;
-                    case 'min':
+                    case "min":
                         regionTotal = regionTotal === 0 ? value : Math.min(regionTotal, value);
                         break;
                 }
@@ -587,7 +588,7 @@ export function createAdvancedDataProcessor() {
             if (options.includeRegionalTotals) {
                 result.push({
                     label: `${region} Total`,
-                    value: aggregationMethod === 'average' ? regionTotal / data.length : regionTotal,
+                    value: aggregationMethod === "average" ? regionTotal / data.length : regionTotal,
                     region,
                     isRegionalTotal: true
                 });
@@ -598,7 +599,7 @@ export function createAdvancedDataProcessor() {
         
         if (options.includeGrandTotal) {
             result.push({
-                label: 'Grand Total',
+                label: "Grand Total",
                 value: grandTotal,
                 isGrandTotal: true
             });
@@ -622,7 +623,7 @@ export function createAdvancedDataProcessor() {
             return [];
         }
         
-        const periodGroups = group(data, (d: any) => d[periodField] || 'unknown');
+        const periodGroups = group(data, (d: any) => d[periodField] || "unknown");
         const result = Array.from(periodGroups.entries()).map(([period, items]) => {
             const total = items.reduce((sum, item) => {
                 if (item.value !== undefined) return sum + item.value;
@@ -746,8 +747,8 @@ export function createAdvancedDataProcessor() {
                 toValue: currentValue,
                 change,
                 percentChange: prevValue !== 0 ? (change / prevValue) * 100 : 0,
-                direction: change > 0 ? 'increase' : change < 0 ? 'decrease' : 'stable',
-                magnitude: Math.abs(change) > 1000 ? 'large' : Math.abs(change) > 100 ? 'medium' : 'small'
+                direction: change > 0 ? "increase" : change < 0 ? "decrease" : "stable",
+                magnitude: Math.abs(change) > 1000 ? "large" : Math.abs(change) > 100 ? "medium" : "small"
             };
         });
     }
@@ -762,10 +763,10 @@ export function createAdvancedDataProcessor() {
         
         if (data.length > 20) {
             suggestions.push({
-                type: 'aggregation',
-                priority: 'medium',
-                description: 'Consider grouping similar items for better readability',
-                impact: 'Reduces visual clutter'
+                type: "aggregation",
+                priority: "medium",
+                description: "Consider grouping similar items for better readability",
+                impact: "Reduces visual clutter"
             });
         }
         
@@ -779,7 +780,7 @@ export function createAdvancedDataProcessor() {
     }
     
     function extractValue(item: any): number {
-        if (typeof item === 'number') return item;
+        if (typeof item === "number") return item;
         if (item.value !== undefined) return item.value;
         if (item.stacks && Array.isArray(item.stacks)) {
             return item.stacks.reduce((sum: number, stack: any) => sum + (stack.value || 0), 0);

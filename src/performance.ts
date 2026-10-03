@@ -1,7 +1,7 @@
 // MintWaterfall Performance System - TypeScript Version
 // Implements virtualization, incremental updates, and memory optimization with full type safety
 
-import * as d3 from 'd3';
+import * as d3 from "d3";
 
 // Type definitions for performance system
 export interface PerformanceMetrics {
@@ -59,7 +59,7 @@ export interface RenderBatch {
 }
 
 export interface RenderOperation {
-    type: 'create' | 'update' | 'remove' | 'style' | 'attribute';
+    type: "create" | "update" | "remove" | "style" | "attribute";
     element: any;
     data: any;
     properties: Record<string, any>;
@@ -84,7 +84,7 @@ export interface PerformanceManager {
     enableMemoryPooling(options?: Partial<MemoryPool>): PerformanceManager;
     createRenderBatch(): RenderBatch;
     flushRenderBatch(batch: RenderBatch): PerformanceManager;
-    setUpdateStrategy(strategy: 'immediate' | 'debounced' | 'throttled' | 'batched'): PerformanceManager;
+    setUpdateStrategy(strategy: "immediate" | "debounced" | "throttled" | "batched"): PerformanceManager;
     getDashboard(): HTMLElement | null;
     enableDashboard(container?: HTMLElement): PerformanceManager;
     disableDashboard(): PerformanceManager;
@@ -109,7 +109,7 @@ export function createPerformanceManager(): PerformanceManager {
     };
     
     // Virtualization configuration
-    let virtualizationConfig: VirtualizationConfig = {
+    const virtualizationConfig: VirtualizationConfig = {
         enabled: false,
         chunkSize: 1000,
         renderThreshold: 10000,
@@ -118,7 +118,7 @@ export function createPerformanceManager(): PerformanceManager {
         recycleNodes: true
     };
     
-    let virtualViewport: VirtualViewport = {
+    const virtualViewport: VirtualViewport = {
         start: 0,
         end: 100,
         visible: [],
@@ -127,7 +127,7 @@ export function createPerformanceManager(): PerformanceManager {
     };
     
     // Performance optimization settings
-    let optimizationConfig: PerformanceOptimization = {
+    const optimizationConfig: PerformanceOptimization = {
         debouncing: true,
         throttling: true,
         batchUpdates: true,
@@ -137,7 +137,7 @@ export function createPerformanceManager(): PerformanceManager {
     };
     
     // Memory pool for reusing DOM elements
-    let memoryPool: MemoryPool = {
+    const memoryPool: MemoryPool = {
         elements: new Map(),
         maxSize: 1000,
         currentSize: 0,
@@ -145,13 +145,8 @@ export function createPerformanceManager(): PerformanceManager {
         missCount: 0
     };
     
-    // Render batching system
-    let currentBatch: RenderBatch | null = null;
-    let batchTimeout: number | null = null;
-    let updateStrategy: 'immediate' | 'debounced' | 'throttled' | 'batched' = 'immediate';
-    
     // Performance profiling
-    let profilers = new Map<string, PerformanceProfiler>();
+    const profilers = new Map<string, PerformanceProfiler>();
     let dashboardElement: HTMLElement | null = null;
     
     // Frame rate tracking
@@ -162,13 +157,13 @@ export function createPerformanceManager(): PerformanceManager {
         Object.assign(virtualizationConfig, options);
         virtualizationConfig.enabled = true;
         
-        console.log('MintWaterfall: Virtualization enabled with config:', virtualizationConfig);
+        console.log("MintWaterfall: Virtualization enabled with config:", virtualizationConfig);
         return performanceManager;
     }
     
     function disableVirtualization(): PerformanceManager {
         virtualizationConfig.enabled = false;
-        console.log('MintWaterfall: Virtualization disabled');
+        console.log("MintWaterfall: Virtualization disabled");
         return performanceManager;
     }
     
@@ -222,32 +217,32 @@ export function createPerformanceManager(): PerformanceManager {
         performanceMetrics.visibleElements = visibleData.length;
         
         // Render only visible elements with proper typing
-        const elements = container.selectAll<SVGGElement, any>('.virtual-item')
+        const elements = container.selectAll<SVGGElement, any>(".virtual-item")
             .data(visibleData, (d: any, i: number) => `item-${i + visibleStart}`);
         
         elements.exit().remove();
         
-        const enter = elements.enter().append<SVGGElement>('g')
-            .attr('class', 'virtual-item');
+        const enter = elements.enter().append<SVGGElement>("g")
+            .attr("class", "virtual-item");
         
         const merged = elements.merge(enter);
-        merged.attr('transform', (d: any, i: number) => `translate(0, ${(i + visibleStart) * itemHeight})`);
+        merged.attr("transform", (d: any, i: number) => `translate(0, ${(i + visibleStart) * itemHeight})`);
     }
     
     function renderDirect(container: d3.Selection<d3.BaseType, any, any, any>, data: any[]): void {
         // Standard rendering for smaller datasets
         performanceMetrics.visibleElements = data.length;
         
-        const elements = container.selectAll<SVGGElement, any>('.chart-element')
+        const elements = container.selectAll<SVGGElement, any>(".chart-element")
             .data(data);
         
         elements.exit().remove();
         
-        const enter = elements.enter().append<SVGGElement>('g')
-            .attr('class', 'chart-element');
+        const enter = elements.enter().append<SVGGElement>("g")
+            .attr("class", "chart-element");
         
-        const merged = elements.merge(enter);
-        // Apply transformations and styles here - merged variable prevents compilation errors
+        elements.merge(enter);
+        // Apply transformations and styles here
     }
     
     function profileOperation(name: string, operation: () => any): any {
@@ -283,7 +278,7 @@ export function createPerformanceManager(): PerformanceManager {
     
     function getMetrics(): PerformanceMetrics {
         // Update memory usage if available
-        if ('memory' in performance) {
+        if ("memory" in performance) {
             const memInfo = (performance as any).memory;
             performanceMetrics.memoryUsage = memInfo.usedJSHeapSize;
             performanceMetrics.peakMemoryUsage = Math.max(performanceMetrics.peakMemoryUsage, memInfo.usedJSHeapSize);
@@ -317,34 +312,8 @@ export function createPerformanceManager(): PerformanceManager {
         Object.assign(memoryPool, options);
         optimizationConfig.memoryPooling = true;
         
-        console.log('MintWaterfall: Memory pooling enabled');
+        console.log("MintWaterfall: Memory pooling enabled");
         return performanceManager;
-    }
-    
-    function getFromPool(type: string): any {
-        if (!optimizationConfig.memoryPooling) return null;
-        
-        const pool = memoryPool.elements.get(type);
-        if (pool && pool.length > 0) {
-            memoryPool.hitCount++;
-            memoryPool.currentSize--;
-            return pool.pop();
-        }
-        
-        memoryPool.missCount++;
-        return null;
-    }
-    
-    function returnToPool(type: string, element: any): void {
-        if (!optimizationConfig.memoryPooling || memoryPool.currentSize >= memoryPool.maxSize) return;
-        
-        if (!memoryPool.elements.has(type)) {
-            memoryPool.elements.set(type, []);
-        }
-        
-        const pool = memoryPool.elements.get(type)!;
-        pool.push(element);
-        memoryPool.currentSize++;
     }
     
     function createRenderBatch(): RenderBatch {
@@ -361,7 +330,7 @@ export function createPerformanceManager(): PerformanceManager {
         
         // Sort operations by priority and type for optimal rendering
         batch.operations.sort((a, b) => {
-            const typeOrder = ['remove', 'create', 'update', 'style', 'attribute'];
+            const typeOrder = ["remove", "create", "update", "style", "attribute"];
             return typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type);
         });
         
@@ -380,19 +349,19 @@ export function createPerformanceManager(): PerformanceManager {
         const { type, element, properties } = operation;
         
         switch (type) {
-            case 'create':
+            case "create":
                 // Create new element logic
                 break;
-            case 'update':
+            case "update":
                 // Update element data logic
                 break;
-            case 'remove':
+            case "remove":
                 // Remove element logic
                 if (element && element.remove) {
                     element.remove();
                 }
                 break;
-            case 'style':
+            case "style":
                 // Apply styles
                 if (element && properties) {
                     Object.keys(properties).forEach(prop => {
@@ -400,7 +369,7 @@ export function createPerformanceManager(): PerformanceManager {
                     });
                 }
                 break;
-            case 'attribute':
+            case "attribute":
                 // Apply attributes
                 if (element && properties) {
                     Object.keys(properties).forEach(prop => {
@@ -411,8 +380,7 @@ export function createPerformanceManager(): PerformanceManager {
         }
     }
     
-    function setUpdateStrategy(strategy: 'immediate' | 'debounced' | 'throttled' | 'batched'): PerformanceManager {
-        updateStrategy = strategy;
+    function setUpdateStrategy(strategy: "immediate" | "debounced" | "throttled" | "batched"): PerformanceManager {
         console.log(`MintWaterfall: Update strategy set to ${strategy}`);
         return performanceManager;
     }
@@ -432,8 +400,8 @@ export function createPerformanceManager(): PerformanceManager {
     }
     
     function createDashboard(): HTMLElement {
-        const dashboard = document.createElement('div');
-        dashboard.className = 'mintwaterfall-performance-dashboard';
+        const dashboard = document.createElement("div");
+        dashboard.className = "mintwaterfall-performance-dashboard";
         dashboard.style.cssText = `
             position: fixed;
             top: 10px;
@@ -465,7 +433,7 @@ export function createPerformanceManager(): PerformanceManager {
             <div>Memory: ${memoryMB}MB (Peak: ${peakMemoryMB}MB)</div>
             <div>Visible Elements: ${metrics.visibleElements}/${metrics.totalElements}</div>
             <div>Render Calls: ${metrics.renderCalls}</div>
-            <div>Virtualization: ${virtualizationConfig.enabled ? 'ON' : 'OFF'}</div>
+            <div>Virtualization: ${virtualizationConfig.enabled ? "ON" : "OFF"}</div>
             <div>Pool Hit Rate: ${memoryPool.hitCount + memoryPool.missCount > 0 ? 
                 ((memoryPool.hitCount / (memoryPool.hitCount + memoryPool.missCount)) * 100).toFixed(1) : 0}%</div>
         `;
@@ -506,7 +474,7 @@ export function createPerformanceManager(): PerformanceManager {
         }
         
         // Clear unused pools
-        memoryPool.elements.forEach((pool, type) => {
+        memoryPool.elements.forEach((pool, _type) => {
             if (pool.length > 50) {
                 pool.splice(25); // Keep only recent 25 elements
             }
@@ -519,7 +487,7 @@ export function createPerformanceManager(): PerformanceManager {
             }
         });
         
-        console.log('MintWaterfall: Memory optimization completed');
+        console.log("MintWaterfall: Memory optimization completed");
         return performanceManager;
     }
     
@@ -528,24 +496,24 @@ export function createPerformanceManager(): PerformanceManager {
         const metrics = getMetrics();
         
         if (metrics.totalElements > 5000 && !virtualizationConfig.enabled) {
-            recommendations.push('Enable virtualization for improved performance with large datasets');
+            recommendations.push("Enable virtualization for improved performance with large datasets");
         }
         
         if (metrics.fps < 30) {
-            recommendations.push('Consider reducing visual complexity or enabling performance optimizations');
+            recommendations.push("Consider reducing visual complexity or enabling performance optimizations");
         }
         
         if (metrics.memoryUsage > 100 * 1024 * 1024) { // 100MB
-            recommendations.push('Memory usage is high - consider enabling memory pooling or reducing data size');
+            recommendations.push("Memory usage is high - consider enabling memory pooling or reducing data size");
         }
         
         if (metrics.renderTime > 100) {
-            recommendations.push('Render time is slow - consider batching updates or optimizing render operations');
+            recommendations.push("Render time is slow - consider batching updates or optimizing render operations");
         }
         
         const poolEfficiency = memoryPool.hitCount / (memoryPool.hitCount + memoryPool.missCount || 1);
         if (poolEfficiency < 0.5 && optimizationConfig.memoryPooling) {
-            recommendations.push('Memory pool efficiency is low - consider adjusting pool size or strategy');
+            recommendations.push("Memory pool efficiency is low - consider adjusting pool size or strategy");
         }
         
         return recommendations;
@@ -647,7 +615,7 @@ export interface AdvancedPerformanceSystem {
     
     // Data optimization
     optimizeDataForRendering<T>(data: T[], maxItems?: number): T[];
-    createDataSampler<T>(strategy: 'uniform' | 'random' | 'importance'): (data: T[], count: number) => T[];
+    createDataSampler<T>(strategy: "uniform" | "random" | "importance"): (data: T[], count: number) => T[];
 }
 
 export interface PerformanceMonitor {
@@ -835,8 +803,8 @@ function createVirtualScrollManagerImpl(config: VirtualScrollConfig): VirtualScr
 // ============================================================================
 
 function createCanvasRendererImpl(container: HTMLElement): CanvasRenderer {
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d')!;
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d")!;
     
     container.appendChild(canvas);
 
@@ -850,18 +818,18 @@ function createCanvasRendererImpl(container: HTMLElement): CanvasRenderer {
         context.save();
         
         // Render data points efficiently
-        data.forEach((item, index) => {
+        data.forEach((item, _index) => {
             const x = xScale(item.label) || 0;
             const y = yScale(item.value) || 0;
             const width = xScale.bandwidth ? xScale.bandwidth() : 20;
             const height = Math.abs(yScale(0) - y);
 
             // Use fillRect for better performance than path operations
-            context.fillStyle = item.color || '#3498db';
+            context.fillStyle = item.color || "#3498db";
             context.fillRect(x, Math.min(y, yScale(0)), width, height);
 
             // Add border if needed
-            context.strokeStyle = '#ffffff';
+            context.strokeStyle = "#ffffff";
             context.lineWidth = 1;
             context.strokeRect(x, Math.min(y, yScale(0)), width, height);
         });
@@ -945,8 +913,8 @@ function createPerformanceMonitorImpl(): PerformanceMonitor {
     }
 
     function getMetrics(): AdvancedPerformanceMetrics {
-        const renderTimes = completed.get('render') || [];
-        const processingTimes = completed.get('dataProcessing') || [];
+        const renderTimes = completed.get("render") || [];
+        const processingTimes = completed.get("dataProcessing") || [];
         
         return {
             renderTime: renderTimes.length > 0 ? d3.mean(renderTimes) || 0 : 0,
@@ -975,7 +943,7 @@ Performance Report:
 - Memory Usage: ${metrics.memoryUsage.toFixed(2)}MB
 - Frame Rate: ${metrics.frameRate.toFixed(1)}fps
 - Items Rendered: ${metrics.itemsRendered}/${metrics.totalItems}
-- Virtualization: ${metrics.virtualizationActive ? 'Active' : 'Inactive'}
+- Virtualization: ${metrics.virtualizationActive ? "Active" : "Inactive"}
         `.trim();
     }
 
@@ -994,7 +962,7 @@ Performance Report:
 // ============================================================================
 
 function getMemoryUsage(): number {
-    if ('memory' in performance) {
+    if ("memory" in performance) {
         const memory = (performance as any).memory;
         return memory.usedJSHeapSize / (1024 * 1024); // Convert to MB
     }
@@ -1021,9 +989,9 @@ function optimizeDataForRenderingImpl<T>(data: T[], maxItems: number = 1000): T[
     return optimized;
 }
 
-function createDataSamplerImpl<T>(strategy: 'uniform' | 'random' | 'importance'): (data: T[], count: number) => T[] {
+function createDataSamplerImpl<T>(strategy: "uniform" | "random" | "importance"): (data: T[], count: number) => T[] {
     switch (strategy) {
-        case 'uniform':
+        case "uniform":
             return (data: T[], count: number): T[] => {
                 if (count >= data.length) return data;
                 const step = data.length / count;
@@ -1035,14 +1003,14 @@ function createDataSamplerImpl<T>(strategy: 'uniform' | 'random' | 'importance')
                 return result;
             };
 
-        case 'random':
+        case "random":
             return (data: T[], count: number): T[] => {
                 if (count >= data.length) return data;
                 const shuffled = [...data].sort(() => 0.5 - Math.random());
                 return shuffled.slice(0, count);
             };
 
-        case 'importance':
+        case "importance":
             return (data: T[], count: number): T[] => {
                 if (count >= data.length) return data;
                 // For importance sampling, we'd need a way to assess importance
@@ -1050,7 +1018,7 @@ function createDataSamplerImpl<T>(strategy: 'uniform' | 'random' | 'importance')
                 const result: T[] = [data[0]]; // Always include first
                 
                 if (count > 2) {
-                    const middle = createDataSamplerImpl<T>('uniform')(
+                    const middle = createDataSamplerImpl<T>("uniform")(
                         data.slice(1, -1), 
                         count - 2
                     );
@@ -1131,14 +1099,14 @@ export function createVirtualWaterfallRenderer(
     const performanceMonitor = system.createPerformanceMonitor();
     
     function render(data: any[], scrollTop: number): void {
-        performanceMonitor.startTiming('render');
+        performanceMonitor.startTiming("render");
         
-        const virtualized = virtualScrollManager.getVirtualizedData(data, scrollTop);
+        virtualScrollManager.getVirtualizedData(data, scrollTop);
         
         // Here you would render only the visible data
         // This is a simplified version - in practice, you'd integrate with D3.js rendering
         
-        performanceMonitor.endTiming('render');
+        performanceMonitor.endTiming("render");
         performanceMonitor.trackFrameRate();
     }
     

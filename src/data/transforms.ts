@@ -21,14 +21,8 @@ export async function loadData(
     source: string | DataItem[] | RawDataItem[],
     options: LoadDataOptions = {}
 ): Promise<DataItem[]> {
-    const {
-        // parseNumbers = true, // Reserved for future use
-        // dateColumns = [], // Reserved for future use
-        // valueColumn = "value", // Reserved for future use
-        // labelColumn = "label", // Reserved for future use
-        // colorColumn = "color", // Reserved for future use
-        // stacksColumn = "stacks" // Reserved for future use
-    } = options;
+    // Reserved for future use: parseNumbers, dateColumns, valueColumn,
+    // labelColumn, colorColumn, stacksColumn options
 
     try {
         let rawData: any;
@@ -164,7 +158,7 @@ export function sortData(data: DataItem[], sortBy: SortBy = "label", direction: 
                 valueA = a.label.toLowerCase();
                 valueB = b.label.toLowerCase();
                 break;
-            case "total":
+            case "total": {
                 // Calculate total for each item
                 const totalA = a.stacks.reduce((sum, stack) => sum + stack.value, 0);
                 const totalB = b.stacks.reduce((sum, stack) => sum + stack.value, 0);
@@ -174,6 +168,7 @@ export function sortData(data: DataItem[], sortBy: SortBy = "label", direction: 
                 valueA = Math.abs(totalA);
                 valueB = Math.abs(totalB);
                 break;
+            }
             case "maxStack":
                 valueA = Math.max(...a.stacks.map(s => s.value));
                 valueB = Math.max(...b.stacks.map(s => s.value));
@@ -229,8 +224,8 @@ export function groupData(data: DataItem[], groupBy: string | ((item: DataItem) 
 }
 
 export function transformStacks(data: DataItem[], transformer: (stack: StackItem) => StackItem): DataItem[] {
-    if (typeof transformer !== 'function') {
-        throw new Error('Transformer must be a function');
+    if (typeof transformer !== "function") {
+        throw new Error("Transformer must be a function");
     }
 
     return data.map(item => ({
@@ -263,8 +258,8 @@ export function normalizeValues(data: DataItem[], targetMax: number): DataItem[]
 }
 
 export function groupByCategory(data: DataItem[], categoryFunction: (item: DataItem) => string): { [key: string]: DataItem[] } {
-    if (typeof categoryFunction !== 'function') {
-        throw new Error('Category function must be a function');
+    if (typeof categoryFunction !== "function") {
+        throw new Error("Category function must be a function");
     }
 
     const groups: { [key: string]: DataItem[] } = {};
@@ -296,7 +291,7 @@ export function calculatePercentages(data: DataItem[]): DataItem[] {
 
 export function interpolateData(data1: DataItem[], data2: DataItem[], t: number): DataItem[] {
     if (data1.length !== data2.length) {
-        throw new Error('Data arrays must have the same length');
+        throw new Error("Data arrays must have the same length");
     }
 
     return data1.map((item1, index) => {
@@ -316,7 +311,7 @@ export function interpolateData(data1: DataItem[], data2: DataItem[], t: number)
 
 export function generateSampleData(itemCount: number, stacksPerItem: number, valueRange: [number, number] = [10, 100]): DataItem[] {
     const [minValue, maxValue] = valueRange;
-    const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
+    const colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
 
     return Array.from({ length: itemCount }, (_, i) => ({
         label: `Item ${i + 1}`,

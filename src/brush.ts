@@ -1,7 +1,7 @@
 // MintWaterfall Brush Selection System - TypeScript Version
 // Provides interactive data selection with visual feedback and full type safety
 
-import * as d3 from 'd3';
+import * as d3 from "d3";
 
 // Type definitions for brush system
 export interface BrushConfig {
@@ -34,7 +34,7 @@ export interface BrushSelection {
 export interface BrushEventData {
     selection: BrushSelection | null;
     sourceEvent: any;
-    type: 'start' | 'brush' | 'end';
+    type: "start" | "brush" | "end";
 }
 
 export interface DataPoint {
@@ -60,7 +60,7 @@ export interface BrushSystem {
     off(type: string, callback?: (event: BrushEventData) => void): BrushSystem;
 }
 
-export type BrushEventType = 'brushstart' | 'brush' | 'brushend' | 'clear';
+export type BrushEventType = "brushstart" | "brush" | "brushend" | "clear";
 
 export function createBrushSystem(): BrushSystem {
     
@@ -73,15 +73,15 @@ export function createBrushSystem(): BrushSystem {
         touchable: true,
         keyModifiers: true,
         selection: {
-            fill: '#007acc',
+            fill: "#007acc",
             fillOpacity: 0.3,
-            stroke: '#007acc',
+            stroke: "#007acc",
             strokeWidth: 1,
             strokeDasharray: null
         },
         handles: {
-            fill: '#fff',
-            stroke: '#007acc',
+            fill: "#fff",
+            stroke: "#007acc",
             strokeWidth: 1,
             size: 6
         }
@@ -122,7 +122,7 @@ export function createBrushSystem(): BrushSystem {
         const eventData: BrushEventData = {
             selection,
             sourceEvent: event.sourceEvent,
-            type: 'start'
+            type: "start"
         };
         
         listeners.call("brushstart", undefined, eventData);
@@ -135,7 +135,7 @@ export function createBrushSystem(): BrushSystem {
         const eventData: BrushEventData = {
             selection,
             sourceEvent: event.sourceEvent,
-            type: 'brush'
+            type: "brush"
         };
         
         listeners.call("brush", undefined, eventData);
@@ -148,7 +148,7 @@ export function createBrushSystem(): BrushSystem {
         const eventData: BrushEventData = {
             selection,
             sourceEvent: event.sourceEvent,
-            type: 'end'
+            type: "end"
         };
         
         listeners.call("brushend", undefined, eventData);
@@ -256,7 +256,7 @@ export function createBrushSystem(): BrushSystem {
             listeners.call("clear", undefined, {
                 selection: null,
                 sourceEvent: null,
-                type: 'end'
+                type: "end"
             });
         }
         return brushSystem;
@@ -348,7 +348,7 @@ export function createBrushSystem(): BrushSystem {
     }
     
     // Remove event listener
-    function off(type: string, callback?: (event: BrushEventData) => void): BrushSystem {
+    function off(type: string, _callback?: (event: BrushEventData) => void): BrushSystem {
         (listeners as any).on(type, null);
         return brushSystem;
     }
@@ -375,15 +375,15 @@ export function createBrushSystem(): BrushSystem {
 
 // Factory function that returns the expected test API
 export function createBrushSystemFactory() {
-    function createBrush(options: { type?: 'x' | 'y' | 'xy' } = {}): any {
-        const { type = 'xy' } = options;
+    function createBrush(options: { type?: "x" | "y" | "xy" } = {}): any {
+        const { type = "xy" } = options;
         
         switch (type) {
-            case 'x':
+            case "x":
                 return d3.brushX();
-            case 'y':
+            case "y":
                 return d3.brushY();
-            case 'xy':
+            case "xy":
             default:
                 return d3.brush();
         }
@@ -443,26 +443,29 @@ export function createBrushSystemFactory() {
         }
     };
     
-    // Event handler methods
-    let startHandler: Function | null = null;
-    let moveHandler: Function | null = null;
-    let endHandler: Function | null = null;
+    // Event handler storage
+    const handlers: {
+        start: ((...args: any[]) => any) | null;
+        move: ((...args: any[]) => any) | null;
+        end: ((...args: any[]) => any) | null;
+    } = { start: null, move: null, end: null };
     
     const brushFactory = {
         createBrush,
         filterDataByBrush,
         getSelectedIndices,
         selectionUtils,
-        onStart(handler: Function) {
-            startHandler = handler;
+        handlers,
+        onStart(handler: (...args: any[]) => any) {
+            handlers.start = handler;
             return brushFactory;
         },
-        onMove(handler: Function) {
-            moveHandler = handler;
+        onMove(handler: (...args: any[]) => any) {
+            handlers.move = handler;
             return brushFactory;
         },
-        onEnd(handler: Function) {
-            endHandler = handler;
+        onEnd(handler: (...args: any[]) => any) {
+            handlers.end = handler;
             return brushFactory;
         }
     };

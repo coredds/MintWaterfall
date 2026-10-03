@@ -133,7 +133,7 @@ export const dataProcessor = createDataProcessor();
 export function createRevenueWaterfall(
     salesData: any[],
     dimensions: string[],
-    valueField: string = 'revenue'
+    valueField: string = "revenue"
 ): DataItem[] {
     return dataProcessor.createMultiDimensionalWaterfall(salesData, dimensions, valueField);
 }
@@ -146,7 +146,7 @@ export function createTemporalWaterfall(
     data: any[],
     timeField: string,
     valueField: string,
-    interval: 'day' | 'week' | 'month' | 'quarter' | 'year' = 'month'
+    interval: "day" | "week" | "month" | "quarter" | "year" = "month"
 ): DataItem[] {
     const timeIntervals = {
         day: d3.timeDay,
@@ -160,7 +160,7 @@ export function createTemporalWaterfall(
         timeAccessor: (d) => new Date(d[timeField]),
         valueAccessor: (d) => d[valueField] || 0,
         interval: timeIntervals[interval],
-        aggregation: 'sum'
+        aggregation: "sum"
     });
 }
 
@@ -171,8 +171,8 @@ export function createTemporalWaterfall(
 export function createVarianceWaterfall(
     data: any[],
     categoryField: string,
-    actualField: string = 'actual',
-    budgetField: string = 'budget'
+    actualField: string = "actual",
+    budgetField: string = "budget"
 ): DataItem[] {
     return data.map(item => {
         const actual = item[actualField] || 0;
@@ -183,8 +183,8 @@ export function createVarianceWaterfall(
             label: item[categoryField],
             stacks: [{
                 value: variance,
-                color: variance >= 0 ? '#2ecc71' : '#e74c3c',
-                label: `Variance: ${variance >= 0 ? '+' : ''}${d3.format('.2f')(variance)}`
+                color: variance >= 0 ? "#2ecc71" : "#e74c3c",
+                label: `Variance: ${variance >= 0 ? "+" : ""}${d3.format(".2f")(variance)}`
             }]
         };
     });
@@ -206,21 +206,21 @@ export function groupWaterfallData<T extends Record<string, any>>(
         ...groupBy
     );
 
-    const colors = ['#3498db', '#2ecc71', '#f39c12', '#e74c3c', '#9b59b6', '#1abc9c', '#34495e', '#95a5a6'];
+    const colors = ["#3498db", "#2ecc71", "#f39c12", "#e74c3c", "#9b59b6", "#1abc9c", "#34495e", "#95a5a6"];
 
     return grouped.map((item, index) => {
         const keys = item.slice(0, -1); // All but last element
         const value = item[item.length - 1]; // Last element
         const label = labelAccessor && data[0]
-            ? keys.map((key, i) => `${Object.keys(data[0] as object)[i]}: ${key}`).join(' | ')
-            : keys.join(' → ');
+            ? keys.map((key, i) => `${Object.keys(data[0] as object)[i]}: ${key}`).join(" | ")
+            : keys.join(" → ");
 
         return {
             label,
             stacks: [{
                 value: value as number,
                 color: colors[index % colors.length],
-                label: `${value >= 0 ? '+' : ''}${d3.format('.2f')(value as number)}`
+                label: `${value >= 0 ? "+" : ""}${d3.format(".2f")(value as number)}`
             }]
         };
     });
@@ -250,8 +250,8 @@ export function createComparisonWaterfall<T1, T2>(
             label: category,
             stacks: [{
                 value: change,
-                color: change >= 0 ? '#2ecc71' : '#e74c3c',
-                label: `Change: ${change >= 0 ? '+' : ''}${d3.format('.2f')(change)}`
+                color: change >= 0 ? "#2ecc71" : "#e74c3c",
+                label: `Change: ${change >= 0 ? "+" : ""}${d3.format(".2f")(change)}`
             }]
         };
     });
@@ -265,8 +265,8 @@ export function transformTransactionData(
     transactions: any[],
     categoryField: string,
     subcategoryField?: string,
-    valueField: string = 'amount',
-    dateField?: string
+    valueField: string = "amount",
+    _dateField?: string
 ): DataItem[] {
     if (subcategoryField) {
         // Two-level breakdown
@@ -284,7 +284,7 @@ export function transformTransactionData(
             (d: any) => d[categoryField]
         ) as Map<string, number>;
 
-        const colors = ['#3498db', '#2ecc71', '#f39c12', '#e74c3c', '#9b59b6'];
+        const colors = ["#3498db", "#2ecc71", "#f39c12", "#e74c3c", "#9b59b6"];
         let colorIndex = 0;
 
         return Array.from(aggregated.entries()).map(([category, value]) => ({
@@ -292,7 +292,7 @@ export function transformTransactionData(
             stacks: [{
                 value: value,
                 color: colors[colorIndex++ % colors.length],
-                label: `${value >= 0 ? '+' : ''}${d3.format('.2f')(value)}`
+                label: `${value >= 0 ? "+" : ""}${d3.format(".2f")(value)}`
             }]
         }));
     }
@@ -304,7 +304,7 @@ export function transformTransactionData(
 export const financialReducers = {
     sum: (values: any[]) => d3.sum(values, (d: any) => d.value || 0),
     average: (values: any[]) => d3.mean(values, (d: any) => d.value || 0) || 0,
-    weightedAverage: (values: any[], weightField: string = 'weight') => {
+    weightedAverage: (values: any[], weightField: string = "weight") => {
         const totalWeight = d3.sum(values, (d: any) => d[weightField] || 0);
         if (totalWeight === 0) return 0;
         return d3.sum(values, (d: any) => (d.value || 0) * (d[weightField] || 0)) / totalWeight;

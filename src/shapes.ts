@@ -1,7 +1,7 @@
 // MintWaterfall Enhanced Shape Generators - TypeScript Version
 // Provides advanced D3.js shape generators for waterfall chart enhancements
 
-import * as d3 from 'd3';
+import * as d3 from "d3";
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -18,7 +18,7 @@ export interface ConfidenceBandData {
 export interface DataPointMarker {
     x: number;
     y: number;
-    type: 'circle' | 'square' | 'triangle' | 'diamond' | 'star' | 'cross';
+    type: "circle" | "square" | "triangle" | "diamond" | "star" | "cross";
     size?: number;
     color?: string;
     label?: string;
@@ -109,9 +109,7 @@ export function createShapeGenerators(): ShapeGeneratorSystem {
      */
     function createConfidenceBand(data: ConfidenceBandData[], config: AreaConfig = {}): string {
         const {
-            curve = d3.curveMonotoneX,
-            opacity = 0.3,
-            fillColor = "#95a5a6"
+            curve = d3.curveMonotoneX
         } = config;
 
         const areaGenerator = d3.area<ConfidenceBandData>()
@@ -210,10 +208,7 @@ export function createShapeGenerators(): ShapeGeneratorSystem {
         config: TrendLineConfig = {}
     ): string {
         const {
-            curve = d3.curveMonotoneX,
-            strokeColor = "#e74c3c",
-            strokeWidth = 2,
-            opacity = 0.8
+            curve = d3.curveMonotoneX
         } = config;
 
         const lineGenerator = d3.line<{x: number, y: number}>()
@@ -347,7 +342,7 @@ export function createWaterfallMilestones(
     milestones: Array<{
         label: string,
         value: number,
-        type: 'target' | 'threshold' | 'alert' | 'achievement',
+        type: "target" | "threshold" | "alert" | "achievement",
         description?: string
     }>,
     xScale: d3.ScaleBand<string>,
@@ -357,10 +352,10 @@ export function createWaterfallMilestones(
     
     const markerData: DataPointMarker[] = milestones.map(milestone => {
         const typeMapping = {
-            target: { type: 'star' as const, color: '#f39c12', size: 100 },
-            threshold: { type: 'diamond' as const, color: '#9b59b6', size: 80 },
-            alert: { type: 'triangle' as const, color: '#e74c3c', size: 90 },
-            achievement: { type: 'circle' as const, color: '#27ae60', size: 85 }
+            target: { type: "star" as const, color: "#f39c12", size: 100 },
+            threshold: { type: "diamond" as const, color: "#9b59b6", size: 80 },
+            alert: { type: "triangle" as const, color: "#e74c3c", size: 90 },
+            achievement: { type: "circle" as const, color: "#27ae60", size: 85 }
         };
         
         const styling = typeMapping[milestone.type as keyof typeof typeMapping] || typeMapping.target;

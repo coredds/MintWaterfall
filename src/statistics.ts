@@ -1,8 +1,8 @@
 // MintWaterfall Advanced Statistical Analysis - TypeScript Version
 // Provides comprehensive statistical analysis features for waterfall chart data
 
-import * as d3 from 'd3';
-import { median, variance, deviation, quantile, bisector, ascending } from 'd3-array';
+import * as d3 from "d3";
+import { median, variance, deviation, quantile, bisector, ascending } from "d3-array";
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -35,8 +35,8 @@ export interface OutlierAnalysis {
         value: number;
         index: number;
         label?: string;
-        severity: 'mild' | 'extreme';
-        type: 'lower' | 'upper';
+        severity: "mild" | "extreme";
+        type: "lower" | "upper";
     }>;
     cleanData: Array<{
         value: number;
@@ -87,7 +87,7 @@ export interface VarianceAnalysis {
     }>;
     significantFactors: Array<{
         label: string;
-        impact: 'high' | 'medium' | 'low';
+        impact: "high" | "medium" | "low";
         variance: number;
     }>;
 }
@@ -97,10 +97,10 @@ export interface TrendAnalysis {
     intercept: number;
     correlation: number;
     rSquared: number;
-    direction: 'increasing' | 'decreasing' | 'stable';
-    strength: 'strong' | 'moderate' | 'weak' | 'none';
+    direction: "increasing" | "decreasing" | "stable";
+    strength: "strong" | "moderate" | "weak" | "none";
     confidence: number;
-    trend: 'increasing' | 'decreasing' | 'stable';
+    trend: "increasing" | "decreasing" | "stable";
     projectedValues: Array<{
         period: number;
         value: number;
@@ -194,7 +194,6 @@ export function createStatisticalSystem(): StatisticalSystem {
         const q1 = quantile(cleanData, 0.25) || 0;
         const q2 = medianValue;
         const q3 = quantile(cleanData, 0.75) || 0;
-        const iqr = q3 - q1;
 
         // Calculate percentiles
         const percentiles = {
@@ -246,7 +245,7 @@ export function createStatisticalSystem(): StatisticalSystem {
      */
     function detectOutliers(data: number[], labels: string[] = []): OutlierAnalysis {
         const summary = calculateSummary(data);
-        const [q1, q2, q3] = summary.quartiles;
+        const [q1, , q3] = summary.quartiles;
         const iqr = q3 - q1;
         
         // IQR method boundaries
@@ -255,8 +254,8 @@ export function createStatisticalSystem(): StatisticalSystem {
         const extremeLowerBound = q1 - 3 * iqr;
         const extremeUpperBound = q3 + 3 * iqr;
 
-        const outliers: OutlierAnalysis['outliers'] = [];
-        const cleanData: OutlierAnalysis['cleanData'] = [];
+        const outliers: OutlierAnalysis["outliers"] = [];
+        const cleanData: OutlierAnalysis["cleanData"] = [];
 
         data.forEach((value, index) => {
             if (value == null || isNaN(value)) return;
@@ -269,8 +268,8 @@ export function createStatisticalSystem(): StatisticalSystem {
                     value,
                     index,
                     label: labels[index],
-                    severity: isExtreme ? 'extreme' : 'mild',
-                    type: value < lowerBound ? 'lower' : 'upper'
+                    severity: isExtreme ? "extreme" : "mild",
+                    type: value < lowerBound ? "lower" : "upper"
                 });
             } else {
                 cleanData.push({
@@ -281,13 +280,13 @@ export function createStatisticalSystem(): StatisticalSystem {
             }
         });
 
-        const mildOutliers = outliers.filter(o => o.severity === 'mild').length;
-        const extremeOutliers = outliers.filter(o => o.severity === 'extreme').length;
+        const mildOutliers = outliers.filter(o => o.severity === "mild").length;
+        const extremeOutliers = outliers.filter(o => o.severity === "extreme").length;
 
         return {
             outliers,
             cleanData,
-            method: 'iqr',
+            method: "iqr",
             threshold: { lowerBound, upperBound, extremeLowerBound, extremeUpperBound },
             statistics: {
                 mean: summary.mean,
@@ -315,13 +314,12 @@ export function createStatisticalSystem(): StatisticalSystem {
     ): DataQualityAssessment {
         const {
             expectedRange,
-            allowedTypes = ['number'],
+            allowedTypes = ["number"],
             nullTolerance = 0.05, // 5% null tolerance
             duplicateTolerance = 0.1 // 10% duplicate tolerance
         } = options;
 
         const totalCount = data.length;
-        let validCount = 0;
         let nullCount = 0;
         let typeValidCount = 0;
         let rangeValidCount = 0;
@@ -336,17 +334,15 @@ export function createStatisticalSystem(): StatisticalSystem {
                 return;
             }
 
-            validCount++;
-
             // Check data type (check the value property if it exists, otherwise the item itself)
-            const valueToCheck = item && typeof item === 'object' && 'value' in item ? item.value : item;
+            const valueToCheck = item && typeof item === "object" && "value" in item ? item.value : item;
             const itemType = typeof valueToCheck;
             if (allowedTypes.includes(itemType)) {
                 typeValidCount++;
             }
 
             // Check range (for numbers)
-            if (itemType === 'number' && expectedRange) {
+            if (itemType === "number" && expectedRange) {
                 if (valueToCheck >= expectedRange[0] && valueToCheck <= expectedRange[1]) {
                     rangeValidCount++;
                 }
@@ -369,7 +365,7 @@ export function createStatisticalSystem(): StatisticalSystem {
         const accuracy = rangeValidCount / totalCount;
         
         // Consistency (coefficient of variation for numeric data)
-        const numericData = data.filter(d => typeof d === 'number' && !isNaN(d));
+        const numericData = data.filter(d => typeof d === "number" && !isNaN(d));
         const cv = numericData.length > 0 ? 
             (deviation(numericData) || 0) / (d3.mean(numericData) || 1) : 0;
         const consistency = Math.max(0, 100 - (cv * 100)); // Invert CV for consistency score
@@ -380,7 +376,7 @@ export function createStatisticalSystem(): StatisticalSystem {
             { 
                 outliers: [], 
                 cleanData: [], 
-                method: 'None - No numeric data',
+                method: "None - No numeric data",
                 threshold: {},
                 statistics: { mean: 0, median: 0, q1: 0, q3: 0, iqr: 0 },
                 summary: { totalOutliers: 0, mildOutliers: 0, extremeOutliers: 0, outlierPercentage: 0 } 
@@ -390,7 +386,7 @@ export function createStatisticalSystem(): StatisticalSystem {
         const recommendations: string[] = [];
         if (completeness < (1 - nullTolerance)) {
             recommendations.push(`Improve data completeness: ${nullCount} missing values detected`);
-            recommendations.push('Remove or impute missing values');
+            recommendations.push("Remove or impute missing values");
         }
         if (validity < 0.95) {
             recommendations.push(`Validate data types: ${totalCount - typeValidCount} invalid types found`);
@@ -471,8 +467,8 @@ export function createStatisticalSystem(): StatisticalSystem {
         const sortedContributions = [...varianceContributions].sort((a, b) => b.contribution - a.contribution);
         const significantFactors = sortedContributions.slice(0, Math.min(5, sortedContributions.length)).map(item => ({
             label: item.label,
-            impact: item.contribution > 20 ? 'high' as const : 
-                   item.contribution > 10 ? 'medium' as const : 'low' as const,
+            impact: item.contribution > 20 ? "high" as const : 
+                   item.contribution > 10 ? "medium" as const : "low" as const,
             variance: item.variance
         }));
 
@@ -484,7 +480,7 @@ export function createStatisticalSystem(): StatisticalSystem {
         data.forEach(item => {
             // Try to extract category from label (e.g., "A1" -> "A", "Category1" -> "Category")
             const category = item.label.match(/^([A-Za-z]+)/)?.[1] || 
-                           (item.value > 0 ? 'positive' : 'negative');
+                           (item.value > 0 ? "positive" : "negative");
             
             if (!categoryGroups.has(category)) {
                 categoryGroups.set(category, []);
@@ -501,8 +497,6 @@ export function createStatisticalSystem(): StatisticalSystem {
         if (groups.length > 1) {
             const groupMeans = groups.map(g => d3.mean(g.values) || 0);
             const groupSizes = groups.map(g => g.values.length);
-            const totalSize = values.length;
-            
             betweenGroupVariance = groups.reduce((sum, group, i) => {
                 const groupMeanValue = groupMeans[i];
                 const groupSize = groupSizes[i];
@@ -522,8 +516,8 @@ export function createStatisticalSystem(): StatisticalSystem {
             betweenGroupVariance / withinGroupVariance : 0;
         
         // Significance level (simplified p-value approximation)
-        const significance = fStatistic > 4 ? 'significant' : 
-                           fStatistic > 2 ? 'moderate' : 'not significant';
+        const significance = fStatistic > 4 ? "significant" : 
+                           fStatistic > 2 ? "moderate" : "not significant";
 
         return {
             totalVariance,
@@ -550,10 +544,10 @@ export function createStatisticalSystem(): StatisticalSystem {
                 intercept: 0,
                 correlation: 0,
                 rSquared: 0,
-                direction: 'stable',
-                strength: 'none',
+                direction: "stable",
+                strength: "none",
                 confidence: 0,
-                trend: 'stable',
+                trend: "stable",
                 projectedValues: [],
                 forecast: []
             };
@@ -584,9 +578,9 @@ export function createStatisticalSystem(): StatisticalSystem {
         const correlation = (xStd * yStd) !== 0 ? numerator / (Math.sqrt(denominator) * yStd * Math.sqrt(data.length - 1)) : 0;
         
         // Determine trend characteristics
-        const direction = slope > 0.01 ? 'increasing' : slope < -0.01 ? 'decreasing' : 'stable';
-        const strength = Math.abs(correlation) > 0.7 ? 'strong' : 
-                        Math.abs(correlation) > 0.3 ? 'moderate' : 'weak';
+        const direction = slope > 0.01 ? "increasing" : slope < -0.01 ? "decreasing" : "stable";
+        const strength = Math.abs(correlation) > 0.7 ? "strong" : 
+                        Math.abs(correlation) > 0.3 ? "moderate" : "weak";
         const confidence = Math.abs(correlation) * 100;
 
         // Generate projections (simple linear extrapolation)
@@ -792,7 +786,7 @@ export function analyzeWaterfallStatistics(
     }
     
     if (summary.standardDeviation > Math.abs(summary.mean)) {
-        insights.push('High volatility detected - consider risk management strategies');
+        insights.push("High volatility detected - consider risk management strategies");
     }
     
     const positiveCount = values.filter(v => v > 0).length;
@@ -800,9 +794,9 @@ export function analyzeWaterfallStatistics(
     const ratio = positiveCount / negativeCount;
     
     if (ratio > 2) {
-        insights.push('Predominantly positive contributors - strong growth pattern');
+        insights.push("Predominantly positive contributors - strong growth pattern");
     } else if (ratio < 0.5) {
-        insights.push('Predominantly negative contributors - potential cost management focus needed');
+        insights.push("Predominantly negative contributors - potential cost management focus needed");
     }
 
     if (quality.anomalies.summary.outlierPercentage > 10) {

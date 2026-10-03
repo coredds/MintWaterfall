@@ -1,9 +1,9 @@
 // MintWaterfall Advanced Interactions
 // Sophisticated D3.js interaction capabilities for enhanced waterfall analysis
 
-import * as d3 from 'd3';
-import { drag } from 'd3-drag';
-import { forceSimulation, forceCenter, forceCollide, forceManyBody } from 'd3-force';
+import * as d3 from "d3";
+import { drag } from "d3-drag";
+import { forceSimulation, forceCenter, forceCollide } from "d3-force";
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -11,7 +11,7 @@ import { forceSimulation, forceCenter, forceCollide, forceManyBody } from 'd3-fo
 
 export interface DragConfig {
     enabled: boolean;
-    axis: 'both' | 'horizontal' | 'vertical';
+    axis: "both" | "horizontal" | "vertical";
     constraints?: {
         minValue?: number;
         maxValue?: number;
@@ -56,7 +56,7 @@ export interface InteractionSystem {
     // Drag functionality
     enableDrag(config: DragConfig): void;
     disableDrag(): void;
-    updateDragConstraints(constraints: DragConfig['constraints']): void;
+    updateDragConstraints(constraints: DragConfig["constraints"]): void;
     
     // Enhanced hover detection (simplified approach)
     enableEnhancedHover(config: VoronoiConfig): void;
@@ -66,17 +66,17 @@ export interface InteractionSystem {
     // Force simulation for dynamic layouts
     startForceSimulation(config: ForceSimulationConfig): d3.Simulation<any, any>;
     stopForceSimulation(): void;
-    updateForces(forces: ForceSimulationConfig['forces']): void;
+    updateForces(forces: ForceSimulationConfig["forces"]): void;
     
     // Combined interaction management
-    setInteractionMode(mode: 'drag' | 'voronoi' | 'force' | 'combined' | 'none'): void;
+    setInteractionMode(mode: "drag" | "voronoi" | "force" | "combined" | "none"): void;
     getActiveInteractions(): string[];
     
     // Data management
     updateData(data: any[]): void;
     
     // Event management
-    on(event: string, callback: Function): void;
+    on(event: string, callback: (...args: any[]) => any): void;
     off(event: string): void;
     trigger(event: string, data?: any): void;
 }
@@ -96,7 +96,7 @@ export function createAdvancedInteractionSystem(
     let enhancedHoverEnabled: boolean = false;
     let currentSimulation: d3.Simulation<any, any> | null = null;
     let currentData: any[] = [];
-    let eventListeners: Map<string, Function[]> = new Map();
+    const eventListeners: Map<string, ((...args: any[]) => any)[]> = new Map();
     
     // ========================================================================
     // DRAG FUNCTIONALITY (d3.drag)
@@ -110,25 +110,25 @@ export function createAdvancedInteractionSystem(
         
         // Create drag behavior
         dragBehavior = drag<any, any>()
-            .on('start', (event, d) => {
+            .on("start", (event, d) => {
                 // Visual feedback on drag start
                 d3.select(event.sourceEvent.target)
                     .raise()
-                    .attr('stroke', '#ff6b6b')
-                    .attr('stroke-width', 2);
+                    .attr("stroke", "#ff6b6b")
+                    .attr("stroke-width", 2);
                 
                 if (config.onDragStart) {
                     config.onDragStart(event, d);
                 }
                 
-                trigger('dragStart', { event, data: d });
+                trigger("dragStart", { event, data: d });
             })
-            .on('drag', (event, d) => {
+            .on("drag", (event, d) => {
                 const bar = d3.select(event.sourceEvent.target);
                 let newValue = d.value || 0;
                 
                 // Handle axis constraints
-                if (config.axis === 'vertical' || config.axis === 'both') {
+                if (config.axis === "vertical" || config.axis === "both") {
                     const newY = event.y;
                     newValue = yScale.invert(newY);
                     
@@ -148,8 +148,8 @@ export function createAdvancedInteractionSystem(
                     const barHeight = Math.abs(yScale(0) - yScale(newValue));
                     const barY = newValue >= 0 ? yScale(newValue) : yScale(0);
                     
-                    bar.attr('y', barY)
-                       .attr('height', barHeight);
+                    bar.attr("y", barY)
+                       .attr("height", barHeight);
                     
                     // Update data
                     d.value = newValue;
@@ -159,51 +159,51 @@ export function createAdvancedInteractionSystem(
                 }
                 
                 // Handle horizontal movement (for reordering)
-                if (config.axis === 'horizontal' || config.axis === 'both') {
+                if (config.axis === "horizontal" || config.axis === "both") {
                     const newX = event.x;
                     // Implementation for horizontal dragging/reordering
-                    const barWidth = parseFloat(bar.attr('width') || '0');
-                    bar.attr('transform', `translate(${newX - barWidth / 2}, 0)`);
+                    const barWidth = parseFloat(bar.attr("width") || "0");
+                    bar.attr("transform", `translate(${newX - barWidth / 2}, 0)`);
                 }
                 
                 if (config.onDrag) {
                     config.onDrag(event, d);
                 }
                 
-                trigger('drag', { event, data: d, newValue });
+                trigger("drag", { event, data: d, newValue });
             })
-            .on('end', (event, d) => {
+            .on("end", (event, d) => {
                 // Remove visual feedback
                 d3.select(event.sourceEvent.target)
-                    .attr('stroke', null)
-                    .attr('stroke-width', null);
+                    .attr("stroke", null)
+                    .attr("stroke-width", null);
                 
                 if (config.onDragEnd) {
                     config.onDragEnd(event, d);
                 }
                 
-                trigger('dragEnd', { event, data: d });
+                trigger("dragEnd", { event, data: d });
             });
         
         // Apply drag behavior to all bars
-        container.selectAll('.bar')
+        container.selectAll(".bar")
             .call(dragBehavior);
         
-        trigger('dragEnabled', config);
+        trigger("dragEnabled", config);
     }
     
     function disableDrag(): void {
         if (dragBehavior) {
-            container.selectAll('.bar')
-                .on('.drag', null);
+            container.selectAll(".bar")
+                .on(".drag", null);
             dragBehavior = null;
-            trigger('dragDisabled');
+            trigger("dragDisabled");
         }
     }
     
-    function updateDragConstraints(constraints: DragConfig['constraints']): void {
+    function updateDragConstraints(constraints: DragConfig["constraints"]): void {
         // Constraints are checked during drag events
-        trigger('dragConstraintsUpdated', constraints);
+        trigger("dragConstraintsUpdated", constraints);
     }
     
     // ========================================================================
@@ -219,61 +219,61 @@ export function createAdvancedInteractionSystem(
         enhancedHoverEnabled = true;
         
         // Create enhanced hover zones around bars
-        const hoverGroup = container.selectAll('.enhanced-hover-group')
+        const hoverGroup = container.selectAll(".enhanced-hover-group")
             .data([0]);
         
         const hoverGroupEnter = hoverGroup.enter()
-            .append('g')
-            .attr('class', 'enhanced-hover-group');
+            .append("g")
+            .attr("class", "enhanced-hover-group");
         
         const hoverGroupMerged = hoverGroupEnter.merge(hoverGroup as any);
         
         // Add enhanced hover zones
-        const zones = hoverGroupMerged.selectAll('.hover-zone')
+        const zones = hoverGroupMerged.selectAll(".hover-zone")
             .data(currentData);
         
         zones.enter()
-            .append('rect')
-            .attr('class', 'hover-zone')
+            .append("rect")
+            .attr("class", "hover-zone")
             .merge(zones as any)
-            .attr('x', d => getBarCenterX(d) - getBarWidth(d) * 0.75)
-            .attr('y', d => Math.min(getBarCenterY(d), yScale(0)) - 10)
-            .attr('width', d => getBarWidth(d) * 1.5)
-            .attr('height', d => Math.abs(yScale(0) - getBarCenterY(d)) + 20)
-            .style('fill', 'transparent')
-            .style('pointer-events', 'all')
-            .on('mouseenter', function(event, d) {
+            .attr("x", d => getBarCenterX(d) - getBarWidth(d) * 0.75)
+            .attr("y", d => Math.min(getBarCenterY(d), yScale(0)) - 10)
+            .attr("width", d => getBarWidth(d) * 1.5)
+            .attr("height", d => Math.abs(yScale(0) - getBarCenterY(d)) + 20)
+            .style("fill", "transparent")
+            .style("pointer-events", "all")
+            .on("mouseenter", function(event, d) {
                 highlightBar(d);
                 if (config.onCellEnter) {
                     config.onCellEnter(event, d);
                 }
-                trigger('enhancedHoverEnter', { event, data: d });
+                trigger("enhancedHoverEnter", { event, data: d });
             })
-            .on('mouseleave', function(event, d) {
+            .on("mouseleave", function(event, d) {
                 unhighlightBar(d);
                 if (config.onCellLeave) {
                     config.onCellLeave(event, d);
                 }
-                trigger('enhancedHoverLeave', { event, data: d });
+                trigger("enhancedHoverLeave", { event, data: d });
             })
-            .on('click', function(event, d) {
+            .on("click", function(event, d) {
                 if (config.onCellClick) {
                     config.onCellClick(event, d);
                 }
-                trigger('enhancedHoverClick', { event, data: d });
+                trigger("enhancedHoverClick", { event, data: d });
             });
         
         zones.exit().remove();
         
-        trigger('enhancedHoverEnabled', config);
+        trigger("enhancedHoverEnabled", config);
     }
     
     function disableEnhancedHover(): void {
         try {
             // Only attempt to remove elements if container has proper D3 methods
-            if (container && container.selectAll && typeof container.selectAll === 'function') {
-                const selection = container.selectAll('.enhanced-hover-group');
-                if (selection && selection.remove && typeof selection.remove === 'function') {
+            if (container && container.selectAll && typeof container.selectAll === "function") {
+                const selection = container.selectAll(".enhanced-hover-group");
+                if (selection && selection.remove && typeof selection.remove === "function") {
                     selection.remove();
                 }
             }
@@ -281,7 +281,7 @@ export function createAdvancedInteractionSystem(
             // Silently handle any DOM manipulation errors in test environment
         }
         enhancedHoverEnabled = false;
-        trigger('enhancedHoverDisabled');
+        trigger("enhancedHoverDisabled");
     }
     
     function updateHoverExtent(extent: [[number, number], [number, number]]): void {
@@ -309,7 +309,7 @@ export function createAdvancedInteractionSystem(
         
         // Add forces based on configuration
         if (config.forces.collision) {
-            currentSimulation.force('collision', forceCollide()
+            currentSimulation.force("collision", forceCollide()
                 .radius(d => getBarWidth(d) / 2 + 5)
                 .strength(config.strength.collision || 0.7));
         }
@@ -317,14 +317,14 @@ export function createAdvancedInteractionSystem(
         if (config.forces.centering) {
             const centerX = (xScale.range()[0] + xScale.range()[1]) / 2;
             const centerY = (yScale.range()[0] + yScale.range()[1]) / 2;
-            currentSimulation.force('center', forceCenter(centerX, centerY)
+            currentSimulation.force("center", forceCenter(centerX, centerY)
                 .strength(config.strength.centering || 0.1));
         }
         
         if (config.forces.positioning) {
-            currentSimulation.force('x', d3.forceX(d => getBarCenterX(d))
+            currentSimulation.force("x", d3.forceX(d => getBarCenterX(d))
                 .strength(config.strength.positioning || 0.5));
-            currentSimulation.force('y', d3.forceY(d => getBarCenterY(d))
+            currentSimulation.force("y", d3.forceY(d => getBarCenterY(d))
                 .strength(config.strength.positioning || 0.5));
         }
         
@@ -335,26 +335,26 @@ export function createAdvancedInteractionSystem(
                 target: d
             }));
             
-            currentSimulation.force('link', d3.forceLink(links)
+            currentSimulation.force("link", d3.forceLink(links)
                 .distance(50)
                 .strength(config.strength.links || 0.3));
         }
         
         // Set up tick handler
-        currentSimulation.on('tick', () => {
+        currentSimulation.on("tick", () => {
             updateBarPositions();
             if (config.onTick && currentSimulation) {
                 config.onTick(currentSimulation);
             }
-            trigger('forceTick', currentSimulation);
+            trigger("forceTick", currentSimulation);
         });
         
         // Set up end handler
-        currentSimulation.on('end', () => {
+        currentSimulation.on("end", () => {
             if (config.onEnd && currentSimulation) {
                 config.onEnd(currentSimulation);
             }
-            trigger('forceEnd', currentSimulation);
+            trigger("forceEnd", currentSimulation);
         });
         
         // Set alpha decay for animation duration
@@ -364,7 +364,7 @@ export function createAdvancedInteractionSystem(
             currentSimulation.alphaDecay(decay);
         }
         
-        trigger('forceSimulationStarted', config);
+        trigger("forceSimulationStarted", config);
         return currentSimulation;
     }
     
@@ -372,23 +372,23 @@ export function createAdvancedInteractionSystem(
         if (currentSimulation) {
             currentSimulation.stop();
             currentSimulation = null;
-            trigger('forceSimulationStopped');
+            trigger("forceSimulationStopped");
         }
     }
     
-    function updateForces(forces: ForceSimulationConfig['forces']): void {
+    function updateForces(forces: ForceSimulationConfig["forces"]): void {
         if (currentSimulation) {
             // Update or remove forces based on configuration
-            if (!forces.collision) currentSimulation.force('collision', null);
-            if (!forces.centering) currentSimulation.force('center', null);
+            if (!forces.collision) currentSimulation.force("collision", null);
+            if (!forces.centering) currentSimulation.force("center", null);
             if (!forces.positioning) {
-                currentSimulation.force('x', null);
-                currentSimulation.force('y', null);
+                currentSimulation.force("x", null);
+                currentSimulation.force("y", null);
             }
-            if (!forces.links) currentSimulation.force('link', null);
+            if (!forces.links) currentSimulation.force("link", null);
             
             currentSimulation.alpha(1).restart();
-            trigger('forcesUpdated', forces);
+            trigger("forcesUpdated", forces);
         }
     }
     
@@ -396,7 +396,7 @@ export function createAdvancedInteractionSystem(
     // INTERACTION MODE MANAGEMENT
     // ========================================================================
     
-    function setInteractionMode(mode: 'drag' | 'voronoi' | 'force' | 'combined' | 'none'): void {
+    function setInteractionMode(mode: "drag" | "voronoi" | "force" | "combined" | "none"): void {
         // Disable all interactions first
         disableDrag();
         disableEnhancedHover();
@@ -406,22 +406,22 @@ export function createAdvancedInteractionSystem(
         const yRange = (yScale as any).range() || [400, 0];
         
         switch (mode) {
-            case 'drag':
+            case "drag":
                 enableDrag({
                     enabled: true,
-                    axis: 'vertical',
+                    axis: "vertical",
                     constraints: { snapToGrid: true, gridSize: 10 }
                 });
                 break;
                 
-            case 'voronoi':
+            case "voronoi":
                 enableEnhancedHover({
                     enabled: true,
                     extent: [[0, 0], [xRange[1], yRange[0]]]
                 });
                 break;
                 
-            case 'force':
+            case "force":
                 startForceSimulation({
                     enabled: true,
                     forces: { collision: true, positioning: true },
@@ -430,31 +430,31 @@ export function createAdvancedInteractionSystem(
                 });
                 break;
                 
-            case 'combined':
+            case "combined":
                 enableEnhancedHover({
                     enabled: true,
                     extent: [[0, 0], [xRange[1], yRange[0]]]
                 });
                 enableDrag({
                     enabled: true,
-                    axis: 'vertical'
+                    axis: "vertical"
                 });
                 break;
                 
-            case 'none':
+            case "none":
             default:
                 // All interactions disabled
                 break;
         }
         
-        trigger('interactionModeChanged', mode);
+        trigger("interactionModeChanged", mode);
     }
     
     function getActiveInteractions(): string[] {
         const active: string[] = [];
-        if (dragBehavior) active.push('drag');
-        if (enhancedHoverEnabled) active.push('hover');
-        if (currentSimulation) active.push('force');
+        if (dragBehavior) active.push("drag");
+        if (enhancedHoverEnabled) active.push("hover");
+        if (currentSimulation) active.push("force");
         return active;
     }
     
@@ -462,7 +462,7 @@ export function createAdvancedInteractionSystem(
     // EVENT MANAGEMENT
     // ========================================================================
     
-    function on(event: string, callback: Function): void {
+    function on(event: string, callback: (...args: any[]) => any): void {
         if (!eventListeners.has(event)) {
             eventListeners.set(event, []);
         }
@@ -500,7 +500,7 @@ export function createAdvancedInteractionSystem(
         return yScale(value / 2);
     }
     
-    function getBarWidth(d: any): number {
+    function getBarWidth(_d: any): number {
         const scale = xScale as any; // Type assertion for compatibility
         if (scale.bandwidth) {
             return scale.bandwidth();
@@ -509,31 +509,31 @@ export function createAdvancedInteractionSystem(
     }
     
     function highlightBar(data: any): void {
-        container.selectAll('.bar')
+        container.selectAll(".bar")
             .filter((d: any) => d === data)
             .transition()
             .duration(150)
-            .attr('opacity', 0.8)
-            .attr('stroke', '#ff6b6b')
-            .attr('stroke-width', 2);
+            .attr("opacity", 0.8)
+            .attr("stroke", "#ff6b6b")
+            .attr("stroke-width", 2);
     }
     
     function unhighlightBar(data: any): void {
-        container.selectAll('.bar')
+        container.selectAll(".bar")
             .filter((d: any) => d === data)
             .transition()
             .duration(150)
-            .attr('opacity', 1)
-            .attr('stroke', null)
-            .attr('stroke-width', null);
+            .attr("opacity", 1)
+            .attr("stroke", null)
+            .attr("stroke-width", null);
     }
     
     function updateBarPositions(): void {
         if (!forceSimulation) return;
         
-        container.selectAll('.bar')
+        container.selectAll(".bar")
             .data(currentData)
-            .attr('transform', (d: any) => {
+            .attr("transform", (d: any) => {
                 const x = (d as any).x || getBarCenterX(d);
                 const y = (d as any).y || getBarCenterY(d);
                 return `translate(${x - getBarWidth(d) / 2}, ${y})`;
@@ -592,7 +592,7 @@ export function createWaterfallDragBehavior(
 ): DragConfig {
     return {
         enabled: true,
-        axis: 'vertical',
+        axis: "vertical",
         constraints: {
             minValue: constraints?.min,
             maxValue: constraints?.max,
