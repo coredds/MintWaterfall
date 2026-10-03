@@ -91,7 +91,7 @@ export { createExportSystem } from "./export.js";
 export { createZoomSystem } from "./zoom.js";
 
 // Version information
-export const version = "1.0.0";
+export const version = "1.1.0";
 
 // Default export
 import { waterfallChart } from "./chart/chart.js";
