@@ -49,6 +49,14 @@ test.describe("visual: scenarios", () => {
               { label: "Q3", stacks: [{ value: -300 }] }, { label: "Q4", stacks: [{ value: 650 }] }
             ]).call(MintWaterfall.waterfallChart().width(720).height(320).showTotal(true).totalLabel("FY")
               .showTrendLine(true).trendLineType("polynomial"));`,
+        horizontal: `
+            d3.select("#chart").datum([
+              { label: "Opening balance", start: true, stacks: [{ value: 2400 }] }, { label: "New customers", stacks: [{ value: 900 }] },
+              { label: "Expansion", stacks: [{ value: 420 }] }, { label: "Churn", stacks: [{ value: -650 }] },
+              { label: "Q2 subtotal", subtotal: true }, { label: "Price changes", stacks: [{ value: 180 }] },
+              { label: "Discounts", stacks: [{ value: -310 }] }
+            ]).call(MintWaterfall.waterfallChart().orientation("horizontal").width(720).height(340)
+              .showTotal(true).totalLabel("Closing balance").showLegend(true));`,
     };
 
     for (const [name, script] of Object.entries(scenarios)) {

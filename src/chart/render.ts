@@ -8,6 +8,7 @@ import {
     getBarPosition,
     getBarCenter,
     isBandScale,
+    truncateLabel,
     barKind,
     BarKind,
     XScale,
@@ -38,6 +39,13 @@ export interface RenderContext {
     /** Text for each bar's value label ("" hides it). */
     labelText: (d: ProcessedData) => string;
     legend: LegendLayout | null;
+    /**
+     * Horizontal bars. xScale is then the category scale over the vertical range and yScale the
+     * value scale over the horizontal range; `barX` is always the offset along the category axis.
+     */
+    horizontal: boolean;
+    /** Truncate category labels to this many characters (0 = no limit). */
+    categoryLabelChars: number;
 }
 
 export interface LegendItem {
@@ -150,20 +158,27 @@ export function drawLegend(svg: AnySelection, ctx: RenderContext): void {
 
 const MINUS = "\u2212";
 
+export interface Rect {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
 interface Segment {
     value: number;
     label?: string;
     index: number;
     color: string;
-    y: number;
-    height: number;
-    startY: number;
+    rect: Rect;
+    /** Zero-length rect at the segment's starting value (enter state). */
+    from: Rect;
 }
 interface Connector {
     id: string;
     x1: number;
+    y1: number;
     x2: number;
-    y: number;
+    y2: number;
 }
 interface Point {
     x: number;
@@ -201,6 +216,23 @@ export function layer(parent: AnySelection, className: string, tag = "g"): AnySe
         sel = parent.append(tag).attr("class", className);
     }
     return sel;
+}
+
+/**
+ * Bar-local rectangle covering values [v0, v1] with thickness `w` along the category axis.
+ * Bar groups are translated to their category offset, so the category coordinate is 0.
+ */
+export function valueRect(ctx: RenderContext, v0: number, v1: number, w: number): Rect {
+    const a = ctx.yScale(v0);
+    const b = ctx.yScale(v1);
+    return ctx.horizontal
+        ? { x: Math.min(a, b), y: 0, width: Math.abs(b - a), height: w }
+        : { x: 0, y: Math.min(a, b), width: w, height: Math.abs(a - b) };
+}
+
+/** SVG transform placing a bar group at `pos` along the category axis. */
+export function categoryTranslate(ctx: RenderContext, pos: number): string {
+    return ctx.horizontal ? `translate(0,${pos})` : `translate(${pos},0)`;
 }
 
 export function plotWidth(ctx: RenderContext): number {
@@ -287,18 +319,16 @@ export function drawGrid(container: AnySelection, ctx: RenderContext): void {
     const lines = gridGroup.selectAll<SVGLineElement, number>("line.grid-line").data(tickValues, (d: number) => d);
     lines.exit().remove();
 
-    const entered = lines
-        .enter()
-        .append("line")
-        .attr("class", "grid-line")
-        .attr("y1", (d: number) => yScale(d))
-        .attr("y2", (d: number) => yScale(d));
+    // Grid lines run across the plot at each value tick (horizontal lines for columns, vertical for bars)
+    const across = (sel: AnySelection, v: (d: number) => number) =>
+        ctx.horizontal
+            ? sel.attr("x1", v).attr("x2", v).attr("y1", margins.top).attr("y2", ctx.height - margins.bottom)
+            : sel.attr("x1", margins.left).attr("x2", ctx.width - margins.right).attr("y1", v).attr("y2", v);
 
-    animate(entered.merge(lines), ctx)
-        .attr("x1", margins.left)
-        .attr("x2", ctx.width - margins.right)
-        .attr("y1", (d: number) => yScale(d))
-        .attr("y2", (d: number) => yScale(d))
+    const entered = lines.enter().append("line").attr("class", "grid-line");
+    across(entered, (d: number) => yScale(d));
+
+    across(animate(entered.merge(lines), ctx), (d: number) => yScale(d))
         .attr("stroke", style.grid)
         .attr("stroke-width", 1)
         .attr("shape-rendering", "crispEdges");
@@ -307,11 +337,7 @@ export function drawGrid(container: AnySelection, ctx: RenderContext): void {
     const [d0, d1] = yScale.domain();
     const zero = gridGroup.selectAll<SVGLineElement, number>("line.zero-line").data(d0 < 0 && d1 > 0 ? [0] : []);
     zero.exit().remove();
-    animate(zero.enter().append("line").attr("class", "zero-line").merge(zero), ctx)
-        .attr("x1", margins.left)
-        .attr("x2", ctx.width - margins.right)
-        .attr("y1", yScale(0))
-        .attr("y2", yScale(0))
+    across(animate(zero.enter().append("line").attr("class", "zero-line").merge(zero), ctx), () => yScale(0))
         .attr("stroke", style.axis)
         .attr("stroke-width", 1.5)
         .attr("shape-rendering", "crispEdges");
@@ -326,10 +352,64 @@ function styleAxisText(axisGroup: AnySelection, ctx: RenderContext): void {
         .style("font-variant-numeric", "tabular-nums");
 }
 
+/** Axis layer for an orientation; cleared when the orientation changes (d3-axis sets some text attrs only on enter). */
+function axisLayer(container: AnySelection, className: string, ctx: RenderContext): AnySelection {
+    const group = layer(container, className);
+    const orientation = ctx.horizontal ? "horizontal" : "vertical";
+    if (group.attr("data-orientation") !== orientation) {
+        group.selectAll("*").remove();
+        group.attr("data-orientation", orientation);
+    }
+    return group;
+}
+
+/** Horizontal charts: value axis along the bottom, category axis on the left. */
+function drawHorizontalAxes(container: AnySelection, ctx: RenderContext): void {
+    const { yScale, margins, config, style } = ctx;
+    const xScale = ctx.xScale as d3.ScaleBand<string>;
+
+    const valueAxis = axisLayer(container, "y-axis", ctx).attr("transform", `translate(0,${ctx.height - margins.bottom})`);
+    animate(valueAxis, ctx).call(
+        d3
+            .axisBottom(yScale)
+            .ticks(ctx.yTickCount)
+            .tickSize(0)
+            .tickPadding(10)
+            .tickFormat(d => config.formatNumber(d.valueOf()))
+    );
+    valueAxis.select(".domain").remove();
+    styleAxisText(valueAxis, ctx);
+
+    const max = ctx.categoryLabelChars;
+    const categoryAxis = axisLayer(container, "x-axis", ctx).attr("transform", `translate(${margins.left},0)`);
+    categoryAxis
+        .interrupt()
+        .call(d3.axisLeft(xScale).tickSize(0).tickSizeOuter(0).tickPadding(10).tickFormat(l => truncateLabel(l, max)));
+    categoryAxis
+        .select(".domain")
+        .attr("stroke", style.axis)
+        .attr("stroke-width", 1)
+        .attr("shape-rendering", "crispEdges");
+    styleAxisText(categoryAxis, ctx);
+    const every = Math.max(1, ctx.xLabelEvery);
+    categoryAxis
+        .selectAll<SVGTextElement, string>(".tick text")
+        .style("font-weight", "500")
+        .attr("display", (_d: string, i: number) => (i % every === 0 ? null : "none"))
+        .each(function (this: SVGTextElement, label: string) {
+            // Full text on hover for truncated labels
+            if (max > 0 && String(label).length > max) d3.select(this).append("title").text(label);
+        });
+}
+
 export function drawAxes(container: AnySelection, ctx: RenderContext): void {
+    if (ctx.horizontal) {
+        drawHorizontalAxes(container, ctx);
+        return;
+    }
     const { xScale, yScale, margins, config, style } = ctx;
 
-    const yAxisGroup = layer(container, "y-axis").attr("transform", `translate(${margins.left},0)`);
+    const yAxisGroup = axisLayer(container, "y-axis", ctx).attr("transform", `translate(${margins.left},0)`);
     const yAxis = d3
         .axisLeft(yScale)
         .ticks(ctx.yTickCount)
@@ -340,7 +420,7 @@ export function drawAxes(container: AnySelection, ctx: RenderContext): void {
     yAxisGroup.select(".domain").remove();
     styleAxisText(yAxisGroup, ctx);
 
-    const xAxisGroup = layer(container, "x-axis").attr("transform", `translate(0,${ctx.height - margins.bottom})`);
+    const xAxisGroup = axisLayer(container, "x-axis", ctx).attr("transform", `translate(0,${ctx.height - margins.bottom})`);
     // Band scale: one tick per bar. Time scale: d3's date ticks for the domain.
     const xAxis = (isBandScale(xScale) ? d3.axisBottom(xScale) : d3.axisBottom(xScale).ticks(Math.max(2, Math.floor(plotWidth(ctx) / 90))))
         .tickSize(0)
@@ -409,7 +489,7 @@ export function drawBars(container: AnySelection, ctx: RenderContext): AnySelect
         .enter()
         .append("g")
         .attr("class", "bar-group")
-        .attr("transform", (d: ProcessedData) => `translate(${barX(ctx, d)},0)`);
+        .attr("transform", (d: ProcessedData) => categoryTranslate(ctx, barX(ctx, d)));
 
     const merged = entered.merge(barGroups);
     merged
@@ -419,7 +499,7 @@ export function drawBars(container: AnySelection, ctx: RenderContext): AnySelect
         .classed("is-increase", (d: ProcessedData) => !isAnchoredBar(d) && d.barTotal >= 0)
         .classed("is-decrease", (d: ProcessedData) => !isAnchoredBar(d) && d.barTotal < 0);
 
-    animate(merged, ctx, stagger).attr("transform", (d: ProcessedData) => `translate(${barX(ctx, d)},0)`);
+    animate(merged, ctx, stagger).attr("transform", (d: ProcessedData) => categoryTranslate(ctx, barX(ctx, d)));
 
     merged.each(function (this: SVGGElement, d: ProcessedData, i: number) {
         const group = d3.select(this);
@@ -436,37 +516,27 @@ export function drawBars(container: AnySelection, ctx: RenderContext): AnySelect
     return merged;
 }
 
+function setRect(sel: AnySelection, r: Rect): AnySelection {
+    return sel.attr("x", r.x).attr("y", r.y).attr("width", r.width).attr("height", r.height);
+}
+
 function drawSingleBar(group: AnySelection, d: ProcessedData, i: number, w: number, ctx: RenderContext, delay: number): void {
-    const { yScale } = ctx;
     const [lo, hi] = getBarExtent(d);
-    const y = yScale(hi);
-    const h = Math.max(0, yScale(lo) - yScale(hi));
+    const r = valueRect(ctx, lo, hi, w);
     const color = getBarColor(d, i, ctx);
-    const start = yScale(isAnchoredBar(d) ? 0 : d.prevCumulativeTotal || 0);
+    const start = isAnchoredBar(d) ? 0 : d.prevCumulativeTotal || 0;
 
     const rect = group.selectAll<SVGRectElement, ProcessedData>("rect.waterfall-bar").data([d]);
-    const entered = rect
-        .enter()
-        .append("rect")
-        .attr("class", "waterfall-bar")
-        .attr("x", 0)
-        .attr("width", w)
-        .attr("y", start)
-        .attr("height", 0)
-        .attr("fill", color);
+    const entered = setRect(rect.enter().append("rect").attr("class", "waterfall-bar"), valueRect(ctx, start, start, w)).attr("fill", color);
 
-    animate(entered.merge(rect), ctx, () => delay)
-        .attr("x", 0)
-        .attr("width", w)
-        .attr("y", y)
-        .attr("height", h)
-        .attr("rx", roundedRadius(ctx, w, h))
+    setRect(animate(entered.merge(rect), ctx, () => delay), r)
+        .attr("rx", roundedRadius(ctx, r.width, r.height))
         .attr("fill", color);
 }
 
 function drawStackSegments(group: AnySelection, d: ProcessedData, w: number, ctx: RenderContext, delay: number): void {
-    const { yScale, style } = ctx;
-    let running = d.prevCumulativeTotal || 0;
+    const { style } = ctx;
+    let running = d.isStart ? 0 : d.prevCumulativeTotal || 0;
     const segments = d.stacks.map((stack, i) => {
         const start = running;
         running += stack.value;
@@ -476,9 +546,8 @@ function drawStackSegments(group: AnySelection, d: ProcessedData, w: number, ctx
             ...stack,
             index: i,
             color: stack.color || style.palette[i % style.palette.length],
-            y: yScale(hi),
-            height: Math.max(0, yScale(lo) - yScale(hi)),
-            startY: yScale(start),
+            rect: valueRect(ctx, lo, hi, w),
+            from: valueRect(ctx, start, start, w),
         };
     });
 
@@ -488,22 +557,22 @@ function drawStackSegments(group: AnySelection, d: ProcessedData, w: number, ctx
         .enter()
         .append("rect")
         .attr("class", "stack")
-        .attr("x", 0)
-        .attr("width", w)
-        .attr("y", (s: Segment) => s.startY)
-        .attr("height", 0);
+        .attr("x", (s: Segment) => s.from.x)
+        .attr("y", (s: Segment) => s.from.y)
+        .attr("width", (s: Segment) => s.from.width)
+        .attr("height", (s: Segment) => s.from.height);
 
     animate(entered.merge(rects), ctx, () => delay)
-        .attr("x", 0)
-        .attr("width", w)
-        .attr("y", (s: Segment) => s.y)
-        .attr("height", (s: Segment) => s.height)
+        .attr("x", (s: Segment) => s.rect.x)
+        .attr("y", (s: Segment) => s.rect.y)
+        .attr("width", (s: Segment) => s.rect.width)
+        .attr("height", (s: Segment) => s.rect.height)
         .attr("fill", (s: Segment) => s.color)
         .attr("stroke", style.surface)
         .attr("stroke-width", 1);
 
     // Only label segments where the text (11px, ~6.2px/char) actually fits
-    const labeled = segments.filter(s => s.label && s.height >= 16 && String(s.label).length * 6.2 <= w - 6);
+    const labeled = segments.filter(s => s.label && s.rect.height >= 16 && String(s.label).length * 6.2 <= s.rect.width - 6);
     const labels = group.selectAll<SVGTextElement, Segment>("text.stack-label").data(labeled);
     labels.exit().remove();
     animate(
@@ -518,8 +587,8 @@ function drawStackSegments(group: AnySelection, d: ProcessedData, w: number, ctx
         ctx,
         () => delay
     )
-        .attr("x", w / 2)
-        .attr("y", (s: Segment) => s.y + s.height / 2)
+        .attr("x", (s: Segment) => s.rect.x + s.rect.width / 2)
+        .attr("y", (s: Segment) => s.rect.y + s.rect.height / 2)
         .attr("fill", "#ffffff")
         .style("font-family", style.fontFamily)
         .style("font-size", "11px")
@@ -537,27 +606,38 @@ export function drawValueLabels(container: AnySelection, ctx: RenderContext): vo
     const labels = labelsGroup.selectAll<SVGTextElement, ProcessedData>("text.total-label").data(data, (d: ProcessedData) => d.label);
     labels.exit().remove();
 
-    const position = (d: ProcessedData) => {
+    // Labels sit past the bar end: above (columns) / right (bars), or below / left for bars entirely below zero
+    const below = (d: ProcessedData) => {
         const [lo, hi] = getBarExtent(d);
-        if (hi <= 0 && lo < 0) return yScale(lo) + 16; // bar entirely below zero → label underneath
-        return yScale(hi) - 7;
+        return hi <= 0 && lo < 0;
     };
+    const valuePos = (d: ProcessedData) => {
+        const [lo, hi] = getBarExtent(d);
+        if (ctx.horizontal) return below(d) ? yScale(lo) - 6 : yScale(hi) + 6;
+        return below(d) ? yScale(lo) + 16 : yScale(hi) - 7;
+    };
+    const centre = (d: ProcessedData) => barX(ctx, d) + w / 2;
+    const place = (sel: AnySelection) =>
+        ctx.horizontal
+            ? sel
+                  .attr("x", valuePos)
+                  .attr("y", centre)
+                  .attr("text-anchor", (d: ProcessedData) => (below(d) ? "end" : "start"))
+                  .attr("dominant-baseline", "central")
+            : sel.attr("x", centre).attr("y", valuePos).attr("text-anchor", "middle").attr("dominant-baseline", null);
 
-    const entered = labels
-        .enter()
-        .append("text")
-        .attr("class", "total-label")
-        .attr("text-anchor", "middle")
-        .attr("x", (d: ProcessedData) => barX(ctx, d) + w / 2)
-        .attr("y", position)
-        .style("opacity", 0);
+    const entered = place(labels.enter().append("text").attr("class", "total-label")).style("opacity", 0);
 
     const fontSize = `${ctx.valueLabelFontSize}px`;
     const delayFn = ctx.config.staggeredAnimations ? (_d: unknown, i: number) => i * ctx.config.staggerDelay : undefined;
 
+    entered
+        .merge(labels)
+        .attr("text-anchor", (d: ProcessedData) => (!ctx.horizontal ? "middle" : below(d) ? "end" : "start"))
+        .attr("dominant-baseline", ctx.horizontal ? "central" : null);
     animate(entered.merge(labels), ctx, delayFn)
-        .attr("x", (d: ProcessedData) => barX(ctx, d) + w / 2)
-        .attr("y", position)
+        .attr("x", ctx.horizontal ? valuePos : centre)
+        .attr("y", ctx.horizontal ? centre : valuePos)
         .attr("fill", style.text)
         .style("font-family", style.fontFamily)
         .style("font-size", fontSize)
@@ -574,17 +654,20 @@ export function drawConnectors(container: AnySelection, ctx: RenderContext): voi
     const show = config.showConnectors && !config.stacked && data.length > 1;
     const w = barWidth(ctx);
 
-    const connectorData: Array<{ id: string; x1: number; x2: number; y: number }> = [];
+    const connectorData: Connector[] = [];
     if (show) {
         for (let i = 0; i < data.length - 1; i++) {
             const current = data[i];
             const next = data[i + 1];
-            connectorData.push({
-                id: `${current.label}\u2192${next.label}`,
-                x1: barX(ctx, current) + w,
-                x2: barX(ctx, next),
-                y: yScale(current.cumulativeTotal),
-            });
+            // From the end of this bar to the start of the next, at this bar's running total
+            const c0 = barX(ctx, current) + w;
+            const c1 = barX(ctx, next);
+            const v = yScale(current.cumulativeTotal);
+            connectorData.push(
+                ctx.horizontal
+                    ? { id: `${current.label}\u2192${next.label}`, x1: v, x2: v, y1: c0, y2: c1 }
+                    : { id: `${current.label}\u2192${next.label}`, x1: c0, x2: c1, y1: v, y2: v }
+            );
         }
     }
 
@@ -596,14 +679,14 @@ export function drawConnectors(container: AnySelection, ctx: RenderContext): voi
         .attr("class", "connector")
         .attr("x1", (d: Connector) => d.x1)
         .attr("x2", (d: Connector) => d.x1)
-        .attr("y1", (d: Connector) => d.y)
-        .attr("y2", (d: Connector) => d.y);
+        .attr("y1", (d: Connector) => d.y1)
+        .attr("y2", (d: Connector) => d.y1);
 
     animate(entered.merge(connectors), ctx)
         .attr("x1", (d: Connector) => d.x1)
         .attr("x2", (d: Connector) => d.x2)
-        .attr("y1", (d: Connector) => d.y)
-        .attr("y2", (d: Connector) => d.y)
+        .attr("y1", (d: Connector) => d.y1)
+        .attr("y2", (d: Connector) => d.y2)
         .attr("stroke", style.connector)
         .attr("stroke-width", 1)
         .attr("stroke-dasharray", "3 3")
@@ -675,13 +758,15 @@ export function drawTrendLine(container: AnySelection, ctx: RenderContext): void
         config.trendLineWindow,
         config.trendLineDegree
     );
-    const points = series.map((d, i) => ({ x: barX(ctx, d) + w / 2, y: yScale(values[i]) }));
+    const points = series.map((d, i) =>
+        ctx.horizontal ? { x: yScale(values[i]), y: barX(ctx, d) + w / 2 } : { x: barX(ctx, d) + w / 2, y: yScale(values[i]) }
+    );
 
     const line = d3
         .line<{ x: number; y: number }>()
         .x(p => p.x)
         .y(p => p.y)
-        .curve(config.trendLineType === "linear" ? d3.curveLinear : d3.curveMonotoneX);
+        .curve(config.trendLineType === "linear" ? d3.curveLinear : ctx.horizontal ? d3.curveMonotoneY : d3.curveMonotoneX);
 
     const dash = config.trendLineStyle === "dashed" ? "6 4" : config.trendLineStyle === "dotted" ? "2 4" : null;
 
@@ -713,7 +798,7 @@ export function drawTrendLine(container: AnySelection, ctx: RenderContext): void
 
 export function drawConfidenceBands(container: AnySelection, ctx: RenderContext): void {
     const { config, data, yScale } = ctx;
-    if (!config.confidenceBandConfig.enabled || !config.confidenceBandConfig.scenarios) {
+    if (!config.confidenceBandConfig.enabled || !config.confidenceBandConfig.scenarios || ctx.horizontal) {
         container.selectAll(".confidence-bands-group").remove();
         return;
     }
@@ -757,7 +842,7 @@ export function drawConfidenceBands(container: AnySelection, ctx: RenderContext)
 
 export function drawMilestones(container: AnySelection, ctx: RenderContext): void {
     const { config, yScale } = ctx;
-    if (!config.milestoneConfig.enabled || config.milestoneConfig.milestones.length === 0) {
+    if (!config.milestoneConfig.enabled || config.milestoneConfig.milestones.length === 0 || ctx.horizontal) {
         container.selectAll(".milestones-group").remove();
         return;
     }

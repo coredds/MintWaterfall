@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shown (increase, decrease, subtotal, total, opening). The plot moves down to make room; long legends wrap.
 - **`theme("auto")`** follows `prefers-color-scheme` (default ↔ dark) and re-renders when it changes.
   A `totalColor()` set after the theme is respected.
+- **`orientation("horizontal")`**: categories down the left axis, values along the bottom. Supports
+  bars, stacked segments, value labels (placed past the bar ends, with room reserved), connectors,
+  trend lines, legend, tooltips, keyboard navigation, themes and export. Long category labels are
+  truncated with the full text in a `<title>`. Brush, zoom, `scaleType("time")`, confidence bands and
+  milestones are vertical-only and are ignored with a one-time console warning. The demo's P&L chart
+  has a Vertical/Horizontal toggle.
 - `BarKind` type and `is-start` CSS class on opening bars; CSV export reports `start` rows.
 - README image of the chart, generated from the real bundle by `scripts/readme-image.mjs`.
 

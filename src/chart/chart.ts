@@ -9,6 +9,7 @@ import {
     ChartExportFormat,
     computeYDomain,
     computeLayout,
+    computeHorizontalLayout,
     niceDomain,
     isAnchoredBar,
     barKind,
@@ -109,6 +110,24 @@ export function waterfallChart(): WaterfallChart {
     let tooltip: TooltipSystem | null = null;
     const exportSystem = createExportSystem();
     let totalColorOverride = false;
+    const warned = new Set<string>();
+
+    /** Horizontal charts ignore vertical-only features; say so once per chart and feature. */
+    function warnVerticalOnly(): void {
+        const ignored: Array<[boolean, string]> = [
+            [config.enableBrush, "enableBrush"],
+            [config.enableZoom, "enableZoom"],
+            [config.scaleType === "time", "scaleType(\"time\")"],
+            [config.confidenceBandConfig.enabled, "confidence bands"],
+            [config.milestoneConfig.enabled, "milestones"],
+        ];
+        for (const [on, name] of ignored) {
+            if (on && !warned.has(name)) {
+                warned.add(name);
+                console.warn(`MintWaterfall: ${name} is not supported with orientation("horizontal") and is ignored.`);
+            }
+        }
+    }
     let colorSchemeQuery: MediaQueryList | null = null;
 
     function onColorSchemeChange(): void {
@@ -266,7 +285,9 @@ export function waterfallChart(): WaterfallChart {
                   Math.max(60, width - Math.max(config.margin.left, 40) - config.margin.right)
               )
             : null;
-        const layout = computeLayout(
+        const horizontal = config.orientation === "horizontal";
+        if (horizontal) warnVerticalOnly();
+        const layout = (horizontal ? computeHorizontalLayout : computeLayout)(
             processed,
             config.margin,
             width,
@@ -278,11 +299,23 @@ export function waterfallChart(): WaterfallChart {
             legendHeight(legend)
         );
         const margins = layout.margins;
+        const zoomOn = config.enableZoom && !horizontal;
+        const hasLabelBelowZero = () =>
+            processed.some(d => d.cumulativeTotal < 0 && (isAnchoredBar(d) || (d.prevCumulativeTotal || 0) <= 0));
+
+        if (horizontal && layout.valueLabelReserve > 0) {
+            // Value labels sit past the bar ends: widen the domain so they stay inside the plot
+            const plot = Math.max(60, width - margins.left - margins.right);
+            const padHi = layout.valueLabelReserve;
+            const padLo = yDomain[0] < 0 && hasLabelBelowZero() ? layout.valueLabelReserve : 0;
+            const perPx = (yDomain[1] - yDomain[0]) / Math.max(20, plot - padHi - padLo);
+            yDomain[1] += padHi * perPx;
+            yDomain[0] -= padLo * perPx;
+        }
 
         // Leave room under bars that sit entirely below zero (their labels go underneath)
-        if (layout.valueLabelFontSize > 0 && yDomain[0] < 0) {
-            const hasLabelBelow = processed.some(d => d.cumulativeTotal < 0 && (isAnchoredBar(d) || (d.prevCumulativeTotal || 0) <= 0));
-            if (hasLabelBelow) {
+        if (!horizontal && layout.valueLabelFontSize > 0 && yDomain[0] < 0) {
+            if (hasLabelBelowZero()) {
                 const plotHeight = Math.max(40, height - margins.top - margins.bottom);
                 yDomain[0] -= ((yDomain[1] - yDomain[0]) * 22) / plotHeight;
             }
@@ -300,13 +333,16 @@ export function waterfallChart(): WaterfallChart {
         const yScale = d3
             .scaleLinear()
             .domain(niceDomain(yDomain, layout.yTickCount))
-            .range([height - margins.bottom, margins.top]);
+            .range(horizontal ? [margins.left, width - margins.right] : [height - margins.bottom, margins.top]);
 
-        const baseRange: [number, number] = [margins.left, width - margins.right];
-        const t = config.enableZoom ? state.transform : d3.zoomIdentity;
+        // Category axis: horizontal for columns (zoomable), top-to-bottom for horizontal bars
+        const baseRange: [number, number] = horizontal
+            ? [margins.top, height - margins.bottom]
+            : [margins.left, width - margins.right];
+        const t = zoomOn ? state.transform : d3.zoomIdentity;
         const range = baseRange.map(v => t.applyX(v)) as [number, number];
         let xScale: XScale;
-        if (config.scaleType === "time") {
+        if (config.scaleType === "time" && !horizontal) {
             const dates = processed.map(d => new Date(d.label));
             xScale = d3.scaleTime().domain(d3.extent(dates) as [Date, Date]).range(range);
         } else {
@@ -336,6 +372,8 @@ export function waterfallChart(): WaterfallChart {
             yTickCount: layout.yTickCount,
             labelText,
             legend,
+            horizontal,
+            categoryLabelChars: layout.categoryLabelChars,
         };
 
         // Accessible name/description
@@ -364,9 +402,9 @@ export function waterfallChart(): WaterfallChart {
             .select("rect");
         // Clip horizontally only when zooming (otherwise edge value labels may overhang the plot)
         clipRect
-            .attr("x", config.enableZoom ? margins.left : 0)
+            .attr("x", zoomOn ? margins.left : 0)
             .attr("y", 0)
-            .attr("width", config.enableZoom ? Math.max(0, width - margins.left - margins.right) : width)
+            .attr("width", zoomOn ? Math.max(0, width - margins.left - margins.right) : width)
             .attr("height", height);
 
         drawBackground(svg, ctx);
@@ -374,7 +412,7 @@ export function waterfallChart(): WaterfallChart {
         const root = layer(svg, "waterfall-container");
         drawGrid(root, ctx);
         drawAxes(root, ctx);
-        root.select(".x-axis").attr("clip-path", config.enableZoom ? `url(#${state.clipId})` : null);
+        root.select(".x-axis").attr("clip-path", zoomOn ? `url(#${state.clipId})` : null);
 
         const chartGroup = layer(root, "chart-group").attr("clip-path", `url(#${state.clipId})`);
         const brushLayer = layer(chartGroup, "brush-layer");
@@ -504,7 +542,7 @@ export function waterfallChart(): WaterfallChart {
     }
 
     function configureBrush(svg: AnySelection, brushLayer: AnySelection, ctx: RenderContext, state: ElementState): void {
-        if (!config.enableBrush) {
+        if (!config.enableBrush || ctx.horizontal) {
             brushLayer.on(".brush", null).selectAll("*").remove();
             state.emphasis = null;
             state.brush = null;
@@ -549,7 +587,7 @@ export function waterfallChart(): WaterfallChart {
     }
 
     function configureZoom(svg: AnySelection, ctx: RenderContext, state: ElementState): void {
-        if (!config.enableZoom) {
+        if (!config.enableZoom || ctx.horizontal) {
             if (state.zoom) {
                 svg.on(".zoom", null);
                 svg.property("__zoom", d3.zoomIdentity);
@@ -707,6 +745,9 @@ export function waterfallChart(): WaterfallChart {
     chart.tooltipContent = accessor(() => config.tooltipContent, v => { config.tooltipContent = v; });
     chart.valueLabel = accessor(() => config.valueLabel, v => { config.valueLabel = v; });
     chart.showLegend = accessor(() => config.showLegend, v => { config.showLegend = v; });
+    chart.orientation = accessor(() => config.orientation, v => {
+        config.orientation = v === "horizontal" ? "horizontal" : "vertical";
+    });
     chart.enableAdvancedColors = accessor(() => config.advancedColorConfig.enabled, v => { config.advancedColorConfig.enabled = v; });
     chart.colorMode = accessor(() => config.colorMode, v => { config.colorMode = v; });
     chart.colorTheme = accessor(() => config.advancedColorConfig.themeName || "default", v => { config.advancedColorConfig.themeName = v; });

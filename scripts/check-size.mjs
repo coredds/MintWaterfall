@@ -5,8 +5,9 @@ import { gzipSync } from "node:zlib";
 
 const KB = 1024;
 const budgets = {
-    "dist/mintwaterfall.min.js": 30 * KB, // current ≈ 27.3 KB gzip
-    "dist/mintwaterfall.esm.js": 52 * KB, // current ≈ 47.0 KB gzip
+    // Raised in 2.1 for orientation, legend, opening bars, custom labels/tooltips (27.3 → 29.6 KB)
+    "dist/mintwaterfall.min.js": 32 * KB, // current ≈ 29.6 KB gzip
+    "dist/mintwaterfall.esm.js": 55 * KB, // current ≈ 51.7 KB gzip
     "dist/experimental.esm.js": 20 * KB, // current ≈ 16.6 KB gzip
 };
 

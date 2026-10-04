@@ -127,6 +127,10 @@
       <h2>Profit &amp; loss bridge</h2>
       <p class="sub">Increases and decreases are colored automatically. <em>Gross profit</em> and <em>Operating income</em> are subtotals; <em>Net income</em> is the grand total. Hover, click, or tab through the bars.</p>
     </div>
+    <div class="seg" id="orientation-bar" role="group" aria-label="Orientation">
+      <button aria-pressed="true" data-orientation="vertical">Vertical</button>
+      <button aria-pressed="false" data-orientation="horizontal">Horizontal</button>
+    </div>
   </div>
   <div class="chart" id="chart-pl"></div>
   <div class="readout" id="pl-readout" aria-live="polite">Click a bar to inspect it.</div>
@@ -270,7 +274,12 @@ function bindSegmented(id, onSelect) {
       readout.innerHTML = "<strong>" + d.label + "</strong> — " + kind + " of " + money(Math.abs(d.barTotal)) +
         "; running total " + money(d.cumulativeTotal) + ".";
     });
-  d3.select("#chart-pl").datum(data).call(chart);
+  var sel = d3.select("#chart-pl").datum(data).call(chart);
+  bindSegmented("orientation-bar", function (b) {
+    var horizontal = b.dataset.orientation === "horizontal";
+    chart.orientation(b.dataset.orientation).height(horizontal ? 440 : 380);
+    sel.call(chart);
+  });
 })();
 
 // ─── STACKED ──────────────────────────────────────────────────────

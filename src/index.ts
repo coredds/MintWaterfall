@@ -77,6 +77,7 @@ export type {
   TrendLineType,
   TrendLineStyle,
   BarKind,
+  Orientation,
   TooltipContentFn,
   ValueLabelFn,
 } from "./chart/config.js";

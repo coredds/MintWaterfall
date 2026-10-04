@@ -83,6 +83,7 @@ All settings are getter/setters: call with no argument to read, with a value to 
 | `responsive` | `false` | Scale the SVG to its container width. |
 | `showTotal` / `totalLabel` / `totalColor` | `false` / `"Total"` / `#475569` | Append a grand-total bar. |
 | `stacked` | `false` | Draw each stack as its own segment. |
+| `orientation` | `"vertical"` | `"horizontal"` puts categories down the left and values along the bottom (long labels are truncated, full text on hover). Brush, zoom, time scales, confidence bands and milestones are vertical-only and are ignored with a warning. |
 | `barPadding` | `0.24` | Gap between bars (0–0.95). |
 | `barRadius` | `3` | Corner radius in px. |
 | `valueLabel` | `null` | `(d, defaultText) => string` to customise value labels; return `""` to hide one. |

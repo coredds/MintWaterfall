@@ -62,3 +62,7 @@ chart.theme("auto");
 chart.valueLabel(d => d.barTotal);
 const opening: ChartData = { label: "Opening", start: true, stacks: [{ value: 5 }] };
 void opening;
+
+chart.orientation("horizontal");
+// @ts-expect-error not an orientation
+chart.orientation("diagonal");

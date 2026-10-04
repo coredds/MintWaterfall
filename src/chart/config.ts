@@ -146,6 +146,9 @@ export type ThemeName =
     | "professional"
     | "heatmap";
 
+/** "vertical" (default): columns. "horizontal": categories down the left, values along the bottom. */
+export type Orientation = "vertical" | "horizontal";
+
 export type TrendLineType = "linear" | "polynomial" | "moving-average";
 export type TrendLineStyle = "solid" | "dashed" | "dotted";
 
@@ -253,6 +256,13 @@ export interface WaterfallChart {
     showLegend(): boolean;
     showLegend(value: boolean): WaterfallChart;
     /**
+     * Bar direction. Horizontal charts support bars, stacks, value labels, connectors, trend lines,
+     * legend, tooltips, keyboard navigation and export; brush, zoom, time scales, confidence bands
+     * and milestones are vertical-only and are ignored (with a console warning) when horizontal.
+     */
+    orientation(): Orientation;
+    orientation(value: Orientation): WaterfallChart;
+    /**
      * Register an event listener. Bar events receive `(event, datum)`;
      * `chartUpdate` receives `(processedData)`; `brushSelection` receives `(event, selectedData)`.
      * Supports d3-dispatch namespaces, e.g. `"barClick.analytics"`.
@@ -313,6 +323,7 @@ export interface ChartConfig {
     tooltipContent: TooltipContentFn | null;
     valueLabel: ValueLabelFn | null;
     showLegend: boolean;
+    orientation: Orientation;
 }
 
 export const defaultConfig: ChartConfig = {
@@ -372,6 +383,7 @@ export const defaultConfig: ChartConfig = {
     tooltipContent: null,
     valueLabel: null,
     showLegend: false,
+    orientation: "vertical",
 };
 
 
@@ -481,9 +493,88 @@ export interface LayoutMetrics {
     /** Font size for value labels in px, or 0 when they do not fit and are hidden. */
     valueLabelFontSize: number;
     yTickCount: number;
+    /** Horizontal charts: truncate category labels to this many characters (0 = no limit). */
+    categoryLabelChars: number;
+    /** Horizontal charts: pixels reserved beyond bar ends for value labels. */
+    valueLabelReserve: number;
 }
 
 const CHAR_WIDTH = 7;
+
+/** Shorten text to `max` characters with an ellipsis (0 = unchanged). */
+export function truncateLabel(text: string, max: number): string {
+    const s = String(text);
+    return max > 0 && s.length > max ? `${s.slice(0, Math.max(1, max - 1))}\u2026` : s;
+}
+
+/**
+ * Layout for horizontal charts: categories on the left axis, values along the bottom.
+ * The left margin fits category labels (capped at 35% of the width, longer labels are
+ * truncated); value labels sit past the bar ends, so their width is reserved in the plot.
+ */
+export function computeHorizontalLayout(
+    data: ProcessedData[],
+    base: MarginConfig,
+    width: number,
+    height: number,
+    _yDomain: [number, number],
+    formatNumber: (n: number) => string,
+    showValueLabels: boolean,
+    labelText?: (d: ProcessedData) => string,
+    topExtra = 0
+): LayoutMetrics {
+    const longestCategory = Math.max(1, ...data.map(d => String(d.label).length));
+    const maxLeft = Math.floor(width * 0.35);
+    const wantedLeft = longestCategory * CHAR_WIDTH + 18;
+    const left = Math.max(base.left, Math.min(wantedLeft, maxLeft));
+    const categoryLabelChars = wantedLeft > maxLeft ? Math.max(3, Math.floor((maxLeft - 18) / CHAR_WIDTH)) : 0;
+
+    const top = Math.max(base.top, 12) + topExtra;
+    const right = Math.max(base.right, 16);
+    const bottom = Math.max(base.bottom, 36);
+
+    const plotWidth = Math.max(60, width - left - right);
+    const plotHeight = Math.max(1, height - top - bottom);
+    const step = plotHeight / Math.max(1, data.length);
+    const yTickCount = Math.max(2, Math.min(10, Math.round(plotWidth / 90)));
+
+    // Bars are `step` tall: show every label when they fit, otherwise thin them out
+    const xLabelEvery = Math.max(1, Math.ceil(14 / step));
+
+    let valueLabelFontSize = 0;
+    let valueLabelReserve = 0;
+    if (showValueLabels) {
+        if (step >= 15) valueLabelFontSize = 12;
+        else if (step >= 12) valueLabelFontSize = 10;
+        if (valueLabelFontSize > 0) {
+            const longestValue = Math.max(
+                1,
+                ...data.map(d =>
+                    labelText
+                        ? String(labelText(d)).length
+                        : String(formatNumber(Math.abs(d.barTotal))).length + (isAnchoredBar(d) ? 0 : 1)
+                )
+            );
+            valueLabelReserve = Math.ceil(longestValue * (valueLabelFontSize * 0.6)) + 10;
+            // Too little room for the labels: hide them rather than squash the bars
+            if (valueLabelReserve * 2 > plotWidth * 0.6) {
+                valueLabelFontSize = 0;
+                valueLabelReserve = 0;
+            }
+        }
+    }
+
+    return {
+        margins: { top, right, bottom, left },
+        wrappedXLabels: null,
+        rotateXLabels: false,
+        xLabelEvery,
+        valueLabelFontSize,
+        yTickCount,
+        categoryLabelChars,
+        valueLabelReserve,
+    };
+}
 
 /**
  * Greedy word-wrap into at most `maxLines` lines of `maxChars` characters.
@@ -579,5 +670,7 @@ export function computeLayout(
         xLabelEvery,
         valueLabelFontSize,
         yTickCount,
+        categoryLabelChars: 0,
+        valueLabelReserve: 0,
     };
 }

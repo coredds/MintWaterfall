@@ -37,6 +37,17 @@ test.describe("demo page", () => {
         expect(box.x + box.width).toBeLessThanOrEqual(vw);
     });
 
+    test("orientation toggle switches the P&L chart to horizontal bars and back", async ({ page, errors }) => {
+        await openDemo(page);
+        const first = page.locator("#chart-pl g.bar-group").first();
+        await page.getByRole("button", { name: "Horizontal", exact: true }).click();
+        await expect(first).toHaveAttribute("transform", /^translate\(0,/);
+        await expect(page.locator("#chart-pl .x-axis .tick text").first()).toHaveText("Revenue");
+        await page.getByRole("button", { name: "Vertical", exact: true }).click();
+        await expect(first).toHaveAttribute("transform", /,0\)$/);
+        expect(errors).toEqual([]);
+    });
+
     test("theme switch restyles the chart", async ({ page }) => {
         await openDemo(page);
         await page.getByRole("button", { name: "Dark", exact: true }).click();

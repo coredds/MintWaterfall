@@ -492,3 +492,110 @@ describe("step 6 features", () => {
         expect(csv[1]).toBe("Open,start,7,7");
     });
 });
+
+describe("horizontal orientation", () => {
+    const num = (el: Element | null, attr: string) => Number(el!.getAttribute(attr));
+    const translateY = (g: Element) => Number(g.getAttribute("transform")!.match(/translate\(0,([-\d.]+)\)/)![1]);
+
+    test("categories run top to bottom and bar length is proportional to value", () => {
+        const { el } = render(PL, c => c.orientation("horizontal"));
+        const groups = bars(el);
+        const ys = groups.map(translateY);
+        expect([...ys].sort((a, b) => a - b)).toEqual(ys); // data order, top to bottom
+        const rev = groups[0].querySelector("rect")!;
+        const sub = groups[2].querySelector("rect")!;
+        expect(num(rev, "y")).toBe(0);
+        expect(num(rev, "height")).toBeGreaterThan(0);
+        expect(num(sub, "width") / num(rev, "width")).toBeCloseTo(3100 / 5200, 3);
+        expect(num(sub, "x")).toBeCloseTo(num(rev, "x"), 5); // both start at zero
+    });
+
+    test("axes swap: categories on the left, values along the bottom, vertical grid lines", () => {
+        const { el } = render(PL, c => c.orientation("horizontal"));
+        expect(el.querySelector(".x-axis")!.getAttribute("transform")).toMatch(/^translate\([\d.]+,0\)$/);
+        expect(el.querySelector(".y-axis")!.getAttribute("transform")).toMatch(/^translate\(0,[\d.]+\)$/);
+        const categoryText = Array.from(el.querySelectorAll(".x-axis .tick text")).map(t => t.textContent);
+        expect(categoryText).toEqual(PL.map(d => d.label));
+        const line = el.querySelector("line.grid-line")!;
+        expect(line.getAttribute("x1")).toBe(line.getAttribute("x2"));
+    });
+
+    test("value labels sit past the bar end, inside the plot", () => {
+        const { el, svg } = render(
+            [
+                { label: "Up", stacks: [{ value: 100 }] },
+                { label: "Down a lot", stacks: [{ value: -300 }] }, // spans -200..100: label past the right end
+                { label: "Further", stacks: [{ value: -50 }] }, // entirely below zero: label on the left
+            ],
+            c => c.orientation("horizontal").width(500)
+        );
+        const labels = Array.from(el.querySelectorAll("text.total-label"));
+        expect(labels.map(l => l.getAttribute("text-anchor"))).toEqual(["start", "start", "end"]);
+        const further = bars(el)[2].querySelector("rect")!;
+        expect(num(labels[2], "x")).toBeLessThan(num(further, "x"));
+        const up = bars(el)[0].querySelector("rect")!;
+        expect(num(labels[0], "x")).toBeGreaterThan(num(up, "x") + num(up, "width"));
+        // reserved space keeps the right-hand label inside the chart width
+        expect(num(labels[0], "x") + 40).toBeLessThan(Number(svg.getAttribute("width")));
+    });
+
+    test("connectors are vertical between consecutive bars", () => {
+        const { el } = render(PL, c => c.orientation("horizontal"));
+        const lines = Array.from(el.querySelectorAll("line.connector"));
+        expect(lines).toHaveLength(PL.length - 1);
+        for (const l of lines) expect(l.getAttribute("x1")).toBe(l.getAttribute("x2"));
+    });
+
+    test("stacked segments lie side by side along the value axis", () => {
+        const { el } = render([{ label: "A", stacks: [{ value: 100, label: "x" }, { value: 50, label: "y" }] }], c =>
+            c.orientation("horizontal").stacked(true)
+        );
+        const [a, b] = Array.from(el.querySelectorAll("rect.stack"));
+        expect(num(b, "x")).toBeCloseTo(num(a, "x") + num(a, "width"), 5);
+        expect(num(a, "height")).toBe(num(b, "height"));
+    });
+
+    test("long category labels are truncated with the full text in a <title>", () => {
+        const long = "An extremely long category label that would not fit in the margin";
+        const { el } = render([{ label: long, stacks: [{ value: 10 }] }, { label: "B", stacks: [{ value: 5 }] }], c =>
+            c.orientation("horizontal").width(400)
+        );
+        const tick = el.querySelector(".x-axis .tick text")!;
+        expect(tick.firstChild!.textContent!.endsWith("\u2026")).toBe(true);
+        expect(tick.querySelector("title")!.textContent).toBe(long);
+    });
+
+    test("switching orientation re-lays out the same chart cleanly", () => {
+        const { el, chart } = render(PL);
+        chart.orientation("horizontal");
+        d3.select(el).datum(PL).call(chart as any);
+        expect(bars(el).every(g => /translate\(0,/.test(g.getAttribute("transform")!))).toBe(true);
+        expect(el.querySelector(".x-axis .tick text")!.getAttribute("transform")).toBeNull();
+        chart.orientation("vertical");
+        d3.select(el).datum(PL).call(chart as any);
+        expect(bars(el).every(g => /,0\)$/.test(g.getAttribute("transform")!))).toBe(true);
+        expect(el.querySelectorAll(".x-axis .tick")).toHaveLength(PL.length);
+    });
+
+    test("vertical-only features are ignored with a single warning each", () => {
+        const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+        const { el, chart } = render(PL, c => c.orientation("horizontal").enableBrush(true).enableZoom(true));
+        expect(el.querySelector(".brush-layer .overlay")).toBeNull();
+        d3.select(el).datum(PL).call(chart as any);
+        const messages = warn.mock.calls.map(c => String(c[0]));
+        expect(messages.filter(m => m.includes("enableBrush"))).toHaveLength(1);
+        expect(messages.filter(m => m.includes("enableZoom"))).toHaveLength(1);
+        warn.mockRestore();
+    });
+
+    test("keyboard navigation, tooltips and events still work", () => {
+        const click = jest.fn();
+        const { el } = render(PL, c => c.orientation("horizontal").on("barClick", click));
+        const [first, second] = bars(el);
+        first.focus();
+        first.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+        expect(document.activeElement).toBe(second);
+        second.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+        expect(click.mock.calls[0][1].label).toBe("Cost of sales");
+    });
+});
