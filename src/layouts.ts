@@ -832,7 +832,7 @@ export function createHierarchicalLayoutSystem(): HierarchicalLayoutSystem {
                 }
             })
             .on("mouseenter", (event, d) => {
-                d3.select(event.currentTarget).select(".treemap-rect")
+                d3.select(event.currentTarget as Element).select(".treemap-rect")
                     .attr("opacity", 1)
                     .attr("stroke-width", 2);
                 
@@ -841,7 +841,7 @@ export function createHierarchicalLayoutSystem(): HierarchicalLayoutSystem {
                 }
             })
             .on("mouseleave", (event, _d) => {
-                d3.select(event.currentTarget).select(".treemap-rect")
+                d3.select(event.currentTarget as Element).select(".treemap-rect")
                     .attr("opacity", 0.8)
                     .attr("stroke-width", 1);
             });
@@ -1163,12 +1163,12 @@ export function createHierarchicalLayoutSystem(): HierarchicalLayoutSystem {
                 }
             })
             .on("mouseenter", (event, _d) => {
-                d3.select(event.currentTarget).select(".pack-circle")
+                d3.select(event.currentTarget as Element).select(".pack-circle")
                     .attr("opacity", 1)
                     .attr("stroke-width", 2);
             })
             .on("mouseleave", (event, _d) => {
-                d3.select(event.currentTarget).select(".pack-circle")
+                d3.select(event.currentTarget as Element).select(".pack-circle")
                     .attr("opacity", 0.7)
                     .attr("stroke-width", 1);
             });

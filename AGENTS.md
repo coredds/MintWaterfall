@@ -76,6 +76,11 @@ Visual check without a dev server (Windows, Edge headless):
   - Screenshot baselines are per platform in `e2e/__screenshots__/{win32,linux}/`. Locally on Windows the installed Edge is used. In CI (Linux), screenshot tests skip until Linux baselines exist — run the **Update visual baselines** workflow (manual dispatch) to create/refresh them.
   - After an intended visual change: `npm run test:e2e:update`, then review the changed PNGs before committing.
 
+## Dependencies
+
+- After changing dependencies (`npm install`, `npm update`, `npm audit fix`), check the lock file still has entries for every platform: npm 11 on Windows can drop peer dependencies of optional, other-platform packages (e.g. `@emnapi/core` for `@napi-rs/wasm-runtime`), which makes `npm ci` fail in Linux CI. `npx npm@latest install --package-lock-only` restores them.
+- `npm audit` should stay at 0 (the weekly Security workflow audits all dependencies).
+
 ## Build Pipeline
 
 - **Bundler:** Rollup 4
