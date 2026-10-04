@@ -126,7 +126,7 @@ describe("entry points", () => {
             expect(typeof (experimental as any)[name]).toBe("function");
         }
         expect(typeof main.waterfallChart).toBe("function");
-        expect(main.version).toBe("2.0.0");
+        expect(main.version).toBe("2.1.0");
     });
 
     test("removed no-op chart settings are gone", () => {

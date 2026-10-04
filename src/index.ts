@@ -99,7 +99,7 @@ export type { ExportSystem } from "./export.js";
 // "mintwaterfall/experimental" in 2.0.0.
 
 // Version information
-export const version = "2.0.0";
+export const version = "2.1.0";
 
 // Default export
 import { waterfallChart } from "./chart/chart.js";
