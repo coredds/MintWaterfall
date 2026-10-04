@@ -33,12 +33,30 @@ function isDark(hex: string): boolean {
     return 0.2126 * r + 0.7152 * g + 0.0722 * b < 128;
 }
 
+/** True when the reader's OS/browser asks for a dark color scheme. */
+export function prefersDarkScheme(): boolean {
+    try {
+        return typeof window !== "undefined" && typeof window.matchMedia === "function"
+            ? window.matchMedia("(prefers-color-scheme: dark)").matches
+            : false;
+    } catch {
+        return false;
+    }
+}
+
+/** The concrete theme for a config: `"auto"` resolves to `"dark"` or `"default"`. */
+export function resolvedThemeName(config: Pick<ChartConfig, "theme">): string | null {
+    if (config.theme === "auto") return prefersDarkScheme() ? "dark" : "default";
+    return config.theme;
+}
+
 /**
  * Build the style tokens for a render. Without an explicit theme the chart has a
  * transparent background and uses the default theme's tokens.
  */
 export function resolveStyle(config: ChartConfig): ResolvedStyle {
-    const explicitTheme = config.theme ? themes[config.theme] : undefined;
+    const name = resolvedThemeName(config);
+    const explicitTheme = name ? themes[name] : undefined;
     const theme: Theme = explicitTheme || themes.default;
     const fmt = theme.conditionalFormatting || { positive: "#10b981", negative: "#ef4444", neutral: "#94a3b8" };
     const dark = isDark(theme.background);

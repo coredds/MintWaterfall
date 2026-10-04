@@ -54,3 +54,11 @@ const data: ChartData[] = [
 const bad: ChartData[] = [{ label: "x", stacks: [{ value: "1" }] }];
 void data;
 void bad;
+
+// New step 6 options are typed
+chart.valueLabel((d, text) => (d.isStart ? "" : text)).tooltipContent((d, html) => html + d.label).showLegend(true);
+chart.theme("auto");
+// @ts-expect-error valueLabel must return a string
+chart.valueLabel(d => d.barTotal);
+const opening: ChartData = { label: "Opening", start: true, stacks: [{ value: 5 }] };
+void opening;

@@ -148,7 +148,7 @@ d3.select(<span class="s">"#chart"</span>).datum([
   <div class="card-head">
     <div>
       <h2>Stacked segments</h2>
-      <p class="sub">Each step can be broken into labeled segments. Colors come from the theme palette unless you set them.</p>
+      <p class="sub">Each step can be broken into labeled segments, with a legend. <em>Q1 opening</em> is an opening balance (<code>start: true</code>): drawn like a total, not as an increase.</p>
     </div>
   </div>
   <div class="chart" id="chart-stacked"></div>
@@ -158,10 +158,11 @@ d3.select(<span class="s">"#chart"</span>).datum([
   <div class="card-head">
     <div>
       <h2>Themes</h2>
-      <p class="sub">Built-in themes restyle bars, grid, axes and text. Switching animates in place.</p>
+      <p class="sub">Built-in themes restyle bars, grid, axes and text. <em>Auto</em> follows the reader's light/dark setting.</p>
     </div>
     <div class="seg" id="theme-bar" role="group" aria-label="Theme">
       <button aria-pressed="true" data-theme="default">Default</button>
+      <button aria-pressed="false" data-theme="auto">Auto</button>
       <button aria-pressed="false" data-theme="dark">Dark</button>
       <button aria-pressed="false" data-theme="corporate">Corporate</button>
       <button aria-pressed="false" data-theme="financial">Financial</button>
@@ -257,6 +258,12 @@ function bindSegmented(id, onSelect) {
     .showTotal(true).totalLabel("Net income")
     .formatNumber(money)
     .enableTooltips(true)
+    .tooltipContent(function (d, html) {
+      // Add a row to the default tooltip: share of revenue
+      var pct = d3.format(".1%")(Math.abs(d.barTotal) / 5200);
+      return html + '<div style="display:flex;justify-content:space-between;gap:20px;line-height:1.7">' +
+        '<span style="opacity:.72">Share of revenue</span><span style="font-weight:600">' + pct + "</span></div>";
+    })
     .responsive(true)
     .on("barClick", function (event, d) {
       var kind = d.isTotal ? "total" : d.isSubtotal ? "subtotal" : (d.barTotal >= 0 ? "increase" : "decrease");
@@ -269,7 +276,7 @@ function bindSegmented(id, onSelect) {
 // ─── STACKED ──────────────────────────────────────────────────────
 (function () {
   var data = [
-    { label: "Q1 opening", stacks: [{ value: 1800, label: "Core" }, { value: 600, label: "Add-ons" }] },
+    { label: "Q1 opening", start: true, stacks: [{ value: 1800, label: "Core" }, { value: 600, label: "Add-ons" }] },
     { label: "New sales",  stacks: [{ value: 900, label: "Core" }, { value: 350, label: "Add-ons" }, { value: 220, label: "Services" }] },
     { label: "Expansion",  stacks: [{ value: 420, label: "Core" }, { value: 260, label: "Add-ons" }] },
     { label: "Churn",      stacks: [{ value: -380, label: "Core" }, { value: -140, label: "Add-ons" }] },
@@ -279,6 +286,7 @@ function bindSegmented(id, onSelect) {
     MW.waterfallChart()
       .width(880).height(380)
       .stacked(true)
+      .showLegend(true)
       .showTotal(true).totalLabel("Q1 closing")
       .formatNumber(d3.format(",.0f"))
       .enableTooltips(true)

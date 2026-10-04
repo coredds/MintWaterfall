@@ -17,6 +17,11 @@ export interface ChartData {
      * point. The bar's own stack values are ignored for the running total.
      */
     subtotal?: boolean;
+    /**
+     * Render this bar as an opening balance: drawn from zero, colored like a total, and the
+     * running total is reset to the sum of its stacks. Typically the first bar.
+     */
+    start?: boolean;
 }
 
 export interface ProcessedData extends ChartData {
@@ -27,6 +32,20 @@ export interface ProcessedData extends ChartData {
     stackPositions?: Array<{ start: number; end: number; color: string; value: number; label?: string }>;
     isTotal?: boolean;
     isSubtotal?: boolean;
+    isStart?: boolean;
+}
+
+export type TooltipContentFn = (datum: ProcessedData, defaultHtml: string) => string;
+export type ValueLabelFn = (datum: ProcessedData, defaultText: string) => string;
+
+/** Semantic kind of a processed bar. */
+export type BarKind = "start" | "increase" | "decrease" | "subtotal" | "total";
+
+export function barKind(d: ProcessedData): BarKind {
+    if (d.isTotal) return "total";
+    if (d.isSubtotal) return "subtotal";
+    if (d.isStart) return "start";
+    return d.barTotal >= 0 ? "increase" : "decrease";
 }
 
 export type ChartEventType =
@@ -113,7 +132,11 @@ export interface ChartEventMap {
 /** An event name, optionally with a d3-dispatch namespace: `"barClick"` or `"barClick.analytics"`. */
 export type ChartEventName<K extends ChartEventType = ChartEventType> = K | `${K}.${string}`;
 
+/**
+ * `"auto"` follows the reader's `prefers-color-scheme` (default ↔ dark) and re-renders when it changes.
+ */
 export type ThemeName =
+    | "auto"
     | "default"
     | "dark"
     | "corporate"
@@ -212,6 +235,24 @@ export interface WaterfallChart {
     barRadius(): number;
     barRadius(value: number): WaterfallChart;
     /**
+     * Custom tooltip content. Receives the bar and the default HTML; return an HTML string.
+     * The result is inserted as HTML: escape user-provided text with `escapeHtml`. `null` restores the default.
+     */
+    tooltipContent(): TooltipContentFn | null;
+    tooltipContent(value: TooltipContentFn | null): WaterfallChart;
+    /**
+     * Custom value label text. Receives the bar and the default label (e.g. "+1,200");
+     * return the text to show, or `""` to hide that bar's label. `null` restores the default.
+     */
+    valueLabel(): ValueLabelFn | null;
+    valueLabel(value: ValueLabelFn | null): WaterfallChart;
+    /**
+     * Show a legend above the plot: stack segment labels when `stacked`, otherwise the bar
+     * kinds present (increase, decrease, subtotal, total, opening).
+     */
+    showLegend(): boolean;
+    showLegend(value: boolean): WaterfallChart;
+    /**
      * Register an event listener. Bar events receive `(event, datum)`;
      * `chartUpdate` receives `(processedData)`; `brushSelection` receives `(event, selectedData)`.
      * Supports d3-dispatch namespaces, e.g. `"barClick.analytics"`.
@@ -269,6 +310,9 @@ export interface ChartConfig {
     showConnectors: boolean;
     showGrid: boolean;
     barRadius: number;
+    tooltipContent: TooltipContentFn | null;
+    valueLabel: ValueLabelFn | null;
+    showLegend: boolean;
 }
 
 export const defaultConfig: ChartConfig = {
@@ -325,6 +369,9 @@ export const defaultConfig: ChartConfig = {
     showConnectors: true,
     showGrid: true,
     barRadius: 3,
+    tooltipContent: null,
+    valueLabel: null,
+    showLegend: false,
 };
 
 
@@ -370,9 +417,9 @@ export function getBarPosition(scale: XScale, label: string, barWidth: number): 
     return scale(new Date(label)) - barWidth / 2;
 }
 
-/** True for bars that are drawn from zero (grand total and subtotals). */
+/** True for bars that are drawn from zero (opening balance, subtotals, grand total). */
 export function isAnchoredBar(d: ProcessedData): boolean {
-    return Boolean(d.isTotal || d.isSubtotal);
+    return Boolean(d.isTotal || d.isSubtotal || d.isStart);
 }
 
 /** The [low, high] value extent a bar covers on the y axis. */
@@ -393,7 +440,7 @@ export function computeYDomain(data: ProcessedData[], stacked: boolean): [number
         const [lo, hi] = getBarExtent(d);
         min = Math.min(min, lo);
         max = Math.max(max, hi);
-        if (stacked && !isAnchoredBar(d)) {
+        if (stacked && (!isAnchoredBar(d) || d.isStart)) {
             let running = d.prevCumulativeTotal || 0;
             for (const s of d.stacks) {
                 running += s.value;
@@ -471,7 +518,11 @@ export function computeLayout(
     height: number,
     yDomain: [number, number],
     formatNumber: (n: number) => string,
-    showValueLabels: boolean
+    showValueLabels: boolean,
+    /** Text of each value label; defaults to the signed formatted value. */
+    labelText?: (d: ProcessedData) => string,
+    /** Extra space reserved above the plot (e.g. for a legend). */
+    topExtra = 0
 ): LayoutMetrics {
     const plotHeightEstimate = Math.max(60, height - base.top - base.bottom);
     const yTickCount = Math.max(2, Math.min(10, Math.round(plotHeightEstimate / 56)));
@@ -479,7 +530,7 @@ export function computeLayout(
     const longestTick = Math.max(1, ...ticks.map(t => String(formatNumber(t)).length));
     const left = Math.max(base.left, longestTick * CHAR_WIDTH + 18);
 
-    const top = Math.max(base.top, showValueLabels ? 28 : 12);
+    const top = Math.max(base.top, showValueLabels ? 28 : 12) + topExtra;
     const right = Math.max(base.right, 12);
 
     const plotWidth = Math.max(1, width - left - right);
@@ -510,7 +561,11 @@ export function computeLayout(
     if (showValueLabels) {
         const longestValue = Math.max(
             1,
-            ...data.map(d => String(formatNumber(Math.abs(d.barTotal))).length + (isAnchoredBar(d) ? 0 : 1))
+            ...data.map(d =>
+                labelText
+                    ? String(labelText(d)).length
+                    : String(formatNumber(Math.abs(d.barTotal))).length + (isAnchoredBar(d) ? 0 : 1)
+            )
         );
         const room = step * 0.94;
         if (longestValue * 7.2 <= room) valueLabelFontSize = 12;

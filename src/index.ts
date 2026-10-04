@@ -59,7 +59,7 @@ export { createAdvancedDataProcessor } from "./data/advanced.js";
 
 // Accessibility, tooltip and export building blocks
 export { createAccessibilitySystem } from "./accessibility.js";
-export { createTooltipSystem } from "./tooltip.js";
+export { createTooltipSystem, escapeHtml } from "./tooltip.js";
 export { createExportSystem } from "./export.js";
 
 // Public chart types
@@ -76,6 +76,9 @@ export type {
   ThemeName,
   TrendLineType,
   TrendLineStyle,
+  BarKind,
+  TooltipContentFn,
+  ValueLabelFn,
 } from "./chart/config.js";
 
 // Supporting types referenced by the public API

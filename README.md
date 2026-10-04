@@ -58,6 +58,7 @@ interface ChartData {
   label: string;           // must be unique within the chart
   stacks?: StackData[];    // segments of this step (summed for the bar's change)
   subtotal?: boolean;      // draw the running total from zero; does not change it
+  start?: boolean;         // opening balance: drawn like a total; resets the running total to its value
 }
 
 interface StackData {
@@ -67,7 +68,7 @@ interface StackData {
 }
 ```
 
-Bars receive computed fields that are passed to event handlers: `barTotal` (the change), `cumulativeTotal` (running total after the bar), `prevCumulativeTotal`, `isTotal`, `isSubtotal`.
+Bars receive computed fields that are passed to event handlers: `barTotal` (the change), `cumulativeTotal` (running total after the bar), `prevCumulativeTotal`, `isTotal`, `isSubtotal`, `isStart`.
 
 ## Chart API
 
@@ -82,14 +83,17 @@ All settings are getter/setters: call with no argument to read, with a value to 
 | `stacked` | `false` | Draw each stack as its own segment. |
 | `barPadding` | `0.24` | Gap between bars (0–0.95). |
 | `barRadius` | `3` | Corner radius in px. |
+| `valueLabel` | `null` | `(d, defaultText) => string` to customise value labels; return `""` to hide one. |
+| `showLegend` | `false` | Legend above the plot: segment labels when stacked, otherwise the bar kinds shown. |
 | `showValueLabels` | `true` | Signed labels (`+1,200`, `−450`) above bars; totals unsigned. |
 | `showConnectors` | `true` | Dashed lines linking consecutive bars. |
 | `showGrid` | `true` | Horizontal grid lines (zero line is emphasised when the axis crosses zero). |
 | `formatNumber` | `d3.format(",.0f")` | Formatter for axis, labels, tooltips. |
 | `duration` / `ease` / `staggeredAnimations` / `staggerDelay` | `650` / `easeCubicOut` / `false` / `100` | Animation. Disabled automatically for `prefers-reduced-motion`. |
-| `theme` | `null` | `default`, `dark`, `corporate`, `accessible`, `colorful`, `financial`, `professional`, `heatmap`. Restyles background, grid, axes, text and bar colors. `null` resets. |
+| `theme` | `null` | `auto` (follows the reader's light/dark setting and updates live), `default`, `dark`, `corporate`, `accessible`, `colorful`, `financial`, `professional`, `heatmap`. Restyles background, grid, axes, text and bar colors. `null` resets. |
 | `enableAdvancedColors` / `colorMode` / `colorTheme` | `false` / `"conditional"` / `"default"` | Color bars by `conditional` (sign), `sequential` (palette per bar) or `diverging` scale. |
 | `enableTooltips` / `tooltipConfig` | `false` / `{}` | Hover tooltip with change, running total and stack breakdown. `tooltipConfig({ theme: "light" })` etc. |
+| `tooltipContent` | `null` | `(d, defaultHtml) => html` to extend or replace tooltip content. Output is inserted as HTML: escape user text with the exported `escapeHtml`. |
 | `enableAccessibility` | `true` | ARIA roles/labels, focusable bars, keyboard navigation, chart summary. |
 | `enableBrush` | `false` | Horizontal brush; emits `brushSelection`. |
 | `enableZoom` / `zoomConfig` | `false` / `{}` | Horizontal zoom & pan (`{ scaleExtent: [1, 8] }`). |

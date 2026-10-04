@@ -381,3 +381,114 @@ describe("validation", () => {
         spy.mockRestore();
     });
 });
+
+describe("step 6 features", () => {
+    test("opening balance resets the running total and is drawn like a total", () => {
+        const { el } = render(
+            [
+                { label: "Opening", start: true, stacks: [{ value: 1000 }] },
+                { label: "Sales", stacks: [{ value: 300 }] },
+                { label: "Costs", stacks: [{ value: -200 }] },
+            ],
+            c => c.showTotal(true).formatNumber(d3.format(",.0f"))
+        );
+        const groups = bars(el);
+        expect(groups[0].classList.contains("is-start")).toBe(true);
+        expect(groups[0].classList.contains("is-increase")).toBe(false);
+        expect(rectOf(groups[0]).fill).toBe("#475569"); // total color, not "increase" green
+        expect(groups[0].getAttribute("aria-label")).toBe("Opening: opening value 1,000");
+        const labels = Array.from(el.querySelectorAll("text.total-label")).map(t => t.textContent);
+        expect(labels).toEqual(["1,000", "+300", "\u2212200", "1,100"]);
+    });
+
+    test("a mid-series start bar replaces the running total", () => {
+        const update = jest.fn();
+        render(
+            [
+                { label: "A", stacks: [{ value: 50 }] },
+                { label: "Restated", start: true, stacks: [{ value: 400 }] },
+                { label: "B", stacks: [{ value: 10 }] },
+            ],
+            c => c.on("chartUpdate", update)
+        );
+        const processed = update.mock.calls[0][0] as ProcessedData[];
+        expect(processed.map(d => d.cumulativeTotal)).toEqual([50, 400, 410]);
+    });
+
+    test("valueLabel customises or hides labels, and layout measures the custom text", () => {
+        const { el } = render(PL, c =>
+            c.valueLabel((d, text) => (d.isSubtotal ? "" : `${text} (${d.label.length})`))
+        );
+        const labels = Array.from(el.querySelectorAll("text.total-label")).map(t => t.textContent);
+        expect(labels).toHaveLength(3);
+        expect(labels[0]).toBe("+5,200 (7)");
+    });
+
+    test("tooltipContent receives the default HTML and can replace it", () => {
+        const fn = jest.fn((d: ProcessedData, html: string) => `<b class="custom">${d.label}</b>${html.length > 0 ? "" : "x"}`);
+        const { el, chart } = render(PL, c => c.enableTooltips(true).tooltipContent(fn));
+        bars(el)[0].dispatchEvent(new MouseEvent("mouseenter", { clientX: 5, clientY: 5 }));
+        expect(fn).toHaveBeenCalledWith(expect.objectContaining({ label: "Revenue" }), expect.stringContaining("Change"));
+        expect(document.querySelector(".mintwaterfall-tooltip b.custom")!.textContent).toBe("Revenue");
+        chart.destroy();
+    });
+
+    test("legend lists bar kinds present, and stack labels when stacked", () => {
+        const { el } = render(PL, c => c.showLegend(true).showTotal(true));
+        const kinds = Array.from(el.querySelectorAll(".legend-item text")).map(t => t.textContent);
+        expect(kinds).toEqual(["Increase", "Decrease", "Subtotal", "Total"]);
+
+        const { el: el2 } = render(
+            [
+                { label: "Q1", stacks: [{ value: 10, label: "Core" }, { value: 5, label: "Add-ons" }] },
+                { label: "Q2", stacks: [{ value: 4, label: "Core" }] },
+            ],
+            c => c.stacked(true).showLegend(true)
+        );
+        const items = Array.from(el2.querySelectorAll(".legend-item"));
+        expect(items.map(i => i.querySelector("text")!.textContent)).toEqual(["Core", "Add-ons"]);
+        const segFill = el2.querySelector("g.bar-group rect.stack")!.getAttribute("fill");
+        expect(items[0].querySelector("rect")!.getAttribute("fill")).toBe(segFill);
+    });
+
+    test("legend reserves space so the plot starts below it", () => {
+        const top = (el: Element) => Number(el.querySelector(".y-axis .tick:last-of-type")!.getAttribute("transform")!.match(/,([\d.]+)\)/)![1]);
+        const { el: without } = render(PL);
+        const { el: withLegend } = render(PL, c => c.showLegend(true));
+        expect(top(withLegend)).toBeGreaterThan(top(without));
+        expect(withLegend.querySelectorAll(".legend-item").length).toBeGreaterThan(0);
+        expect(without.querySelectorAll(".legend-item")).toHaveLength(0);
+    });
+
+    test('theme("auto") follows prefers-color-scheme', () => {
+        const listeners: Array<() => void> = [];
+        let dark = true;
+        const original = window.matchMedia;
+        (window as any).matchMedia = (q: string) => ({
+            matches: q.includes("dark") ? dark : false,
+            media: q,
+            addEventListener: (_: string, fn: () => void) => listeners.push(fn),
+            removeEventListener: jest.fn(),
+        });
+        try {
+            const { el, chart } = render(PL, c => c.theme("auto"));
+            expect(el.querySelector("rect.mw-background")!.getAttribute("fill")).toBe("#0f172a");
+            expect(rectOf(bars(el)[0]).fill).toBe("#34d399");
+            dark = false;
+            listeners.forEach(fn => fn());
+            expect(el.querySelector("rect.mw-background")!.getAttribute("fill")).toBe("#ffffff");
+            expect(rectOf(bars(el)[0]).fill).toBe("#10b981");
+            expect(chart.theme()).toBe("auto");
+            chart.destroy();
+        } finally {
+            (window as any).matchMedia = original;
+        }
+    });
+
+    test("CSV export labels opening bars as start", async () => {
+        (URL as any).createObjectURL = jest.fn(() => "blob:mock");
+        const { chart } = render([{ label: "Open", start: true, stacks: [{ value: 7 }] }, { label: "B", stacks: [{ value: 1 }] }]);
+        const csv = String((await chart.export("csv")).data).split("\n");
+        expect(csv[1]).toBe("Open,start,7,7");
+    });
+});

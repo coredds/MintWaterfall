@@ -30,6 +30,12 @@ export function prepareData(
 
         const stacks = bar.stacks || [];
         const barTotal = stacks.reduce((sum, stack) => sum + stack.value, 0);
+
+        if (bar.start) {
+            cumulativeTotal = barTotal;
+            return { ...bar, stacks, barTotal, cumulativeTotal, prevCumulativeTotal: 0, isStart: true };
+        }
+
         const prevCumulativeTotal = cumulativeTotal;
         cumulativeTotal += barTotal;
 

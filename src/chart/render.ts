@@ -8,6 +8,8 @@ import {
     getBarPosition,
     getBarCenter,
     isBandScale,
+    barKind,
+    BarKind,
     XScale,
     YScale,
     getBarExtent,
@@ -33,6 +35,117 @@ export interface RenderContext {
     xLabelEvery: number;
     valueLabelFontSize: number;
     yTickCount: number;
+    /** Text for each bar's value label ("" hides it). */
+    labelText: (d: ProcessedData) => string;
+    legend: LegendLayout | null;
+}
+
+export interface LegendItem {
+    label: string;
+    color: string;
+}
+
+export interface LegendLayout {
+    items: Array<LegendItem & { x: number; row: number }>;
+    rows: number;
+}
+
+const LEGEND_ROW = 20;
+const LEGEND_SWATCH = 10;
+
+function legendItemWidth(label: string): number {
+    return LEGEND_SWATCH + 6 + label.length * 6.6 + 18;
+}
+
+/**
+ * Legend entries: stack segment labels when stacked, otherwise one entry per bar kind
+ * that is drawn in a single consistent color (kinds with mixed colors are omitted).
+ */
+export function legendItems(data: ProcessedData[], config: ChartConfig, style: ResolvedStyle): LegendItem[] {
+    const items = new Map<string, string>();
+    if (config.stacked) {
+        for (const d of data) {
+            if (isAnchoredBar(d) && !d.isStart) continue;
+            d.stacks.forEach((s, i) => {
+                if (s.label && !items.has(s.label)) items.set(s.label, s.color || style.palette[i % style.palette.length]);
+            });
+        }
+        for (const d of data) {
+            if (d.isTotal) items.set(d.label, config.totalColor);
+        }
+        return [...items].map(([label, color]) => ({ label, color }));
+    }
+    const pseudo = { config, style, data } as RenderContext;
+    const names: Record<BarKind, string> = {
+        start: "Opening",
+        increase: "Increase",
+        decrease: "Decrease",
+        subtotal: "Subtotal",
+        total: "Total",
+    };
+    const byKind = new Map<BarKind, Set<string>>();
+    data.forEach((d, i) => {
+        const kind = barKind(d);
+        if (!byKind.has(kind)) byKind.set(kind, new Set());
+        byKind.get(kind)!.add(getBarColor(d, i, pseudo));
+    });
+    const order: BarKind[] = ["start", "increase", "decrease", "subtotal", "total"];
+    return order
+        .filter(k => byKind.get(k)?.size === 1)
+        .map(k => ({ label: names[k], color: [...byKind.get(k)!][0] }));
+}
+
+/** Pack legend items into rows that fit `availableWidth`. */
+export function layoutLegend(items: LegendItem[], availableWidth: number): LegendLayout | null {
+    if (items.length === 0) return null;
+    const placed: LegendLayout["items"] = [];
+    let x = 0;
+    let row = 0;
+    for (const item of items) {
+        const w = legendItemWidth(item.label);
+        if (x > 0 && x + w > availableWidth) {
+            row += 1;
+            x = 0;
+        }
+        placed.push({ ...item, x, row });
+        x += w;
+    }
+    return { items: placed, rows: row + 1 };
+}
+
+export function legendHeight(legend: LegendLayout | null): number {
+    return legend ? legend.rows * LEGEND_ROW + 6 : 0;
+}
+
+export function drawLegend(svg: AnySelection, ctx: RenderContext): void {
+    const items = ctx.legend ? ctx.legend.items : [];
+    const group = layer(svg, "legend-group")
+        .attr("transform", `translate(${ctx.margins.left},8)`)
+        .attr("role", items.length ? "list" : null)
+        .attr("aria-label", items.length ? "Legend" : null);
+    const sel = group
+        .selectAll<SVGGElement, LegendLayout["items"][number]>("g.legend-item")
+        .data(items, d => d.label);
+    sel.exit().remove();
+    const entered = sel.enter().append("g").attr("class", "legend-item").attr("role", "listitem");
+    entered.append("rect").attr("rx", 2);
+    entered.append("text");
+    const merged = entered.merge(sel).attr("transform", d => `translate(${d.x},${d.row * LEGEND_ROW})`);
+    merged
+        .select("rect")
+        .attr("width", LEGEND_SWATCH)
+        .attr("height", LEGEND_SWATCH)
+        .attr("y", 1)
+        .attr("fill", d => d.color);
+    merged
+        .select("text")
+        .attr("x", LEGEND_SWATCH + 6)
+        .attr("y", 6)
+        .attr("dominant-baseline", "central")
+        .attr("fill", ctx.style.mutedText)
+        .style("font-family", ctx.style.fontFamily)
+        .style("font-size", "12px")
+        .text(d => d.label);
 }
 
 const MINUS = "\u2212";
@@ -126,6 +239,10 @@ export function formatBarValue(d: ProcessedData, format: (n: number) => string):
 export function getBarColor(d: ProcessedData, i: number, ctx: RenderContext): string {
     const { config, style } = ctx;
     if (d.isTotal) return config.totalColor;
+    if (d.isStart) {
+        // Opening balances: explicit single color, otherwise the total color
+        return d.stacks.length === 1 && d.stacks[0].color ? d.stacks[0].color : config.totalColor;
+    }
     if (d.isSubtotal) {
         // Subtotals: explicit color, otherwise a lighter shade of the total color
         if (d.stacks[0]?.color && d.stacks[0].color !== config.totalColor) return d.stacks[0].color;
@@ -298,6 +415,7 @@ export function drawBars(container: AnySelection, ctx: RenderContext): AnySelect
     merged
         .classed("is-total", (d: ProcessedData) => Boolean(d.isTotal))
         .classed("is-subtotal", (d: ProcessedData) => Boolean(d.isSubtotal))
+        .classed("is-start", (d: ProcessedData) => Boolean(d.isStart))
         .classed("is-increase", (d: ProcessedData) => !isAnchoredBar(d) && d.barTotal >= 0)
         .classed("is-decrease", (d: ProcessedData) => !isAnchoredBar(d) && d.barTotal < 0);
 
@@ -305,7 +423,7 @@ export function drawBars(container: AnySelection, ctx: RenderContext): AnySelect
 
     merged.each(function (this: SVGGElement, d: ProcessedData, i: number) {
         const group = d3.select(this);
-        if (ctx.config.stacked && !isAnchoredBar(d) && d.stacks.length > 0) {
+        if (ctx.config.stacked && (!isAnchoredBar(d) || d.isStart) && d.stacks.length > 0) {
             group.selectAll("rect.waterfall-bar").remove();
             drawStackSegments(group, d, w, ctx, stagger ? stagger(d, i) : 0);
         } else {
@@ -414,7 +532,7 @@ export function drawValueLabels(container: AnySelection, ctx: RenderContext): vo
     const labelsGroup = layer(container, "labels-group").attr("aria-hidden", "true");
     const w = barWidth(ctx);
     const visible = config.showValueLabels && ctx.valueLabelFontSize > 0;
-    const data = visible ? ctx.data.filter(d => d.barTotal !== 0 || isAnchoredBar(d)) : [];
+    const data = visible ? ctx.data.filter(d => (d.barTotal !== 0 || isAnchoredBar(d)) && ctx.labelText(d) !== "") : [];
 
     const labels = labelsGroup.selectAll<SVGTextElement, ProcessedData>("text.total-label").data(data, (d: ProcessedData) => d.label);
     labels.exit().remove();
@@ -447,7 +565,7 @@ export function drawValueLabels(container: AnySelection, ctx: RenderContext): vo
         .style("font-variant-numeric", "tabular-nums")
         .style("pointer-events", "none")
         .style("opacity", 1)
-        .text((d: ProcessedData) => formatBarValue(d, config.formatNumber));
+        .text((d: ProcessedData) => ctx.labelText(d));
 }
 
 export function drawConnectors(container: AnySelection, ctx: RenderContext): void {

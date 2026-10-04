@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `StatisticalSystem`, `DataProcessor`, …).
 - API reference generated with TypeDoc (`npm run docs:api`), published at `/api/` on the demo site.
 - Compile-time tests for the public typings (`tests/types`, run by `npm run typecheck`).
+- **Opening balances:** `{ label, start: true, stacks }` draws a bar from zero in the total color and
+  resets the running total to its value (previously a first "Opening" bar was shown as a green increase).
+- **`valueLabel((d, defaultText) => string)`** customises value labels; return `""` to hide one.
+  Label sizing measures the custom text.
+- **`tooltipContent((d, defaultHtml) => html)`** extends or replaces the tooltip. `escapeHtml` is now exported.
+- **`showLegend(true)`**: segment labels (with their colors) for stacked charts, otherwise the bar kinds
+  shown (increase, decrease, subtotal, total, opening). The plot moves down to make room; long legends wrap.
+- **`theme("auto")`** follows `prefers-color-scheme` (default ↔ dark) and re-renders when it changes.
+  A `totalColor()` set after the theme is respected.
+- `BarKind` type and `is-start` CSS class on opening bars; CSV export reports `start` rows.
 
 ### Fixed
 

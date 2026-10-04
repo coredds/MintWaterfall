@@ -11,10 +11,11 @@ import {
     computeLayout,
     niceDomain,
     isAnchoredBar,
+    barKind,
     XScale,
 } from "./config.js";
 import { prepareData } from "./lifecycle.js";
-import { resolveStyle, ResolvedStyle } from "./style.js";
+import { resolveStyle, resolvedThemeName, ResolvedStyle } from "./style.js";
 import {
     RenderContext,
     AnySelection,
@@ -23,6 +24,10 @@ import {
     barWidth,
     formatBarValue,
     drawBackground,
+    drawLegend,
+    legendItems,
+    layoutLegend,
+    legendHeight,
     drawGrid,
     drawAxes,
     drawBars,
@@ -34,7 +39,7 @@ import {
 } from "./render.js";
 import { createTooltipSystem, escapeHtml, TooltipSystem } from "../tooltip.js";
 import { createExportSystem } from "../export.js";
-import { applyTheme, themes } from "../themes.js";
+import { themes } from "../themes.js";
 
 interface ElementState {
     clipId: string;
@@ -43,6 +48,8 @@ interface ElementState {
     emphasis: Set<string> | null;
     zoom: d3.ZoomBehavior<SVGSVGElement, unknown> | null;
     brush: d3.BrushBehavior<unknown> | null;
+    /** The element the chart was called on (container or <svg>). */
+    container: Element | null;
     /** Pending requestAnimationFrame id for a coalesced zoom render. */
     frame: number | null;
     /** Observes the container in responsive mode. */
@@ -101,6 +108,28 @@ export function waterfallChart(): WaterfallChart {
     let boundData: ChartData[] | null = null;
     let tooltip: TooltipSystem | null = null;
     const exportSystem = createExportSystem();
+    let totalColorOverride = false;
+    let colorSchemeQuery: MediaQueryList | null = null;
+
+    function onColorSchemeChange(): void {
+        if (config.theme !== "auto") return;
+        renderedSvgs.forEach(svgNode => {
+            const s = states.get(svgNode);
+            if (s && s.container && s.container.isConnected) renderElement(s.container, s.data);
+        });
+    }
+
+    /** For theme("auto"): apply the theme that matches the current color scheme and watch for changes. */
+    function syncAutoTheme(): void {
+        if (config.theme !== "auto") return;
+        const resolved = resolvedThemeName(config) as string;
+        config.advancedColorConfig.themeName = resolved;
+        if (!totalColorOverride && themes[resolved]) config.totalColor = themes[resolved].totalColor;
+        if (!colorSchemeQuery && typeof window !== "undefined" && typeof window.matchMedia === "function") {
+            colorSchemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
+            colorSchemeQuery.addEventListener?.("change", onColorSchemeChange);
+        }
+    }
 
     const listeners = d3.dispatch(
         "barClick",
@@ -120,6 +149,7 @@ export function waterfallChart(): WaterfallChart {
         const fmt = config.formatNumber;
         if (d.isTotal) return `${d.label}: total ${fmt(d.barTotal)}`;
         if (d.isSubtotal) return `${d.label}: subtotal ${fmt(d.barTotal)}`;
+        if (d.isStart) return `${d.label}: opening value ${fmt(d.barTotal)}`;
         const direction = d.barTotal >= 0 ? "increase" : "decrease";
         return `${d.label}: ${direction} of ${fmt(Math.abs(d.barTotal))}, running total ${fmt(d.cumulativeTotal)}`;
     }
@@ -145,7 +175,7 @@ export function waterfallChart(): WaterfallChart {
 
         let html = `<div style="font-weight:600;font-size:13px;margin-bottom:2px">${escapeHtml(d.label)}</div>`;
         if (isAnchoredBar(d)) {
-            html += row(d.isTotal ? "Total" : "Subtotal", fmt(d.barTotal));
+            html += row(d.isTotal ? "Total" : d.isSubtotal ? "Subtotal" : "Opening", fmt(d.barTotal));
             return html;
         }
         const changeColor = d.barTotal >= 0 ? style.positive : style.negative;
@@ -191,6 +221,7 @@ export function waterfallChart(): WaterfallChart {
                 emphasis: null,
                 zoom: null,
                 brush: null,
+                container: null,
                 frame: null,
                 resize: null,
                 lastWidth: 0,
@@ -220,9 +251,21 @@ export function waterfallChart(): WaterfallChart {
             if (Number.isFinite(h) && h > 0) height = h;
         }
 
+        state.container = node;
+        syncAutoTheme();
         const processed = prepareData(data, config);
         const style = resolveStyle(config);
         const yDomain = computeYDomain(processed, config.stacked);
+        const labelText = (d: ProcessedData): string => {
+            const text = formatBarValue(d, config.formatNumber);
+            return config.valueLabel ? String(config.valueLabel(d, text) ?? "") : text;
+        };
+        const legend = config.showLegend
+            ? layoutLegend(
+                  legendItems(processed, config, style),
+                  Math.max(60, width - Math.max(config.margin.left, 40) - config.margin.right)
+              )
+            : null;
         const layout = computeLayout(
             processed,
             config.margin,
@@ -230,7 +273,9 @@ export function waterfallChart(): WaterfallChart {
             height,
             yDomain,
             config.formatNumber,
-            config.showValueLabels
+            config.showValueLabels,
+            labelText,
+            legendHeight(legend)
         );
         const margins = layout.margins;
 
@@ -289,6 +334,8 @@ export function waterfallChart(): WaterfallChart {
             xLabelEvery: layout.xLabelEvery,
             valueLabelFontSize: layout.valueLabelFontSize,
             yTickCount: layout.yTickCount,
+            labelText,
+            legend,
         };
 
         // Accessible name/description
@@ -323,6 +370,7 @@ export function waterfallChart(): WaterfallChart {
             .attr("height", height);
 
         drawBackground(svg, ctx);
+        drawLegend(svg, ctx);
         const root = layer(svg, "waterfall-container");
         drawGrid(root, ctx);
         drawAxes(root, ctx);
@@ -384,7 +432,10 @@ export function waterfallChart(): WaterfallChart {
                 if (config.enableTooltips) {
                     getTooltip()
                         .configure({ ...(config.tooltipConfig as any) })
-                        .show(() => tooltipHtml(d, ctx.style), event, d as any);
+                        .show(() => {
+                            const html = tooltipHtml(d, ctx.style);
+                            return config.tooltipContent ? String(config.tooltipContent(d, html) ?? "") : html;
+                        }, event, d as any);
                 }
                 listeners.call("barMouseover", this, event, d);
             })
@@ -602,18 +653,24 @@ export function waterfallChart(): WaterfallChart {
     chart.stacked = accessor(() => config.stacked, v => { config.stacked = v; });
     chart.showTotal = accessor(() => config.showTotal, v => { config.showTotal = v; });
     chart.totalLabel = accessor(() => config.totalLabel, v => { config.totalLabel = v; });
-    chart.totalColor = accessor(() => config.totalColor, v => { config.totalColor = v; });
+    chart.totalColor = accessor(() => config.totalColor, v => {
+        config.totalColor = v;
+        totalColorOverride = true;
+    });
     chart.barPadding = accessor(() => config.barPadding, v => { config.barPadding = v; });
     chart.duration = accessor(() => config.duration, v => { config.duration = v; });
     chart.ease = accessor(() => config.ease, v => { config.ease = v; });
     chart.formatNumber = accessor(() => config.formatNumber, v => { config.formatNumber = v; });
     chart.theme = accessor(() => config.theme, v => {
         config.theme = v;
+        // A theme sets the total color; a later chart.totalColor(...) call overrides it
+        totalColorOverride = false;
         if (v) {
+            const resolved = resolvedThemeName(config) as string;
             config.advancedColorConfig.enabled = true;
-            config.advancedColorConfig.themeName = v;
+            config.advancedColorConfig.themeName = resolved;
             config.colorMode = "conditional";
-            if (themes[v]) applyTheme(chart as any, v as any);
+            if (themes[resolved]) config.totalColor = themes[resolved].totalColor;
         } else {
             config.advancedColorConfig.enabled = false;
             config.totalColor = defaultConfig.totalColor;
@@ -647,6 +704,9 @@ export function waterfallChart(): WaterfallChart {
     chart.showConnectors = accessor(() => config.showConnectors, v => { config.showConnectors = v; });
     chart.showGrid = accessor(() => config.showGrid, v => { config.showGrid = v; });
     chart.barRadius = accessor(() => config.barRadius, v => { config.barRadius = v; });
+    chart.tooltipContent = accessor(() => config.tooltipContent, v => { config.tooltipContent = v; });
+    chart.valueLabel = accessor(() => config.valueLabel, v => { config.valueLabel = v; });
+    chart.showLegend = accessor(() => config.showLegend, v => { config.showLegend = v; });
     chart.enableAdvancedColors = accessor(() => config.advancedColorConfig.enabled, v => { config.advancedColorConfig.enabled = v; });
     chart.colorMode = accessor(() => config.colorMode, v => { config.colorMode = v; });
     chart.colorTheme = accessor(() => config.advancedColorConfig.themeName || "default", v => { config.advancedColorConfig.themeName = v; });
@@ -684,7 +744,7 @@ export function waterfallChart(): WaterfallChart {
                 case "csv": {
                     const rows = lastProcessed.map(d => ({
                         label: d.label,
-                        type: d.isTotal ? "total" : d.isSubtotal ? "subtotal" : d.barTotal >= 0 ? "increase" : "decrease",
+                        type: barKind(d),
                         value: d.barTotal,
                         runningTotal: d.cumulativeTotal,
                     }));
@@ -717,6 +777,10 @@ export function waterfallChart(): WaterfallChart {
             }
         });
         renderedSvgs.clear();
+        if (colorSchemeQuery) {
+            colorSchemeQuery.removeEventListener?.("change", onColorSchemeChange);
+            colorSchemeQuery = null;
+        }
     };
 
     return chart;

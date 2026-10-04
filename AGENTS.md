@@ -71,7 +71,7 @@ Visual check without a dev server (Windows, Edge headless):
 - **Framework:** Jest 30 with jsdom, two projects in `jest.config.json`:
   - `unit` — `tests/*.test.{js,ts}`, uses the D3 mock `tests/__mocks__/d3.js` and `tests/setup.js` (Canvas/SVG mocks). Good for API/getter-setter and pure data tests; it cannot verify rendering.
   - `dom` — `tests/dom/*.test.ts`, real D3 in jsdom. Use this for anything that renders. Render with `.duration(0)` so output is synchronous. jsdom lacks `SVGSVGElement.viewBox`/`getBBox`, and `URL.createObjectURL` must be stubbed.
-- **Coverage:** global threshold in `jest.config.json` is a ratchet (currently ~47% lines) — raise it when coverage improves, never lower it.
+- **Coverage:** global threshold in `jest.config.json` is a ratchet (currently ~49% lines) — raise it when coverage improves, never lower it.
 - **Browser (Playwright):** `e2e/` — `demo.spec.ts` (functional: keyboard, tooltip, brush/zoom gestures, responsive, PNG export) and `visual.spec.ts` (screenshots). D3 is served from `node_modules` (no CDN) and reduced motion is emulated so renders are static. `e2e/fixture.html` is a blank page for custom scenarios.
   - Screenshot baselines are per platform in `e2e/__screenshots__/{win32,linux}/`. Locally on Windows the installed Edge is used. In CI (Linux), screenshot tests skip until Linux baselines exist — run the **Update visual baselines** workflow (manual dispatch) to create/refresh them.
   - After an intended visual change: `npm run test:e2e:update`, then review the changed PNGs before committing.
