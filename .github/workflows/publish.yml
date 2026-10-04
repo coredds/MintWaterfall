@@ -16,12 +16,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Trusted publishing (OIDC) needs npm >= 11.5.1, i.e. Node 24. No dependency cache in release builds.
       - name: Use Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 22.x
+          node-version: 24.x
           registry-url: https://registry.npmjs.org
-          cache: npm
 
       - run: npm ci
 
@@ -42,10 +42,11 @@ jobs:
       - name: Package check (types, ESM, CJS from a packed tarball)
         run: npm run check:package
 
+      # Authenticates via npm trusted publishing (OIDC, needs id-token: write above) — no npm token
+      # secret. Configure it once on npmjs.com: package Settings → Trusted publisher → GitHub Actions,
+      # user "coredds", repo "MintWaterfall", workflow "publish.yml". Provenance is added automatically.
       - name: Publish to npm
-        run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
 
       - name: Generate changelog
         id: changelog
