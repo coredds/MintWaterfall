@@ -25,3 +25,6 @@ jobs:
       
       - name: Run security audit (production dependencies only)
         run: npm audit --omit=dev --audit-level=high
+
+      - name: Run security audit (all dependencies, incl. build/test tooling)
+        run: npm audit --audit-level=high

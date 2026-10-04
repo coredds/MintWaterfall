@@ -9,6 +9,8 @@ A TypeScript waterfall chart library built on D3.js v7 — subtotals, stacked se
 
 **[Live demo](https://coredds.github.io/MintWaterfall/)** · **[API reference](https://coredds.github.io/MintWaterfall/api/)**
 
+![A profit-and-loss waterfall chart: revenue, costs, gross profit and operating income subtotals, ending at net income](.github/assets/chart.png)
+
 ## Installation
 
 ```bash
@@ -178,6 +180,7 @@ npm run test:e2e:update  # accept intended visual changes (regenerate screenshot
 npm run check:size       # gzip size budgets for the bundles
 npm run check:package    # pack, install in a clean project, type-check and load via ESM/CJS
 npm run docs:api         # TypeDoc API reference into api-docs/
+node scripts/readme-image.mjs  # regenerate the README image (.github/assets/chart.png) after visual changes
 ```
 
 Build output:

@@ -28,6 +28,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`theme("auto")`** follows `prefers-color-scheme` (default ↔ dark) and re-renders when it changes.
   A `totalColor()` set after the theme is respected.
 - `BarKind` type and `is-start` CSS class on opening bars; CSV export reports `start` rows.
+- README image of the chart, generated from the real bundle by `scripts/readme-image.mjs`.
+
+### Security
+
+- Dev/build dependencies: `npm audit` 45 → 0 vulnerabilities (`npm audit fix`, `@rollup/plugin-terser`
+  1.0, and an override pinning a patched `brace-expansion` under ESLint's `minimatch@3`). The published
+  package's runtime dependencies were already clean. The weekly security workflow now audits all
+  dependencies, not only production ones. Building from source needs Node 20+.
 
 ### Fixed
 

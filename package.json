@@ -102,7 +102,7 @@
     "@playwright/test": "^1.63.0",
     "@rollup/plugin-babel": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
-    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-terser": "^1.0.0",
     "@rollup/plugin-typescript": "^12.3.0",
     "@types/d3": "^7.4.3",
     "babel-jest": "^30.0.5",
@@ -138,6 +138,9 @@
     "d3-force": "^3.0.0"
   },
   "overrides": {
-    "js-yaml": "^4.1.1"
+    "js-yaml": "^4.1.1",
+    "minimatch@3": {
+      "brace-expansion": "^1.1.21"
+    }
   }
 }
