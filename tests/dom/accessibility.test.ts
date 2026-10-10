@@ -6,7 +6,14 @@ import { createAccessibilitySystem, makeChartAccessible } from "../../src/access
 
 const data = [
     { label: "Revenue", stacks: [{ value: 500 }] },
-    { label: "Costs", stacks: [{ value: -200, label: "COGS" }, { value: -100, label: "Opex" }], cumulative: 200 },
+    {
+        label: "Costs",
+        stacks: [
+            { value: -200, label: "COGS" },
+            { value: -100, label: "Opex" },
+        ],
+        cumulative: 200,
+    },
     { label: "Tax", stacks: [{ value: -50 }] },
 ];
 

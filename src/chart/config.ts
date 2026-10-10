@@ -48,13 +48,7 @@ export function barKind(d: ProcessedData): BarKind {
     return d.barTotal >= 0 ? "increase" : "decrease";
 }
 
-export type ChartEventType =
-    | "barClick"
-    | "barMouseover"
-    | "barMouseout"
-    | "barFocus"
-    | "chartUpdate"
-    | "brushSelection";
+export type ChartEventType = "barClick" | "barMouseover" | "barMouseout" | "barFocus" | "chartUpdate" | "brushSelection";
 
 export type ChartExportFormat = "svg" | "png" | "json" | "csv";
 
@@ -89,7 +83,6 @@ export interface ZoomConfig {
     translateExtent?: [[number, number], [number, number]];
     [key: string]: any;
 }
-
 
 export interface AdvancedColorConfig {
     enabled: boolean;
@@ -138,16 +131,7 @@ export type ChartEventName<K extends ChartEventType = ChartEventType> = K | `${K
 /**
  * `"auto"` follows the reader's `prefers-color-scheme` (default ↔ dark) and re-renders when it changes.
  */
-export type ThemeName =
-    | "auto"
-    | "default"
-    | "dark"
-    | "corporate"
-    | "accessible"
-    | "colorful"
-    | "financial"
-    | "professional"
-    | "heatmap";
+export type ThemeName = "auto" | "default" | "dark" | "corporate" | "accessible" | "colorful" | "financial" | "professional" | "heatmap";
 
 /** "vertical" (default): columns. "horizontal": categories down the left, values along the bottom. */
 export type Orientation = "vertical" | "horizontal";
@@ -291,7 +275,10 @@ export interface WaterfallChart {
     data(): ChartData[] | null;
     data(value: ChartData[] | null): WaterfallChart;
     /** Export the most recently rendered chart. Requires `enableExport(true)` (default). */
-    export(format: ChartExportFormat, options?: Record<string, any>): Promise<{ blob: Blob; url: string; data: string | Blob; download: () => void }>;
+    export(
+        format: ChartExportFormat,
+        options?: Record<string, any>
+    ): Promise<{ blob: Blob; url: string; data: string | Blob; download: () => void }>;
     /** Remove the tooltip element and detach zoom/brush listeners. */
     destroy(): void;
     (selection: d3.Selection<any, any, any, any>): void;
@@ -405,7 +392,6 @@ export const defaultConfig: ChartConfig = {
     orientation: "vertical",
 };
 
-
 /** Categorical (default) or time-based x scale. */
 export type XScale = d3.ScaleBand<string> | d3.ScaleTime<number, number>;
 export type YScale = d3.ScaleLinear<number, number>;
@@ -432,7 +418,10 @@ export function getBarWidth(scale: XScale, labels: string[] | number, totalWidth
     const count = typeof labels === "number" ? labels : labels.length;
     let width = (totalWidth * (1 - padding)) / Math.max(1, count);
     if (Array.isArray(labels) && labels.length > 1) {
-        const xs = labels.map(l => scale(new Date(l))).filter(Number.isFinite).sort((a, b) => a - b);
+        const xs = labels
+            .map(l => scale(new Date(l)))
+            .filter(Number.isFinite)
+            .sort((a, b) => a - b);
         let gap = Infinity;
         for (let i = 1; i < xs.length; i++) gap = Math.min(gap, xs[i] - xs[i - 1]);
         if (Number.isFinite(gap) && gap > 0) width = Math.min(width, gap * (1 - padding));
@@ -496,10 +485,7 @@ export function niceDomain(domain: [number, number], tickCount: number, maxWaste
     const extent = hi - lo || 1;
     const [n0, n1] = d3.scaleLinear().domain(domain).nice(tickCount).domain() as [number, number];
     const pad = extent * 0.02;
-    return [
-        lo - n0 <= extent * maxWaste ? n0 : lo - pad,
-        n1 - hi <= extent * maxWaste ? n1 : hi + pad,
-    ];
+    return [lo - n0 <= extent * maxWaste ? n0 : lo - pad, n1 - hi <= extent * maxWaste ? n1 : hi + pad];
 }
 
 export interface LayoutMetrics {
@@ -569,9 +555,7 @@ export function computeHorizontalLayout(
             const longestValue = Math.max(
                 1,
                 ...data.map(d =>
-                    labelText
-                        ? String(labelText(d)).length
-                        : String(formatNumber(Math.abs(d.barTotal))).length + (isAnchoredBar(d) ? 0 : 1)
+                    labelText ? String(labelText(d)).length : String(formatNumber(Math.abs(d.barTotal))).length + (isAnchoredBar(d) ? 0 : 1)
                 )
             );
             valueLabelReserve = Math.ceil(longestValue * (valueLabelFontSize * 0.6)) + 10;
@@ -672,9 +656,7 @@ export function computeLayout(
         const longestValue = Math.max(
             1,
             ...data.map(d =>
-                labelText
-                    ? String(labelText(d)).length
-                    : String(formatNumber(Math.abs(d.barTotal))).length + (isAnchoredBar(d) ? 0 : 1)
+                labelText ? String(labelText(d)).length : String(formatNumber(Math.abs(d.barTotal))).length + (isAnchoredBar(d) ? 0 : 1)
             )
         );
         const room = step * 0.94;

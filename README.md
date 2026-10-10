@@ -57,16 +57,16 @@ Call `selection.call(chart)` again after changing data or settings — the chart
 
 ```ts
 interface ChartData {
-  label: string;           // must be unique within the chart
-  stacks?: StackData[];    // segments of this step (summed for the bar's change)
-  subtotal?: boolean;      // draw the running total from zero; does not change it
-  start?: boolean;         // opening balance: drawn like a total; resets the running total to its value
+  label: string; // must be unique within the chart
+  stacks?: StackData[]; // segments of this step (summed for the bar's change)
+  subtotal?: boolean; // draw the running total from zero; does not change it
+  start?: boolean; // opening balance: drawn like a total; resets the running total to its value
 }
 
 interface StackData {
   value: number;
-  color?: string;          // optional — defaults to increase/decrease (or palette when stacked)
-  label?: string;          // shown inside stacked segments and in tooltips
+  color?: string; // optional — defaults to increase/decrease (or palette when stacked)
+  label?: string; // shown inside stacked segments and in tooltips
 }
 ```
 
@@ -76,36 +76,36 @@ Bars receive computed fields that are passed to event handlers: `barTotal` (the 
 
 All settings are getter/setters: call with no argument to read, with a value to set (returns the chart for chaining).
 
-| Setting | Default | Description |
-| --- | --- | --- |
-| `width`, `height` | `800`, `400` | Size in px (also used as the `viewBox`). |
-| `margin` | `{ top: 32, right: 24, bottom: 48, left: 56 }` | Minimum margins; the left/bottom grow to fit tick and axis labels. |
-| `responsive` | `false` | Scale the SVG to its container width. |
-| `showTotal` / `totalLabel` / `totalColor` | `false` / `"Total"` / `#475569` | Append a grand-total bar. |
-| `stacked` | `false` | Draw each stack as its own segment. |
-| `orientation` | `"vertical"` | `"horizontal"` puts categories down the left and values along the bottom (long labels are truncated, full text on hover). Brush, zoom, time scales, confidence bands and milestones are vertical-only and are ignored with a warning. |
-| `barPadding` | `0.24` | Gap between bars (0–0.95). |
-| `barRadius` | `3` | Corner radius in px. |
-| `valueLabel` | `null` | `(d, defaultText) => string` to customise value labels; return `""` to hide one. |
-| `showLegend` | `false` | Legend above the plot: segment labels when stacked, otherwise the bar kinds shown. |
-| `showValueLabels` | `true` | Signed labels (`+1,200`, `−450`) above bars; totals unsigned. |
-| `showConnectors` | `true` | Dashed lines linking consecutive bars. |
-| `showGrid` | `true` | Horizontal grid lines (zero line is emphasised when the axis crosses zero). |
-| `formatNumber` | `d3.format(",.0f")` | Formatter for axis, labels, tooltips. |
-| `duration` / `ease` / `staggeredAnimations` / `staggerDelay` | `650` / `easeCubicOut` / `false` / `100` | Animation. Disabled automatically for `prefers-reduced-motion`. |
-| `theme` | `null` | `auto` (follows the reader's light/dark setting and updates live), `default`, `dark`, `corporate`, `accessible`, `colorful`, `financial`, `professional`, `heatmap`. Restyles background, grid, axes, text and bar colors. `null` resets. |
-| `enableAdvancedColors` / `colorMode` / `colorTheme` | `false` / `"conditional"` / `"default"` | Color bars by `conditional` (sign), `sequential` (palette per bar) or `diverging` scale. |
-| `enableTooltips` / `tooltipConfig` | `false` / `{}` | Hover tooltip with change, running total and stack breakdown. `tooltipConfig({ theme: "light" })` etc. |
-| `tooltipContent` | `null` | `(d, defaultHtml) => html` to extend or replace tooltip content. Output is inserted as HTML: escape user text with the exported `escapeHtml`. |
-| `enableAccessibility` | `true` | ARIA roles/labels, focusable bars, keyboard navigation, chart summary. |
-| `enableBrush` | `false` | Horizontal brush; emits `brushSelection`. |
-| `enableZoom` / `zoomConfig` | `false` / `{}` | Horizontal zoom & pan (`{ scaleExtent: [1, 8] }`). |
-| `enableExport` / `exportConfig` | `true` / `{}` | Allow `chart.export()`; `exportConfig({ filename })`. |
-| `showTrendLine`, `trendLineType`, `trendLineColor`, `trendLineWidth`, `trendLineStyle`, `trendLineOpacity`, `trendLineWindow`, `trendLineDegree` | off | Trend of the running total: `linear`, `polynomial` (least squares), `moving-average`. |
-| `confidenceBands` / `enableConfidenceBands` | off | Shaded band between optimistic and pessimistic running totals: `confidenceBands({ enabled: true, scenarios: { optimistic, pessimistic }, opacity, showTrendLines })`. Scenario entries are `{ label, value }` changes matched to bars by label; subtotal, total and opening bars behave as in the chart. Partial objects are merged. Vertical only. |
-| `milestones` / `enableMilestones` / `addMilestone` | off | Markers at a value above a bar: `addMilestone({ label, value, type: "target" \| "threshold" \| "alert" \| "achievement", description })`. Vertical only. |
-| `scaleType` | `"auto"` | `"time"` positions bars on a time scale (labels must parse as dates); otherwise categorical. |
-| `data` | `null` | Data to use when the selection has no bound datum. |
+| Setting                                                                                                                                          | Default                                        | Description                                                                                                                                                                                                                                                                                                                                         |
+| ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `width`, `height`                                                                                                                                | `800`, `400`                                   | Size in px (also used as the `viewBox`).                                                                                                                                                                                                                                                                                                            |
+| `margin`                                                                                                                                         | `{ top: 32, right: 24, bottom: 48, left: 56 }` | Minimum margins; the left/bottom grow to fit tick and axis labels.                                                                                                                                                                                                                                                                                  |
+| `responsive`                                                                                                                                     | `false`                                        | Scale the SVG to its container width.                                                                                                                                                                                                                                                                                                               |
+| `showTotal` / `totalLabel` / `totalColor`                                                                                                        | `false` / `"Total"` / `#475569`                | Append a grand-total bar.                                                                                                                                                                                                                                                                                                                           |
+| `stacked`                                                                                                                                        | `false`                                        | Draw each stack as its own segment.                                                                                                                                                                                                                                                                                                                 |
+| `orientation`                                                                                                                                    | `"vertical"`                                   | `"horizontal"` puts categories down the left and values along the bottom (long labels are truncated, full text on hover). Brush, zoom, time scales, confidence bands and milestones are vertical-only and are ignored with a warning.                                                                                                               |
+| `barPadding`                                                                                                                                     | `0.24`                                         | Gap between bars (0–0.95).                                                                                                                                                                                                                                                                                                                          |
+| `barRadius`                                                                                                                                      | `3`                                            | Corner radius in px.                                                                                                                                                                                                                                                                                                                                |
+| `valueLabel`                                                                                                                                     | `null`                                         | `(d, defaultText) => string` to customise value labels; return `""` to hide one.                                                                                                                                                                                                                                                                    |
+| `showLegend`                                                                                                                                     | `false`                                        | Legend above the plot: segment labels when stacked, otherwise the bar kinds shown.                                                                                                                                                                                                                                                                  |
+| `showValueLabels`                                                                                                                                | `true`                                         | Signed labels (`+1,200`, `−450`) above bars; totals unsigned.                                                                                                                                                                                                                                                                                       |
+| `showConnectors`                                                                                                                                 | `true`                                         | Dashed lines linking consecutive bars.                                                                                                                                                                                                                                                                                                              |
+| `showGrid`                                                                                                                                       | `true`                                         | Horizontal grid lines (zero line is emphasised when the axis crosses zero).                                                                                                                                                                                                                                                                         |
+| `formatNumber`                                                                                                                                   | `d3.format(",.0f")`                            | Formatter for axis, labels, tooltips.                                                                                                                                                                                                                                                                                                               |
+| `duration` / `ease` / `staggeredAnimations` / `staggerDelay`                                                                                     | `650` / `easeCubicOut` / `false` / `100`       | Animation. Disabled automatically for `prefers-reduced-motion`.                                                                                                                                                                                                                                                                                     |
+| `theme`                                                                                                                                          | `null`                                         | `auto` (follows the reader's light/dark setting and updates live), `default`, `dark`, `corporate`, `accessible`, `colorful`, `financial`, `professional`, `heatmap`. Restyles background, grid, axes, text and bar colors. `null` resets.                                                                                                           |
+| `enableAdvancedColors` / `colorMode` / `colorTheme`                                                                                              | `false` / `"conditional"` / `"default"`        | Color bars by `conditional` (sign), `sequential` (palette per bar) or `diverging` scale.                                                                                                                                                                                                                                                            |
+| `enableTooltips` / `tooltipConfig`                                                                                                               | `false` / `{}`                                 | Hover tooltip with change, running total and stack breakdown. `tooltipConfig({ theme: "light" })` etc.                                                                                                                                                                                                                                              |
+| `tooltipContent`                                                                                                                                 | `null`                                         | `(d, defaultHtml) => html` to extend or replace tooltip content. Output is inserted as HTML: escape user text with the exported `escapeHtml`.                                                                                                                                                                                                       |
+| `enableAccessibility`                                                                                                                            | `true`                                         | ARIA roles/labels, focusable bars, keyboard navigation, chart summary.                                                                                                                                                                                                                                                                              |
+| `enableBrush`                                                                                                                                    | `false`                                        | Horizontal brush; emits `brushSelection`.                                                                                                                                                                                                                                                                                                           |
+| `enableZoom` / `zoomConfig`                                                                                                                      | `false` / `{}`                                 | Horizontal zoom & pan (`{ scaleExtent: [1, 8] }`).                                                                                                                                                                                                                                                                                                  |
+| `enableExport` / `exportConfig`                                                                                                                  | `true` / `{}`                                  | Allow `chart.export()`; `exportConfig({ filename })`.                                                                                                                                                                                                                                                                                               |
+| `showTrendLine`, `trendLineType`, `trendLineColor`, `trendLineWidth`, `trendLineStyle`, `trendLineOpacity`, `trendLineWindow`, `trendLineDegree` | off                                            | Trend of the running total: `linear`, `polynomial` (least squares), `moving-average`.                                                                                                                                                                                                                                                               |
+| `confidenceBands` / `enableConfidenceBands`                                                                                                      | off                                            | Shaded band between optimistic and pessimistic running totals: `confidenceBands({ enabled: true, scenarios: { optimistic, pessimistic }, opacity, showTrendLines })`. Scenario entries are `{ label, value }` changes matched to bars by label; subtotal, total and opening bars behave as in the chart. Partial objects are merged. Vertical only. |
+| `milestones` / `enableMilestones` / `addMilestone`                                                                                               | off                                            | Markers at a value above a bar: `addMilestone({ label, value, type: "target" \| "threshold" \| "alert" \| "achievement", description })`. Vertical only.                                                                                                                                                                                            |
+| `scaleType`                                                                                                                                      | `"auto"`                                       | `"time"` positions bars on a time scale (labels must parse as dates); otherwise categorical.                                                                                                                                                                                                                                                        |
+| `data`                                                                                                                                           | `null`                                         | Data to use when the selection has no bound datum.                                                                                                                                                                                                                                                                                                  |
 
 Methods:
 
@@ -115,28 +115,28 @@ Methods:
 
 ### Events
 
-| Event | Arguments |
-| --- | --- |
-| `barClick` | `(event, datum)` — mouse click, or Enter/Space on a focused bar |
-| `barMouseover`, `barMouseout` | `(event, datum)` |
-| `barFocus` | `(event, datum)` |
-| `brushSelection` | `(event, selectedData[])` — empty array when cleared |
-| `chartUpdate` | `(processedData[])` — after every render |
+| Event                         | Arguments                                                       |
+| ----------------------------- | --------------------------------------------------------------- |
+| `barClick`                    | `(event, datum)` — mouse click, or Enter/Space on a focused bar |
+| `barMouseover`, `barMouseout` | `(event, datum)`                                                |
+| `barFocus`                    | `(event, datum)`                                                |
+| `brushSelection`              | `(event, selectedData[])` — empty array when cleared            |
+| `chartUpdate`                 | `(processedData[])` — after every render                        |
 
 ### Accessibility
 
-With `enableAccessibility(true)` (default) the SVG gets `role="group"`, `aria-roledescription="waterfall chart"` and a generated summary (bar count, final total, largest increase/decrease) as its accessible name and `<title>`. Bars are a `role="list"` of focusable `listitem`s with labels such as *"Cost of sales: decrease of 2,100, running total 3,100"*. Arrow keys / Home / End move between bars; Enter or Space fires `barClick`. The `accessible` theme uses the Okabe–Ito color-blind-safe palette.
+With `enableAccessibility(true)` (default) the SVG gets `role="group"`, `aria-roledescription="waterfall chart"` and a generated summary (bar count, final total, largest increase/decrease) as its accessible name and `<title>`. Bars are a `role="list"` of focusable `listitem`s with labels such as _"Cost of sales: decrease of 2,100, running total 3,100"_. Arrow keys / Home / End move between bars; Enter or Space fires `barClick`. The `accessible` theme uses the Okabe–Ito color-blind-safe palette.
 
 ## Standalone modules
 
 These are exported for use alongside (or without) the chart:
 
-| Export | Purpose |
-| --- | --- |
+| Export                                                                                                                                                              | Purpose                                                                      |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | `createDataProcessor`, `createAdvancedDataProcessor`, `createRevenueWaterfall`, `createTemporalWaterfall`, `createVarianceWaterfall`, `transformTransactionData`, … | Shape raw records into chart data (grouping, rollups, temporal aggregation). |
-| `createStatisticalSystem`, `analyzeWaterfallStatistics` | Summaries, outliers, trend analysis, data quality. |
-| `themes`, `applyTheme`, `getConditionalColor`, `createSequentialScale`, `createDivergingScale`, … | Theme definitions and color helpers. |
-| `createTooltipSystem`, `createExportSystem`, `createAccessibilitySystem`, `createShapeGenerators`, `createScaleSystem`, `createAnimationSystem` | Lower-level building blocks used by or alongside the chart. |
+| `createStatisticalSystem`, `analyzeWaterfallStatistics`                                                                                                             | Summaries, outliers, trend analysis, data quality.                           |
+| `themes`, `applyTheme`, `getConditionalColor`, `createSequentialScale`, `createDivergingScale`, …                                                                   | Theme definitions and color helpers.                                         |
+| `createTooltipSystem`, `createExportSystem`, `createAccessibilitySystem`, `createShapeGenerators`, `createScaleSystem`, `createAnimationSystem`                     | Lower-level building blocks used by or alongside the chart.                  |
 
 TypeScript types for chart data and the chart API are exported too: `ChartData`, `StackData`, `ProcessedData`, `WaterfallChart`, `ChartEventType`, `ChartExportFormat`.
 
@@ -145,7 +145,10 @@ import { createStatisticalSystem } from "mintwaterfall";
 
 const stats = createStatisticalSystem();
 const summary = stats.calculateSummary([4200, 3800, 5100, 4700]);
-const trend = stats.analyzeTrend([{ x: 1, y: 10 }, { x: 2, y: 20 }]);
+const trend = stats.analyzeTrend([
+  { x: 1, y: 10 },
+  { x: 2, y: 20 },
+]);
 ```
 
 ### Experimental (`mintwaterfall/experimental`)
@@ -156,12 +159,12 @@ Helpers that aren't used by the chart and have limited test coverage live in a s
 import { createHierarchicalLayout, createAdvancedInteractionSystem } from "mintwaterfall/experimental";
 ```
 
-| Export | Purpose |
-| --- | --- |
-| `createHierarchicalLayout`, `createHierarchicalLayoutSystem`, `createWaterfallTreemap`, `createWaterfallSunburst`, `createWaterfallBubbles` | Treemap, sunburst, pack and other hierarchical layouts. |
-| `createAdvancedInteractionSystem`, `createWaterfallDragBehavior`, `createWaterfallVoronoiConfig`, `createWaterfallForceConfig` | Drag, Voronoi hover and force simulation. |
-| `createPerformanceManager`, `createAdvancedPerformanceSystem`, `createWaterfallSpatialIndex`, `createVirtualWaterfallRenderer` | Spatial indexing and virtualised rendering. |
-| `createBrushSystem`, `createZoomSystem` | Standalone brush/zoom building blocks. For a chart, use `enableBrush` / `enableZoom` instead. |
+| Export                                                                                                                                      | Purpose                                                                                       |
+| ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `createHierarchicalLayout`, `createHierarchicalLayoutSystem`, `createWaterfallTreemap`, `createWaterfallSunburst`, `createWaterfallBubbles` | Treemap, sunburst, pack and other hierarchical layouts.                                       |
+| `createAdvancedInteractionSystem`, `createWaterfallDragBehavior`, `createWaterfallVoronoiConfig`, `createWaterfallForceConfig`              | Drag, Voronoi hover and force simulation.                                                     |
+| `createPerformanceManager`, `createAdvancedPerformanceSystem`, `createWaterfallSpatialIndex`, `createVirtualWaterfallRenderer`              | Spatial indexing and virtualised rendering.                                                   |
+| `createBrushSystem`, `createZoomSystem`                                                                                                     | Standalone brush/zoom building blocks. For a chart, use `enableBrush` / `enableZoom` instead. |
 
 Script tag: `dist/mintwaterfall-experimental.min.js` (global `MintWaterfallExperimental`). Upgrading from 1.x? See the [2.0.0 migration notes](CHANGELOG.md#200---2026-10-03).
 

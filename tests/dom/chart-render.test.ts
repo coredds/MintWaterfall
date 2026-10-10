@@ -23,7 +23,9 @@ function render(data: ChartData[], configure: (c: ReturnType<typeof waterfallCha
     const el = mount();
     const chart = waterfallChart().width(600).height(300).duration(0);
     configure(chart);
-    d3.select(el).datum(data).call(chart as any);
+    d3.select(el)
+        .datum(data)
+        .call(chart as any);
     return { el, chart, svg: el.querySelector("svg") as SVGSVGElement };
 }
 
@@ -56,7 +58,12 @@ describe("rendering", () => {
             { label: "A", stacks: [{ value: 1000 }] },
             { label: "B", stacks: [{ value: -100 }] },
         ]);
-        const baseline = Number(el.querySelector(".x-axis")!.getAttribute("transform")!.match(/,([\d.]+)\)/)![1]);
+        const baseline = Number(
+            el
+                .querySelector(".x-axis")!
+                .getAttribute("transform")!
+                .match(/,([\d.]+)\)/)![1]
+        );
         const first = rectOf(bars(el)[0]);
         expect(first.y + first.height).toBeCloseTo(baseline, 5);
     });
@@ -105,7 +112,13 @@ describe("rendering", () => {
     test("stacked mode draws one rect per stack, colored from the palette", () => {
         const { el } = render(
             [
-                { label: "A", stacks: [{ value: 100, label: "x" }, { value: 50, label: "y" }] },
+                {
+                    label: "A",
+                    stacks: [
+                        { value: 100, label: "x" },
+                        { value: 50, label: "y" },
+                    ],
+                },
                 { label: "B", stacks: [{ value: -30 }] },
             ],
             c => c.stacked(true)
@@ -120,13 +133,18 @@ describe("rendering", () => {
         const { el, chart } = render(long);
         const before = rectOf(bars(el)[11]).height;
         const changed = long.map((d, i) => (i === 11 ? { ...d, stacks: [{ value: 400 }] } : d));
-        d3.select(el).datum(changed).call(chart as any);
+        d3.select(el)
+            .datum(changed)
+            .call(chart as any);
         expect(rectOf(bars(el)[11]).height).toBeGreaterThan(before);
     });
 
     test("re-rendering does not accumulate defs or clip paths", () => {
         const { el, chart } = render(PL);
-        for (let i = 0; i < 5; i++) d3.select(el).datum(PL).call(chart as any);
+        for (let i = 0; i < 5; i++)
+            d3.select(el)
+                .datum(PL)
+                .call(chart as any);
         expect(el.querySelectorAll("defs")).toHaveLength(1);
         expect(el.querySelectorAll("clipPath")).toHaveLength(1);
         expect(el.querySelectorAll("svg")).toHaveLength(1);
@@ -138,7 +156,9 @@ describe("rendering", () => {
         svg.setAttribute("height", "250");
         document.body.appendChild(svg);
         const chart = waterfallChart().duration(0);
-        d3.select(svg).datum(PL).call(chart as any);
+        d3.select(svg)
+            .datum(PL)
+            .call(chart as any);
         expect(chart.width()).toBe(800);
         expect(svg.getAttribute("viewBox")).toBe("0 0 500 250");
     });
@@ -160,7 +180,9 @@ describe("rendering", () => {
     test("clearing the theme removes the background", () => {
         const { el, chart } = render(PL, c => c.theme("dark"));
         chart.theme(null);
-        d3.select(el).datum(PL).call(chart as any);
+        d3.select(el)
+            .datum(PL)
+            .call(chart as any);
         expect(el.querySelector("rect.mw-background")).toBeNull();
     });
 
@@ -175,7 +197,9 @@ describe("rendering", () => {
         const { el, chart } = render(PL, c => c.showTrendLine(true).trendLineType("polynomial"));
         expect(el.querySelector("path.trend-line")!.getAttribute("d")).toBeTruthy();
         chart.showTrendLine(false);
-        d3.select(el).datum(PL).call(chart as any);
+        d3.select(el)
+            .datum(PL)
+            .call(chart as any);
         expect(el.querySelector("path.trend-line")).toBeNull();
     });
 
@@ -303,9 +327,7 @@ describe("events", () => {
 
 describe("tooltips", () => {
     test("shows an escaped tooltip on hover", () => {
-        const { el, chart } = render([{ label: "<img src=x onerror=alert(1)>", stacks: [{ value: 5 }] }], c =>
-            c.enableTooltips(true)
-        );
+        const { el, chart } = render([{ label: "<img src=x onerror=alert(1)>", stacks: [{ value: 5 }] }], c => c.enableTooltips(true));
         bars(el)[0].dispatchEvent(new MouseEvent("mouseenter", { clientX: 10, clientY: 10 }));
         const tip = document.querySelector(".mintwaterfall-tooltip") as HTMLElement;
         expect(tip).not.toBeNull();
@@ -330,7 +352,9 @@ describe("brush and zoom", () => {
         expect((svg as any).__zoom).toBeDefined();
         expect((svg as any).__on?.some((l: any) => l.name === "zoom")).toBe(true);
         chart.enableZoom(false);
-        d3.select(el).datum(PL).call(chart as any);
+        d3.select(el)
+            .datum(PL)
+            .call(chart as any);
         expect(((svg as any).__on || []).some((l: any) => l.name === "zoom")).toBe(false);
     });
 });
@@ -416,9 +440,7 @@ describe("step 6 features", () => {
     });
 
     test("valueLabel customises or hides labels, and layout measures the custom text", () => {
-        const { el } = render(PL, c =>
-            c.valueLabel((d, text) => (d.isSubtotal ? "" : `${text} (${d.label.length})`))
-        );
+        const { el } = render(PL, c => c.valueLabel((d, text) => (d.isSubtotal ? "" : `${text} (${d.label.length})`)));
         const labels = Array.from(el.querySelectorAll("text.total-label")).map(t => t.textContent);
         expect(labels).toHaveLength(3);
         expect(labels[0]).toBe("+5,200 (7)");
@@ -440,7 +462,13 @@ describe("step 6 features", () => {
 
         const { el: el2 } = render(
             [
-                { label: "Q1", stacks: [{ value: 10, label: "Core" }, { value: 5, label: "Add-ons" }] },
+                {
+                    label: "Q1",
+                    stacks: [
+                        { value: 10, label: "Core" },
+                        { value: 5, label: "Add-ons" },
+                    ],
+                },
                 { label: "Q2", stacks: [{ value: 4, label: "Core" }] },
             ],
             c => c.stacked(true).showLegend(true)
@@ -452,7 +480,13 @@ describe("step 6 features", () => {
     });
 
     test("legend reserves space so the plot starts below it", () => {
-        const top = (el: Element) => Number(el.querySelector(".y-axis .tick:last-of-type")!.getAttribute("transform")!.match(/,([\d.]+)\)/)![1]);
+        const top = (el: Element) =>
+            Number(
+                el
+                    .querySelector(".y-axis .tick:last-of-type")!
+                    .getAttribute("transform")!
+                    .match(/,([\d.]+)\)/)![1]
+            );
         const { el: without } = render(PL);
         const { el: withLegend } = render(PL, c => c.showLegend(true));
         expect(top(withLegend)).toBeGreaterThan(top(without));
@@ -487,7 +521,10 @@ describe("step 6 features", () => {
 
     test("CSV export labels opening bars as start", async () => {
         (URL as any).createObjectURL = jest.fn(() => "blob:mock");
-        const { chart } = render([{ label: "Open", start: true, stacks: [{ value: 7 }] }, { label: "B", stacks: [{ value: 1 }] }]);
+        const { chart } = render([
+            { label: "Open", start: true, stacks: [{ value: 7 }] },
+            { label: "B", stacks: [{ value: 1 }] },
+        ]);
         const csv = String((await chart.export("csv")).data).split("\n");
         expect(csv[1]).toBe("Open,start,7,7");
     });
@@ -547,8 +584,17 @@ describe("horizontal orientation", () => {
     });
 
     test("stacked segments lie side by side along the value axis", () => {
-        const { el } = render([{ label: "A", stacks: [{ value: 100, label: "x" }, { value: 50, label: "y" }] }], c =>
-            c.orientation("horizontal").stacked(true)
+        const { el } = render(
+            [
+                {
+                    label: "A",
+                    stacks: [
+                        { value: 100, label: "x" },
+                        { value: 50, label: "y" },
+                    ],
+                },
+            ],
+            c => c.orientation("horizontal").stacked(true)
         );
         const [a, b] = Array.from(el.querySelectorAll("rect.stack"));
         expect(num(b, "x")).toBeCloseTo(num(a, "x") + num(a, "width"), 5);
@@ -557,8 +603,12 @@ describe("horizontal orientation", () => {
 
     test("long category labels are truncated with the full text in a <title>", () => {
         const long = "An extremely long category label that would not fit in the margin";
-        const { el } = render([{ label: long, stacks: [{ value: 10 }] }, { label: "B", stacks: [{ value: 5 }] }], c =>
-            c.orientation("horizontal").width(400)
+        const { el } = render(
+            [
+                { label: long, stacks: [{ value: 10 }] },
+                { label: "B", stacks: [{ value: 5 }] },
+            ],
+            c => c.orientation("horizontal").width(400)
         );
         const tick = el.querySelector(".x-axis .tick text")!;
         expect(tick.firstChild!.textContent!.endsWith("\u2026")).toBe(true);
@@ -568,11 +618,15 @@ describe("horizontal orientation", () => {
     test("switching orientation re-lays out the same chart cleanly", () => {
         const { el, chart } = render(PL);
         chart.orientation("horizontal");
-        d3.select(el).datum(PL).call(chart as any);
+        d3.select(el)
+            .datum(PL)
+            .call(chart as any);
         expect(bars(el).every(g => /translate\(0,/.test(g.getAttribute("transform")!))).toBe(true);
         expect(el.querySelector(".x-axis .tick text")!.getAttribute("transform")).toBeNull();
         chart.orientation("vertical");
-        d3.select(el).datum(PL).call(chart as any);
+        d3.select(el)
+            .datum(PL)
+            .call(chart as any);
         expect(bars(el).every(g => /,0\)$/.test(g.getAttribute("transform")!))).toBe(true);
         expect(el.querySelectorAll(".x-axis .tick")).toHaveLength(PL.length);
     });
@@ -581,7 +635,9 @@ describe("horizontal orientation", () => {
         const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
         const { el, chart } = render(PL, c => c.orientation("horizontal").enableBrush(true).enableZoom(true));
         expect(el.querySelector(".brush-layer .overlay")).toBeNull();
-        d3.select(el).datum(PL).call(chart as any);
+        d3.select(el)
+            .datum(PL)
+            .call(chart as any);
         const messages = warn.mock.calls.map(c => String(c[0]));
         expect(messages.filter(m => m.includes("enableBrush"))).toHaveLength(1);
         expect(messages.filter(m => m.includes("enableZoom"))).toHaveLength(1);
@@ -657,12 +713,16 @@ describe("confidence bands", () => {
         expect(el.querySelectorAll("path.scenario-line")).toHaveLength(2);
 
         chart.confidenceBands({ showTrendLines: false });
-        d3.select(el).datum(PL).call(chart as any);
+        d3.select(el)
+            .datum(PL)
+            .call(chart as any);
         expect(el.querySelectorAll("path.scenario-line")).toHaveLength(0);
         expect(chart.confidenceBands().opacity).toBe(0.4); // partial update merged
 
         chart.enableConfidenceBands(false);
-        d3.select(el).datum(PL).call(chart as any);
+        d3.select(el)
+            .datum(PL)
+            .call(chart as any);
         expect(el.querySelector(".confidence-bands-group")).toBeNull();
     });
 
@@ -706,7 +766,10 @@ describe("milestones", () => {
         const markers = Array.from(el.querySelectorAll("path.milestone-marker"));
         expect(markers).toHaveLength(2);
         const revenueTop = rectOf(bars(el)[0]).y; // Revenue bar top is 5200
-        const [, mx, my] = markers[0].getAttribute("transform")!.match(/translate\(([-\d.]+), ?([-\d.]+)\)/)!.map(Number);
+        const [, mx, my] = markers[0]
+            .getAttribute("transform")!
+            .match(/translate\(([-\d.]+), ?([-\d.]+)\)/)!
+            .map(Number);
         expect(mx).toBeCloseTo(barCenter(bars(el)[0]), 3);
         expect(my).toBeCloseTo(revenueTop, 3);
         expect(markers[0].getAttribute("fill")).toBe("#f39c12"); // target
@@ -720,10 +783,14 @@ describe("milestones", () => {
         const { el, chart } = render(PL, c => c.milestones({ enabled: true, milestones: list }));
         chart.addMilestone({ label: "Opex", value: 1150, type: "threshold" });
         expect(list).toHaveLength(1);
-        d3.select(el).datum(PL).call(chart as any);
+        d3.select(el)
+            .datum(PL)
+            .call(chart as any);
         expect(el.querySelectorAll("path.milestone-marker")).toHaveLength(2);
         chart.enableMilestones(false);
-        d3.select(el).datum(PL).call(chart as any);
+        d3.select(el)
+            .datum(PL)
+            .call(chart as any);
         expect(el.querySelector(".milestones-group")).toBeNull();
     });
 

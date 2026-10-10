@@ -14,13 +14,21 @@ import {
     validateData,
 } from "./validation.js";
 
-export { DataItem, StackItem, ProcessedDataItem, LoadDataOptions, TransformOptions, AggregationType, SortDirection, SortBy, RawDataItem, DataSummary };
+export {
+    DataItem,
+    StackItem,
+    ProcessedDataItem,
+    LoadDataOptions,
+    TransformOptions,
+    AggregationType,
+    SortDirection,
+    SortBy,
+    RawDataItem,
+    DataSummary,
+};
 
 // Data loading utilities
-export async function loadData(
-    source: string | DataItem[] | RawDataItem[],
-    options: LoadDataOptions = {}
-): Promise<DataItem[]> {
+export async function loadData(source: string | DataItem[] | RawDataItem[], options: LoadDataOptions = {}): Promise<DataItem[]> {
     // Reserved for future use: parseNumbers, dateColumns, valueColumn,
     // labelColumn, colorColumn, stacksColumn options
 
@@ -62,7 +70,6 @@ export async function loadData(
 
         // Transform raw data to MintWaterfall format if needed
         return transformToWaterfallFormat(rawData, options);
-
     } catch (error) {
         console.error("Error loading data:", error);
         throw error;
@@ -70,17 +77,14 @@ export async function loadData(
 }
 
 // Transform various data formats to MintWaterfall format
-export function transformToWaterfallFormat(
-    data: any[],
-    options: TransformOptions = {}
-): DataItem[] {
+export function transformToWaterfallFormat(data: any[], options: TransformOptions = {}): DataItem[] {
     const {
         valueColumn = "value",
         labelColumn = "label",
         colorColumn = "color",
         // stacksColumn = "stacks", // Reserved for future use
         defaultColor = "#3498db",
-        parseNumbers = true
+        parseNumbers = true,
     } = options;
 
     if (!Array.isArray(data)) {
@@ -107,11 +111,13 @@ export function transformToWaterfallFormat(
 
         return {
             label: String(label),
-            stacks: [{
-                value: value,
-                color: color,
-                label: item.stackLabel || `${value >= 0 ? "+" : ""}${value}`
-            }]
+            stacks: [
+                {
+                    value: value,
+                    color: color,
+                    label: item.stackLabel || `${value >= 0 ? "+" : ""}${value}`,
+                },
+            ],
         };
     });
 }
@@ -142,7 +148,7 @@ export function aggregateData(data: DataItem[], aggregateBy: AggregationType = "
         return {
             ...item,
             aggregatedValue,
-            originalStacks: item.stacks
+            originalStacks: item.stacks,
         };
     });
 }
@@ -230,7 +236,7 @@ export function transformStacks(data: DataItem[], transformer: (stack: StackItem
 
     return data.map(item => ({
         ...item,
-        stacks: item.stacks.map(transformer)
+        stacks: item.stacks.map(transformer),
     }));
 }
 
@@ -252,8 +258,8 @@ export function normalizeValues(data: DataItem[], targetMax: number): DataItem[]
         stacks: item.stacks.map(stack => ({
             ...stack,
             originalValue: stack.value,
-            value: stack.value * scaleFactor
-        }))
+            value: stack.value * scaleFactor,
+        })),
     }));
 }
 
@@ -283,8 +289,8 @@ export function calculatePercentages(data: DataItem[]): DataItem[] {
             ...item,
             stacks: item.stacks.map(stack => ({
                 ...stack,
-                percentage: total === 0 ? 0 : (Math.abs(stack.value) / total) * 100
-            }))
+                percentage: total === 0 ? 0 : (Math.abs(stack.value) / total) * 100,
+            })),
         };
     });
 }
@@ -303,8 +309,8 @@ export function interpolateData(data1: DataItem[], data2: DataItem[], t: number)
             stacks: Array.from({ length: minStacks }, (_, i) => ({
                 value: item1.stacks[i].value + (item2.stacks[i].value - item1.stacks[i].value) * t,
                 color: item1.stacks[i].color,
-                label: item1.stacks[i].label
-            }))
+                label: item1.stacks[i].label,
+            })),
         };
     });
 }
@@ -318,7 +324,7 @@ export function generateSampleData(itemCount: number, stacksPerItem: number, val
         stacks: Array.from({ length: stacksPerItem }, (_, j) => ({
             value: Math.random() * (maxValue - minValue) + minValue,
             color: colors[j % colors.length],
-            label: `Stack ${j + 1}`
-        }))
+            label: `Stack ${j + 1}`,
+        })),
     }));
 }

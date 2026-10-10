@@ -8,8 +8,8 @@ const d3Mock = require("../tests/__mocks__/d3.js");
 global.d3 = d3Mock;
 
 describe("Tooltip System", () => {
-  test("should create tooltip system", () => {
-    const tooltipSystem = createTooltipSystem();
-    expect(tooltipSystem).toBeDefined();
-  });
+    test("should create tooltip system", () => {
+        const tooltipSystem = createTooltipSystem();
+        expect(tooltipSystem).toBeDefined();
+    });
 });

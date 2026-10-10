@@ -25,14 +25,6 @@
     "strictNullChecks": true,
     "strictFunctionTypes": true
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "tests",
-    "**/*.test.ts",
-    "**/*.test.js"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "tests", "**/*.test.ts", "**/*.test.js"]
 }

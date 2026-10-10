@@ -120,7 +120,7 @@ export function waterfallChart(): WaterfallChart {
         const ignored: Array<[boolean, string]> = [
             [config.enableBrush, "enableBrush"],
             [config.enableZoom, "enableZoom"],
-            [config.scaleType === "time", "scaleType(\"time\")"],
+            [config.scaleType === "time", 'scaleType("time")'],
             [config.confidenceBandConfig.enabled, "confidence bands"],
             [config.milestoneConfig.enabled, "milestones"],
         ];
@@ -153,14 +153,7 @@ export function waterfallChart(): WaterfallChart {
         }
     }
 
-    const listeners = d3.dispatch(
-        "barClick",
-        "barMouseover",
-        "barMouseout",
-        "barFocus",
-        "chartUpdate",
-        "brushSelection"
-    );
+    const listeners = d3.dispatch("barClick", "barMouseover", "barMouseout", "barFocus", "chartUpdate", "brushSelection");
 
     function getTooltip(): TooltipSystem {
         if (!tooltip) tooltip = createTooltipSystem();
@@ -191,7 +184,7 @@ export function waterfallChart(): WaterfallChart {
     function tooltipHtml(d: ProcessedData, style: ResolvedStyle): string {
         const fmt = config.formatNumber;
         const row = (key: string, value: string, color?: string) =>
-            "<div style=\"display:flex;justify-content:space-between;gap:20px;line-height:1.7\">" +
+            '<div style="display:flex;justify-content:space-between;gap:20px;line-height:1.7">' +
             `<span style="opacity:.72">${escapeHtml(key)}</span>` +
             `<span style="font-weight:600;font-variant-numeric:tabular-nums${color ? `;color:${color}` : ""}">${escapeHtml(value)}</span></div>`;
 
@@ -204,11 +197,11 @@ export function waterfallChart(): WaterfallChart {
         html += row("Change", formatBarValue(d, fmt), changeColor);
         html += row("Running total", fmt(d.cumulativeTotal));
         if (d.stacks.length > 1) {
-            html += "<div style=\"height:1px;background:currentColor;opacity:.15;margin:6px 0\"></div>";
+            html += '<div style="height:1px;background:currentColor;opacity:.15;margin:6px 0"></div>';
             d.stacks.forEach((s, i) => {
                 const color = s.color || style.palette[i % style.palette.length];
                 html +=
-                    "<div style=\"display:flex;align-items:center;gap:8px;line-height:1.7\">" +
+                    '<div style="display:flex;align-items:center;gap:8px;line-height:1.7">' +
                     `<span style="width:8px;height:8px;border-radius:2px;background:${escapeHtml(color)}"></span>` +
                     `<span style="flex:1;opacity:.85">${escapeHtml(s.label || `Segment ${i + 1}`)}</span>` +
                     `<span style="font-variant-numeric:tabular-nums">${escapeHtml(fmt(s.value))}</span></div>`;
@@ -220,7 +213,9 @@ export function waterfallChart(): WaterfallChart {
     function applyEmphasis(svg: AnySelection, labels: Set<string> | null): void {
         const dim = (label: string) => labels !== null && !labels.has(label);
         svg.selectAll<SVGGElement, ProcessedData>("g.bar-group").style("opacity", (d: ProcessedData) => (dim(d.label) ? 0.3 : 1));
-        svg.selectAll<SVGTextElement, ProcessedData>("text.total-label").attr("fill-opacity", (d: ProcessedData) => (dim(d.label) ? 0.3 : 1));
+        svg.selectAll<SVGTextElement, ProcessedData>("text.total-label").attr("fill-opacity", (d: ProcessedData) =>
+            dim(d.label) ? 0.3 : 1
+        );
     }
 
     function renderElement(node: Element, data: ChartData[], durationOverride?: number): void {
@@ -339,15 +334,16 @@ export function waterfallChart(): WaterfallChart {
             .range(horizontal ? [margins.left, width - margins.right] : [height - margins.bottom, margins.top]);
 
         // Category axis: horizontal for columns (zoomable), top-to-bottom for horizontal bars
-        const baseRange: [number, number] = horizontal
-            ? [margins.top, height - margins.bottom]
-            : [margins.left, width - margins.right];
+        const baseRange: [number, number] = horizontal ? [margins.top, height - margins.bottom] : [margins.left, width - margins.right];
         const t = zoomOn ? state.transform : d3.zoomIdentity;
         const range = baseRange.map(v => t.applyX(v)) as [number, number];
         let xScale: XScale;
         if (config.scaleType === "time" && !horizontal) {
             const dates = processed.map(d => new Date(d.label));
-            xScale = d3.scaleTime().domain(d3.extent(dates) as [Date, Date]).range(range);
+            xScale = d3
+                .scaleTime()
+                .domain(d3.extent(dates) as [Date, Date])
+                .range(range);
         } else {
             const padding = Math.max(0, Math.min(0.95, config.barPadding));
             xScale = d3
@@ -385,9 +381,7 @@ export function waterfallChart(): WaterfallChart {
             let title: AnySelection = svg.select(":scope > title");
             if (title.empty()) title = svg.insert("title", ":first-child");
             title.text(summary);
-            svg.attr("role", "group")
-                .attr("aria-roledescription", "waterfall chart")
-                .attr("aria-label", summary);
+            svg.attr("role", "group").attr("aria-roledescription", "waterfall chart").attr("aria-label", summary);
         } else {
             svg.select(":scope > title").remove();
             svg.attr("role", null).attr("aria-roledescription", null).attr("aria-label", null);
@@ -473,10 +467,14 @@ export function waterfallChart(): WaterfallChart {
                 if (config.enableTooltips) {
                     getTooltip()
                         .configure({ ...(config.tooltipConfig as any) })
-                        .show(() => {
-                            const html = tooltipHtml(d, ctx.style);
-                            return config.tooltipContent ? String(config.tooltipContent(d, html) ?? "") : html;
-                        }, event, d as any);
+                        .show(
+                            () => {
+                                const html = tooltipHtml(d, ctx.style);
+                                return config.tooltipContent ? String(config.tooltipContent(d, html) ?? "") : html;
+                            },
+                            event,
+                            d as any
+                        );
                 }
                 listeners.call("barMouseover", this, event, d);
             })
@@ -494,23 +492,14 @@ export function waterfallChart(): WaterfallChart {
             })
             .on("focus", function (this: SVGGElement, event: FocusEvent, d: ProcessedData) {
                 applyEmphasis(svg, new Set([d.label]));
-                d3.select(this)
-                    .selectAll("rect")
-                    .attr("stroke", ctx.style.text)
-                    .attr("stroke-width", 2);
+                d3.select(this).selectAll("rect").attr("stroke", ctx.style.text).attr("stroke-width", 2);
                 listeners.call("barFocus", this, event, d);
             })
             .on("blur", function (this: SVGGElement) {
                 const state = states.get(svg.node());
                 applyEmphasis(svg, state ? state.emphasis : null);
-                d3.select(this)
-                    .selectAll("rect.waterfall-bar")
-                    .attr("stroke", null)
-                    .attr("stroke-width", null);
-                d3.select(this)
-                    .selectAll("rect.stack")
-                    .attr("stroke", ctx.style.surface)
-                    .attr("stroke-width", 1);
+                d3.select(this).selectAll("rect.waterfall-bar").attr("stroke", null).attr("stroke-width", null);
+                d3.select(this).selectAll("rect.stack").attr("stroke", ctx.style.surface).attr("stroke-width", 1);
             })
             .on("keydown", function (this: SVGGElement, event: KeyboardEvent, d: ProcessedData) {
                 const nodes = barsLayer.selectAll("g.bar-group").nodes() as SVGGElement[];
@@ -613,13 +602,16 @@ export function waterfallChart(): WaterfallChart {
                 // A brush selection is in pixel space; it no longer matches the bars after a zoom/pan
                 const hadSelection = s.emphasis !== null;
                 if (s.brush) {
-                    d3.select(svgNode).select<SVGGElement>(".brush-layer").call(s.brush.clear as any);
+                    d3.select(svgNode)
+                        .select<SVGGElement>(".brush-layer")
+                        .call(s.brush.clear as any);
                 }
                 s.emphasis = null;
                 if (hadSelection) listeners.call("brushSelection", svgNode, event, []);
                 // Coalesce bursts of zoom events (wheel, pan) into one render per frame
                 if (s.frame === null) {
-                    const raf = typeof requestAnimationFrame === "function" ? requestAnimationFrame : (cb: () => void) => setTimeout(cb, 16);
+                    const raf =
+                        typeof requestAnimationFrame === "function" ? requestAnimationFrame : (cb: () => void) => setTimeout(cb, 16);
                     s.frame = raf(() => {
                         s.frame = null;
                         renderElement(svgNode, s.data, 0);
@@ -688,82 +680,319 @@ export function waterfallChart(): WaterfallChart {
         };
     }
 
-    chart.width = accessor(() => config.width, v => { config.width = v; });
-    chart.height = accessor(() => config.height, v => { config.height = v; });
-    chart.margin = accessor(() => config.margin, v => { config.margin = v; });
-    chart.stacked = accessor(() => config.stacked, v => { config.stacked = v; });
-    chart.showTotal = accessor(() => config.showTotal, v => { config.showTotal = v; });
-    chart.totalLabel = accessor(() => config.totalLabel, v => { config.totalLabel = v; });
-    chart.totalColor = accessor(() => config.totalColor, v => {
-        config.totalColor = v;
-        totalColorOverride = true;
-    });
-    chart.barPadding = accessor(() => config.barPadding, v => { config.barPadding = v; });
-    chart.duration = accessor(() => config.duration, v => { config.duration = v; });
-    chart.ease = accessor(() => config.ease, v => { config.ease = v; });
-    chart.formatNumber = accessor(() => config.formatNumber, v => { config.formatNumber = v; });
-    chart.theme = accessor(() => config.theme, v => {
-        config.theme = v;
-        // A theme sets the total color; a later chart.totalColor(...) call overrides it
-        totalColorOverride = false;
-        if (v) {
-            const resolved = resolvedThemeName(config) as string;
-            config.advancedColorConfig.enabled = true;
-            config.advancedColorConfig.themeName = resolved;
-            config.colorMode = "conditional";
-            if (themes[resolved]) config.totalColor = themes[resolved].totalColor;
-        } else {
-            config.advancedColorConfig.enabled = false;
-            config.totalColor = defaultConfig.totalColor;
+    chart.width = accessor(
+        () => config.width,
+        v => {
+            config.width = v;
         }
-    });
-    chart.enableBrush = accessor(() => config.enableBrush, v => { config.enableBrush = v; });
-    chart.brushOptions = accessor(() => config.brushOptions, v => { config.brushOptions = v; });
-    chart.staggeredAnimations = accessor(() => config.staggeredAnimations, v => { config.staggeredAnimations = v; });
-    chart.staggerDelay = accessor(() => config.staggerDelay, v => { config.staggerDelay = v; });
-    chart.scaleType = accessor(() => config.scaleType, v => { config.scaleType = v; });
-    chart.showTrendLine = accessor(() => config.showTrendLine, v => { config.showTrendLine = v; });
-    chart.trendLineColor = accessor(() => config.trendLineColor, v => { config.trendLineColor = v; });
-    chart.trendLineWidth = accessor(() => config.trendLineWidth, v => { config.trendLineWidth = v; });
-    chart.trendLineStyle = accessor(() => config.trendLineStyle, v => { config.trendLineStyle = v; });
-    chart.trendLineOpacity = accessor(() => config.trendLineOpacity, v => { config.trendLineOpacity = v; });
-    chart.trendLineType = accessor(() => config.trendLineType, v => { config.trendLineType = v; });
-    chart.trendLineWindow = accessor(() => config.trendLineWindow, v => { config.trendLineWindow = v; });
-    chart.trendLineDegree = accessor(() => config.trendLineDegree, v => { config.trendLineDegree = v; });
-    chart.enableAccessibility = accessor(() => config.enableAccessibility, v => { config.enableAccessibility = v; });
-    chart.enableTooltips = accessor(() => config.enableTooltips, v => {
-        config.enableTooltips = v;
-        if (!v && tooltip) tooltip.hide();
-    });
-    chart.tooltipConfig = accessor(() => config.tooltipConfig, v => { config.tooltipConfig = v; });
-    chart.enableExport = accessor(() => config.enableExport, v => { config.enableExport = v; });
-    chart.exportConfig = accessor(() => config.exportConfig, v => { config.exportConfig = v; });
-    chart.enableZoom = accessor(() => config.enableZoom, v => { config.enableZoom = v; });
-    chart.zoomConfig = accessor(() => config.zoomConfig, v => { config.zoomConfig = v; });
-    chart.responsive = accessor(() => config.responsive, v => { config.responsive = v; });
-    chart.showValueLabels = accessor(() => config.showValueLabels, v => { config.showValueLabels = v; });
-    chart.showConnectors = accessor(() => config.showConnectors, v => { config.showConnectors = v; });
-    chart.showGrid = accessor(() => config.showGrid, v => { config.showGrid = v; });
-    chart.barRadius = accessor(() => config.barRadius, v => { config.barRadius = v; });
-    chart.tooltipContent = accessor(() => config.tooltipContent, v => { config.tooltipContent = v; });
-    chart.valueLabel = accessor(() => config.valueLabel, v => { config.valueLabel = v; });
-    chart.showLegend = accessor(() => config.showLegend, v => { config.showLegend = v; });
-    chart.orientation = accessor(() => config.orientation, v => {
-        config.orientation = v === "horizontal" ? "horizontal" : "vertical";
-    });
-    chart.enableAdvancedColors = accessor(() => config.advancedColorConfig.enabled, v => { config.advancedColorConfig.enabled = v; });
-    chart.colorMode = accessor(() => config.colorMode, v => { config.colorMode = v; });
-    chart.colorTheme = accessor(() => config.advancedColorConfig.themeName || "default", v => { config.advancedColorConfig.themeName = v; });
-    chart.neutralThreshold = accessor(() => config.advancedColorConfig.neutralThreshold || 0, v => { config.advancedColorConfig.neutralThreshold = v; });
+    );
+    chart.height = accessor(
+        () => config.height,
+        v => {
+            config.height = v;
+        }
+    );
+    chart.margin = accessor(
+        () => config.margin,
+        v => {
+            config.margin = v;
+        }
+    );
+    chart.stacked = accessor(
+        () => config.stacked,
+        v => {
+            config.stacked = v;
+        }
+    );
+    chart.showTotal = accessor(
+        () => config.showTotal,
+        v => {
+            config.showTotal = v;
+        }
+    );
+    chart.totalLabel = accessor(
+        () => config.totalLabel,
+        v => {
+            config.totalLabel = v;
+        }
+    );
+    chart.totalColor = accessor(
+        () => config.totalColor,
+        v => {
+            config.totalColor = v;
+            totalColorOverride = true;
+        }
+    );
+    chart.barPadding = accessor(
+        () => config.barPadding,
+        v => {
+            config.barPadding = v;
+        }
+    );
+    chart.duration = accessor(
+        () => config.duration,
+        v => {
+            config.duration = v;
+        }
+    );
+    chart.ease = accessor(
+        () => config.ease,
+        v => {
+            config.ease = v;
+        }
+    );
+    chart.formatNumber = accessor(
+        () => config.formatNumber,
+        v => {
+            config.formatNumber = v;
+        }
+    );
+    chart.theme = accessor(
+        () => config.theme,
+        v => {
+            config.theme = v;
+            // A theme sets the total color; a later chart.totalColor(...) call overrides it
+            totalColorOverride = false;
+            if (v) {
+                const resolved = resolvedThemeName(config) as string;
+                config.advancedColorConfig.enabled = true;
+                config.advancedColorConfig.themeName = resolved;
+                config.colorMode = "conditional";
+                if (themes[resolved]) config.totalColor = themes[resolved].totalColor;
+            } else {
+                config.advancedColorConfig.enabled = false;
+                config.totalColor = defaultConfig.totalColor;
+            }
+        }
+    );
+    chart.enableBrush = accessor(
+        () => config.enableBrush,
+        v => {
+            config.enableBrush = v;
+        }
+    );
+    chart.brushOptions = accessor(
+        () => config.brushOptions,
+        v => {
+            config.brushOptions = v;
+        }
+    );
+    chart.staggeredAnimations = accessor(
+        () => config.staggeredAnimations,
+        v => {
+            config.staggeredAnimations = v;
+        }
+    );
+    chart.staggerDelay = accessor(
+        () => config.staggerDelay,
+        v => {
+            config.staggerDelay = v;
+        }
+    );
+    chart.scaleType = accessor(
+        () => config.scaleType,
+        v => {
+            config.scaleType = v;
+        }
+    );
+    chart.showTrendLine = accessor(
+        () => config.showTrendLine,
+        v => {
+            config.showTrendLine = v;
+        }
+    );
+    chart.trendLineColor = accessor(
+        () => config.trendLineColor,
+        v => {
+            config.trendLineColor = v;
+        }
+    );
+    chart.trendLineWidth = accessor(
+        () => config.trendLineWidth,
+        v => {
+            config.trendLineWidth = v;
+        }
+    );
+    chart.trendLineStyle = accessor(
+        () => config.trendLineStyle,
+        v => {
+            config.trendLineStyle = v;
+        }
+    );
+    chart.trendLineOpacity = accessor(
+        () => config.trendLineOpacity,
+        v => {
+            config.trendLineOpacity = v;
+        }
+    );
+    chart.trendLineType = accessor(
+        () => config.trendLineType,
+        v => {
+            config.trendLineType = v;
+        }
+    );
+    chart.trendLineWindow = accessor(
+        () => config.trendLineWindow,
+        v => {
+            config.trendLineWindow = v;
+        }
+    );
+    chart.trendLineDegree = accessor(
+        () => config.trendLineDegree,
+        v => {
+            config.trendLineDegree = v;
+        }
+    );
+    chart.enableAccessibility = accessor(
+        () => config.enableAccessibility,
+        v => {
+            config.enableAccessibility = v;
+        }
+    );
+    chart.enableTooltips = accessor(
+        () => config.enableTooltips,
+        v => {
+            config.enableTooltips = v;
+            if (!v && tooltip) tooltip.hide();
+        }
+    );
+    chart.tooltipConfig = accessor(
+        () => config.tooltipConfig,
+        v => {
+            config.tooltipConfig = v;
+        }
+    );
+    chart.enableExport = accessor(
+        () => config.enableExport,
+        v => {
+            config.enableExport = v;
+        }
+    );
+    chart.exportConfig = accessor(
+        () => config.exportConfig,
+        v => {
+            config.exportConfig = v;
+        }
+    );
+    chart.enableZoom = accessor(
+        () => config.enableZoom,
+        v => {
+            config.enableZoom = v;
+        }
+    );
+    chart.zoomConfig = accessor(
+        () => config.zoomConfig,
+        v => {
+            config.zoomConfig = v;
+        }
+    );
+    chart.responsive = accessor(
+        () => config.responsive,
+        v => {
+            config.responsive = v;
+        }
+    );
+    chart.showValueLabels = accessor(
+        () => config.showValueLabels,
+        v => {
+            config.showValueLabels = v;
+        }
+    );
+    chart.showConnectors = accessor(
+        () => config.showConnectors,
+        v => {
+            config.showConnectors = v;
+        }
+    );
+    chart.showGrid = accessor(
+        () => config.showGrid,
+        v => {
+            config.showGrid = v;
+        }
+    );
+    chart.barRadius = accessor(
+        () => config.barRadius,
+        v => {
+            config.barRadius = v;
+        }
+    );
+    chart.tooltipContent = accessor(
+        () => config.tooltipContent,
+        v => {
+            config.tooltipContent = v;
+        }
+    );
+    chart.valueLabel = accessor(
+        () => config.valueLabel,
+        v => {
+            config.valueLabel = v;
+        }
+    );
+    chart.showLegend = accessor(
+        () => config.showLegend,
+        v => {
+            config.showLegend = v;
+        }
+    );
+    chart.orientation = accessor(
+        () => config.orientation,
+        v => {
+            config.orientation = v === "horizontal" ? "horizontal" : "vertical";
+        }
+    );
+    chart.enableAdvancedColors = accessor(
+        () => config.advancedColorConfig.enabled,
+        v => {
+            config.advancedColorConfig.enabled = v;
+        }
+    );
+    chart.colorMode = accessor(
+        () => config.colorMode,
+        v => {
+            config.colorMode = v;
+        }
+    );
+    chart.colorTheme = accessor(
+        () => config.advancedColorConfig.themeName || "default",
+        v => {
+            config.advancedColorConfig.themeName = v;
+        }
+    );
+    chart.neutralThreshold = accessor(
+        () => config.advancedColorConfig.neutralThreshold || 0,
+        v => {
+            config.advancedColorConfig.neutralThreshold = v;
+        }
+    );
     // Partial objects merge into the current config (as in 1.x)
-    chart.confidenceBands = accessor(() => config.confidenceBandConfig, (v: Partial<ConfidenceBandConfig>) => {
-        config.confidenceBandConfig = { ...config.confidenceBandConfig, ...v };
-    });
-    chart.enableConfidenceBands = accessor(() => config.confidenceBandConfig.enabled, v => { config.confidenceBandConfig.enabled = v; });
-    chart.milestones = accessor(() => config.milestoneConfig, (v: Partial<MilestoneConfig>) => {
-        config.milestoneConfig = { ...config.milestoneConfig, ...v, milestones: [...(v.milestones ?? config.milestoneConfig.milestones)] };
-    });
-    chart.enableMilestones = accessor(() => config.milestoneConfig.enabled, v => { config.milestoneConfig.enabled = v; });
+    chart.confidenceBands = accessor(
+        () => config.confidenceBandConfig,
+        (v: Partial<ConfidenceBandConfig>) => {
+            config.confidenceBandConfig = { ...config.confidenceBandConfig, ...v };
+        }
+    );
+    chart.enableConfidenceBands = accessor(
+        () => config.confidenceBandConfig.enabled,
+        v => {
+            config.confidenceBandConfig.enabled = v;
+        }
+    );
+    chart.milestones = accessor(
+        () => config.milestoneConfig,
+        (v: Partial<MilestoneConfig>) => {
+            config.milestoneConfig = {
+                ...config.milestoneConfig,
+                ...v,
+                milestones: [...(v.milestones ?? config.milestoneConfig.milestones)],
+            };
+        }
+    );
+    chart.enableMilestones = accessor(
+        () => config.milestoneConfig.enabled,
+        v => {
+            config.milestoneConfig.enabled = v;
+        }
+    );
     chart.addMilestone = function (milestone: Milestone): WaterfallChart {
         config.milestoneConfig.milestones.push(milestone);
         return chart;

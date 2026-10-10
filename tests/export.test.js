@@ -8,8 +8,8 @@ const d3Mock = require("../tests/__mocks__/d3.js");
 global.d3 = d3Mock;
 
 describe("Export System", () => {
-  test("should create export system", () => {
-    const exportSystem = createExportSystem();
-    expect(exportSystem).toBeDefined();
-  });
+    test("should create export system", () => {
+        const exportSystem = createExportSystem();
+        expect(exportSystem).toBeDefined();
+    });
 });

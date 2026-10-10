@@ -9,50 +9,42 @@ export { createDataProcessor, dataProcessor } from "./data/pipeline.js";
 
 // Data processing - Advanced D3.js Operations
 export {
-  // Standalone helper functions
-  createRevenueWaterfall,
-  createTemporalWaterfall,
-  createVarianceWaterfall,
-  groupWaterfallData,
-  createComparisonWaterfall,
-  transformTransactionData,
+    // Standalone helper functions
+    createRevenueWaterfall,
+    createTemporalWaterfall,
+    createVarianceWaterfall,
+    groupWaterfallData,
+    createComparisonWaterfall,
+    transformTransactionData,
 
-  // Financial utilities
-  financialReducers,
-  d3DataUtils,
+    // Financial utilities
+    financialReducers,
+    d3DataUtils,
 } from "./data/pipeline.js";
-
 
 // Animation system
 export { createAnimationSystem } from "./animations.js";
 
 // Themes and color helpers
 export {
-  themes,
-  applyTheme,
-  createSequentialScale,
-  createDivergingScale,
-  getConditionalColor,
-  createWaterfallColorScale,
-  interpolateThemeColor,
-  getAdvancedBarColor,
+    themes,
+    applyTheme,
+    createSequentialScale,
+    createDivergingScale,
+    getConditionalColor,
+    createWaterfallColorScale,
+    interpolateThemeColor,
+    getAdvancedBarColor,
 } from "./themes.js";
 
 // Scales
 export { createScaleSystem } from "./scales.js";
 
 // Shapes (confidence bands and milestones used by the chart)
-export {
-  createShapeGenerators,
-  createWaterfallConfidenceBands,
-  createWaterfallMilestones,
-} from "./shapes.js";
+export { createShapeGenerators, createWaterfallConfidenceBands, createWaterfallMilestones } from "./shapes.js";
 
 // Statistical analysis
-export {
-  createStatisticalSystem,
-  analyzeWaterfallStatistics,
-} from "./statistics.js";
+export { createStatisticalSystem, analyzeWaterfallStatistics } from "./statistics.js";
 
 // Advanced data processing
 export { createAdvancedDataProcessor } from "./data/advanced.js";
@@ -64,26 +56,34 @@ export { createExportSystem } from "./export.js";
 
 // Public chart types
 export type {
-  ChartData,
-  StackData,
-  ProcessedData,
-  WaterfallChart,
-  MarginConfig,
-  ChartEventType,
-  ChartEventName,
-  ChartEventMap,
-  ChartExportFormat,
-  ThemeName,
-  TrendLineType,
-  TrendLineStyle,
-  BarKind,
-  Orientation,
-  TooltipContentFn,
-  ValueLabelFn,
+    ChartData,
+    StackData,
+    ProcessedData,
+    WaterfallChart,
+    MarginConfig,
+    ChartEventType,
+    ChartEventName,
+    ChartEventMap,
+    ChartExportFormat,
+    ThemeName,
+    TrendLineType,
+    TrendLineStyle,
+    BarKind,
+    Orientation,
+    TooltipContentFn,
+    ValueLabelFn,
 } from "./chart/config.js";
 
 // Supporting types referenced by the public API
-export type { BrushOptions, TooltipConfig, ExportConfig, ZoomConfig, ConfidenceBandConfig, MilestoneConfig, Milestone } from "./chart/config.js";
+export type {
+    BrushOptions,
+    TooltipConfig,
+    ExportConfig,
+    ZoomConfig,
+    ConfidenceBandConfig,
+    MilestoneConfig,
+    Milestone,
+} from "./chart/config.js";
 export type { Theme, ThemeCollection, ChartWithTheme } from "./themes.js";
 export type { XPosition, SymbolConfig, ShapeGeneratorSystem } from "./shapes.js";
 export type { StatisticalSystem, StatisticalSummary, DataQualityAssessment, VarianceAnalysis } from "./statistics.js";

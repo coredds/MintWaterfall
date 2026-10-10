@@ -56,24 +56,24 @@ export interface InteractionSystem {
     enableDrag(config: DragConfig): void;
     disableDrag(): void;
     updateDragConstraints(constraints: DragConfig["constraints"]): void;
-    
+
     // Enhanced hover detection (simplified approach)
     enableEnhancedHover(config: VoronoiConfig): void;
     disableEnhancedHover(): void;
     updateHoverExtent(extent: [[number, number], [number, number]]): void;
-    
+
     // Force simulation for dynamic layouts
     startForceSimulation(config: ForceSimulationConfig): d3.Simulation<any, any>;
     stopForceSimulation(): void;
     updateForces(forces: ForceSimulationConfig["forces"]): void;
-    
+
     // Combined interaction management
     setInteractionMode(mode: "drag" | "voronoi" | "force" | "combined" | "none"): void;
     getActiveInteractions(): string[];
-    
+
     // Data management
     updateData(data: any[]): void;
-    
+
     // Event management
     on(event: string, callback: (...args: any[]) => any): void;
     off(event: string): void;
@@ -89,74 +89,69 @@ export function createAdvancedInteractionSystem(
     xScale: d3.ScaleLinear<number, number> | d3.ScaleBand<string>,
     yScale: d3.ScaleLinear<number, number>
 ): InteractionSystem {
-    
     // Internal state
     let dragBehavior: d3.DragBehavior<any, any, any> | null = null;
     let enhancedHoverEnabled: boolean = false;
     let currentSimulation: d3.Simulation<any, any> | null = null;
     let currentData: any[] = [];
     const eventListeners: Map<string, ((...args: any[]) => any)[]> = new Map();
-    
+
     // ========================================================================
     // DRAG FUNCTIONALITY (d3.drag)
     // ========================================================================
-    
+
     function enableDrag(config: DragConfig): void {
         if (!config || !config.enabled) {
             disableDrag();
             return;
         }
-        
+
         // Create drag behavior
         dragBehavior = drag<any, any>()
             .on("start", (event, d) => {
                 // Visual feedback on drag start
-                d3.select(event.sourceEvent.target)
-                    .raise()
-                    .attr("stroke", "#ff6b6b")
-                    .attr("stroke-width", 2);
-                
+                d3.select(event.sourceEvent.target).raise().attr("stroke", "#ff6b6b").attr("stroke-width", 2);
+
                 if (config.onDragStart) {
                     config.onDragStart(event, d);
                 }
-                
+
                 trigger("dragStart", { event, data: d });
             })
             .on("drag", (event, d) => {
                 const bar = d3.select(event.sourceEvent.target);
                 let newValue = d.value || 0;
-                
+
                 // Handle axis constraints
                 if (config.axis === "vertical" || config.axis === "both") {
                     const newY = event.y;
                     newValue = yScale.invert(newY);
-                    
+
                     // Apply constraints
                     if (config.constraints) {
                         const { minValue, maxValue, snapToGrid, gridSize } = config.constraints;
-                        
+
                         if (minValue !== undefined) newValue = Math.max(minValue, newValue);
                         if (maxValue !== undefined) newValue = Math.min(maxValue, newValue);
-                        
+
                         if (snapToGrid && gridSize) {
                             newValue = Math.round(newValue / gridSize) * gridSize;
                         }
                     }
-                    
+
                     // Update visual position
                     const barHeight = Math.abs(yScale(0) - yScale(newValue));
                     const barY = newValue >= 0 ? yScale(newValue) : yScale(0);
-                    
-                    bar.attr("y", barY)
-                       .attr("height", barHeight);
-                    
+
+                    bar.attr("y", barY).attr("height", barHeight);
+
                     // Update data
                     d.value = newValue;
                     if (d.stacks && d.stacks.length > 0) {
                         d.stacks[0].value = newValue;
                     }
                 }
-                
+
                 // Handle horizontal movement (for reordering)
                 if (config.axis === "horizontal" || config.axis === "both") {
                     const newX = event.x;
@@ -164,74 +159,67 @@ export function createAdvancedInteractionSystem(
                     const barWidth = parseFloat(bar.attr("width") || "0");
                     bar.attr("transform", `translate(${newX - barWidth / 2}, 0)`);
                 }
-                
+
                 if (config.onDrag) {
                     config.onDrag(event, d);
                 }
-                
+
                 trigger("drag", { event, data: d, newValue });
             })
             .on("end", (event, d) => {
                 // Remove visual feedback
-                d3.select(event.sourceEvent.target)
-                    .attr("stroke", null)
-                    .attr("stroke-width", null);
-                
+                d3.select(event.sourceEvent.target).attr("stroke", null).attr("stroke-width", null);
+
                 if (config.onDragEnd) {
                     config.onDragEnd(event, d);
                 }
-                
+
                 trigger("dragEnd", { event, data: d });
             });
-        
+
         // Apply drag behavior to all bars
-        container.selectAll(".bar")
-            .call(dragBehavior);
-        
+        container.selectAll(".bar").call(dragBehavior);
+
         trigger("dragEnabled", config);
     }
-    
+
     function disableDrag(): void {
         if (dragBehavior) {
-            container.selectAll(".bar")
-                .on(".drag", null);
+            container.selectAll(".bar").on(".drag", null);
             dragBehavior = null;
             trigger("dragDisabled");
         }
     }
-    
+
     function updateDragConstraints(constraints: DragConfig["constraints"]): void {
         // Constraints are checked during drag events
         trigger("dragConstraintsUpdated", constraints);
     }
-    
+
     // ========================================================================
     // ENHANCED HOVER DETECTION (Simplified approach)
     // ========================================================================
-    
+
     function enableEnhancedHover(config: VoronoiConfig): void {
         if (!config || !config.enabled || currentData.length === 0) {
             disableEnhancedHover();
             return;
         }
-        
+
         enhancedHoverEnabled = true;
-        
+
         // Create enhanced hover zones around bars
-        const hoverGroup = container.selectAll(".enhanced-hover-group")
-            .data([0]);
-        
-        const hoverGroupEnter = hoverGroup.enter()
-            .append("g")
-            .attr("class", "enhanced-hover-group");
-        
+        const hoverGroup = container.selectAll(".enhanced-hover-group").data([0]);
+
+        const hoverGroupEnter = hoverGroup.enter().append("g").attr("class", "enhanced-hover-group");
+
         const hoverGroupMerged = hoverGroupEnter.merge(hoverGroup as any);
-        
+
         // Add enhanced hover zones
-        const zones = hoverGroupMerged.selectAll(".hover-zone")
-            .data(currentData);
-        
-        zones.enter()
+        const zones = hoverGroupMerged.selectAll(".hover-zone").data(currentData);
+
+        zones
+            .enter()
             .append("rect")
             .attr("class", "hover-zone")
             .merge(zones as any)
@@ -241,32 +229,32 @@ export function createAdvancedInteractionSystem(
             .attr("height", d => Math.abs(yScale(0) - getBarCenterY(d)) + 20)
             .style("fill", "transparent")
             .style("pointer-events", "all")
-            .on("mouseenter", function(event, d) {
+            .on("mouseenter", function (event, d) {
                 highlightBar(d);
                 if (config.onCellEnter) {
                     config.onCellEnter(event, d);
                 }
                 trigger("enhancedHoverEnter", { event, data: d });
             })
-            .on("mouseleave", function(event, d) {
+            .on("mouseleave", function (event, d) {
                 unhighlightBar(d);
                 if (config.onCellLeave) {
                     config.onCellLeave(event, d);
                 }
                 trigger("enhancedHoverLeave", { event, data: d });
             })
-            .on("click", function(event, d) {
+            .on("click", function (event, d) {
                 if (config.onCellClick) {
                     config.onCellClick(event, d);
                 }
                 trigger("enhancedHoverClick", { event, data: d });
             });
-        
+
         zones.exit().remove();
-        
+
         trigger("enhancedHoverEnabled", config);
     }
-    
+
     function disableEnhancedHover(): void {
         try {
             // Only attempt to remove elements if container has proper D3 methods
@@ -282,7 +270,7 @@ export function createAdvancedInteractionSystem(
         enhancedHoverEnabled = false;
         trigger("enhancedHoverDisabled");
     }
-    
+
     function updateHoverExtent(extent: [[number, number], [number, number]]): void {
         if (enhancedHoverEnabled) {
             // Re-enable with current data
@@ -290,55 +278,59 @@ export function createAdvancedInteractionSystem(
             enableEnhancedHover(currentConfig);
         }
     }
-    
+
     // ========================================================================
     // FORCE SIMULATION FOR DYNAMIC LAYOUTS (d3.forceSimulation)
     // ========================================================================
-    
+
     function startForceSimulation(config: ForceSimulationConfig): d3.Simulation<any, any> {
         if (!config || !config.enabled || currentData.length === 0) {
             return forceSimulation<any, any>([]);
         }
-        
+
         // Stop any existing simulation
         stopForceSimulation();
-        
+
         // Create new simulation
         currentSimulation = forceSimulation(currentData);
-        
+
         // Add forces based on configuration
         if (config.forces.collision) {
-            currentSimulation.force("collision", forceCollide()
-                .radius(d => getBarWidth(d) / 2 + 5)
-                .strength(config.strength.collision || 0.7));
+            currentSimulation.force(
+                "collision",
+                forceCollide()
+                    .radius(d => getBarWidth(d) / 2 + 5)
+                    .strength(config.strength.collision || 0.7)
+            );
         }
-        
+
         if (config.forces.centering) {
             const centerX = (xScale.range()[0] + xScale.range()[1]) / 2;
             const centerY = (yScale.range()[0] + yScale.range()[1]) / 2;
-            currentSimulation.force("center", forceCenter(centerX, centerY)
-                .strength(config.strength.centering || 0.1));
+            currentSimulation.force("center", forceCenter(centerX, centerY).strength(config.strength.centering || 0.1));
         }
-        
+
         if (config.forces.positioning) {
-            currentSimulation.force("x", d3.forceX(d => getBarCenterX(d))
-                .strength(config.strength.positioning || 0.5));
-            currentSimulation.force("y", d3.forceY(d => getBarCenterY(d))
-                .strength(config.strength.positioning || 0.5));
+            currentSimulation.force("x", d3.forceX(d => getBarCenterX(d)).strength(config.strength.positioning || 0.5));
+            currentSimulation.force("y", d3.forceY(d => getBarCenterY(d)).strength(config.strength.positioning || 0.5));
         }
-        
+
         if (config.forces.links && currentData.length > 1) {
             // Create links between consecutive bars
             const links = currentData.slice(1).map((d, i) => ({
                 source: currentData[i],
-                target: d
+                target: d,
             }));
-            
-            currentSimulation.force("link", d3.forceLink(links)
-                .distance(50)
-                .strength(config.strength.links || 0.3));
+
+            currentSimulation.force(
+                "link",
+                d3
+                    .forceLink(links)
+                    .distance(50)
+                    .strength(config.strength.links || 0.3)
+            );
         }
-        
+
         // Set up tick handler
         currentSimulation.on("tick", () => {
             updateBarPositions();
@@ -347,7 +339,7 @@ export function createAdvancedInteractionSystem(
             }
             trigger("forceTick", currentSimulation);
         });
-        
+
         // Set up end handler
         currentSimulation.on("end", () => {
             if (config.onEnd && currentSimulation) {
@@ -355,18 +347,18 @@ export function createAdvancedInteractionSystem(
             }
             trigger("forceEnd", currentSimulation);
         });
-        
+
         // Set alpha decay for animation duration
         if (config.duration) {
             const targetAlpha = 0.001;
             const decay = 1 - Math.pow(targetAlpha, 1 / config.duration);
             currentSimulation.alphaDecay(decay);
         }
-        
+
         trigger("forceSimulationStarted", config);
         return currentSimulation;
     }
-    
+
     function stopForceSimulation(): void {
         if (currentSimulation) {
             currentSimulation.stop();
@@ -374,7 +366,7 @@ export function createAdvancedInteractionSystem(
             trigger("forceSimulationStopped");
         }
     }
-    
+
     function updateForces(forces: ForceSimulationConfig["forces"]): void {
         if (currentSimulation) {
             // Update or remove forces based on configuration
@@ -385,70 +377,76 @@ export function createAdvancedInteractionSystem(
                 currentSimulation.force("y", null);
             }
             if (!forces.links) currentSimulation.force("link", null);
-            
+
             currentSimulation.alpha(1).restart();
             trigger("forcesUpdated", forces);
         }
     }
-    
+
     // ========================================================================
     // INTERACTION MODE MANAGEMENT
     // ========================================================================
-    
+
     function setInteractionMode(mode: "drag" | "voronoi" | "force" | "combined" | "none"): void {
         // Disable all interactions first
         disableDrag();
         disableEnhancedHover();
         stopForceSimulation();
-        
+
         const xRange = (xScale as any).range() || [0, 800];
         const yRange = (yScale as any).range() || [400, 0];
-        
+
         switch (mode) {
             case "drag":
                 enableDrag({
                     enabled: true,
                     axis: "vertical",
-                    constraints: { snapToGrid: true, gridSize: 10 }
+                    constraints: { snapToGrid: true, gridSize: 10 },
                 });
                 break;
-                
+
             case "voronoi":
                 enableEnhancedHover({
                     enabled: true,
-                    extent: [[0, 0], [xRange[1], yRange[0]]]
+                    extent: [
+                        [0, 0],
+                        [xRange[1], yRange[0]],
+                    ],
                 });
                 break;
-                
+
             case "force":
                 startForceSimulation({
                     enabled: true,
                     forces: { collision: true, positioning: true },
                     strength: { collision: 0.7, positioning: 0.5 },
-                    duration: 1000
+                    duration: 1000,
                 });
                 break;
-                
+
             case "combined":
                 enableEnhancedHover({
                     enabled: true,
-                    extent: [[0, 0], [xRange[1], yRange[0]]]
+                    extent: [
+                        [0, 0],
+                        [xRange[1], yRange[0]],
+                    ],
                 });
                 enableDrag({
                     enabled: true,
-                    axis: "vertical"
+                    axis: "vertical",
                 });
                 break;
-                
+
             case "none":
             default:
                 // All interactions disabled
                 break;
         }
-        
+
         trigger("interactionModeChanged", mode);
     }
-    
+
     function getActiveInteractions(): string[] {
         const active: string[] = [];
         if (dragBehavior) active.push("drag");
@@ -456,33 +454,33 @@ export function createAdvancedInteractionSystem(
         if (currentSimulation) active.push("force");
         return active;
     }
-    
+
     // ========================================================================
     // EVENT MANAGEMENT
     // ========================================================================
-    
+
     function on(event: string, callback: (...args: any[]) => any): void {
         if (!eventListeners.has(event)) {
             eventListeners.set(event, []);
         }
         eventListeners.get(event)!.push(callback);
     }
-    
+
     function off(event: string): void {
         eventListeners.delete(event);
     }
-    
+
     function trigger(event: string, data?: any): void {
         const callbacks = eventListeners.get(event);
         if (callbacks) {
             callbacks.forEach(callback => callback(data));
         }
     }
-    
+
     // ========================================================================
     // UTILITY FUNCTIONS
     // ========================================================================
-    
+
     function getBarCenterX(d: any): number {
         const scale = xScale as any; // Type assertion for compatibility
         if (scale.bandwidth) {
@@ -493,12 +491,12 @@ export function createAdvancedInteractionSystem(
             return scale(parseFloat(d.label) || 0);
         }
     }
-    
+
     function getBarCenterY(d: any): number {
         const value = d.value || (d.stacks && d.stacks[0] ? d.stacks[0].value : 0);
         return yScale(value / 2);
     }
-    
+
     function getBarWidth(_d: any): number {
         const scale = xScale as any; // Type assertion for compatibility
         if (scale.bandwidth) {
@@ -506,9 +504,10 @@ export function createAdvancedInteractionSystem(
         }
         return 40; // Default width for linear scales
     }
-    
+
     function highlightBar(data: any): void {
-        container.selectAll(".bar")
+        container
+            .selectAll(".bar")
             .filter((d: any) => d === data)
             .transition()
             .duration(150)
@@ -516,9 +515,10 @@ export function createAdvancedInteractionSystem(
             .attr("stroke", "#ff6b6b")
             .attr("stroke-width", 2);
     }
-    
+
     function unhighlightBar(data: any): void {
-        container.selectAll(".bar")
+        container
+            .selectAll(".bar")
             .filter((d: any) => d === data)
             .transition()
             .duration(150)
@@ -526,11 +526,12 @@ export function createAdvancedInteractionSystem(
             .attr("stroke", null)
             .attr("stroke-width", null);
     }
-    
+
     function updateBarPositions(): void {
         if (!forceSimulation) return;
-        
-        container.selectAll(".bar")
+
+        container
+            .selectAll(".bar")
             .data(currentData)
             .attr("transform", (d: any) => {
                 const x = (d as any).x || getBarCenterX(d);
@@ -538,27 +539,33 @@ export function createAdvancedInteractionSystem(
                 return `translate(${x - getBarWidth(d) / 2}, ${y})`;
             });
     }
-    
+
     // ========================================================================
     // PUBLIC API
     // ========================================================================
-    
+
     // Method to update data for interactions
     function updateData(data: any[]): void {
         currentData = data;
-        
+
         // Update active interactions with new data
         if (enhancedHoverEnabled) {
-            const config = { enabled: true, extent: [[0, 0], [800, 600]] as [[number, number], [number, number]] };
+            const config = {
+                enabled: true,
+                extent: [
+                    [0, 0],
+                    [800, 600],
+                ] as [[number, number], [number, number]],
+            };
             enableEnhancedHover(config);
         }
-        
+
         if (currentSimulation) {
             currentSimulation.nodes(data);
             currentSimulation.alpha(1).restart();
         }
     }
-    
+
     return {
         enableDrag,
         disableDrag,
@@ -574,7 +581,7 @@ export function createAdvancedInteractionSystem(
         updateData,
         on,
         off,
-        trigger
+        trigger,
     };
 }
 
@@ -596,13 +603,13 @@ export function createWaterfallDragBehavior(
             minValue: constraints?.min,
             maxValue: constraints?.max,
             snapToGrid: true,
-            gridSize: 100 // Snap to hundreds
+            gridSize: 100, // Snap to hundreds
         },
         onDrag: (event, data) => {
             if (onValueChange) {
                 onValueChange(data, data.value);
             }
-        }
+        },
     };
 }
 
@@ -618,31 +625,29 @@ export function createWaterfallVoronoiConfig(
         enabled: true,
         extent: [
             [margin.left, margin.top],
-            [chartWidth - margin.right, chartHeight - margin.bottom]
+            [chartWidth - margin.right, chartHeight - margin.bottom],
         ],
         showCells: false,
-        cellOpacity: 0.1
+        cellOpacity: 0.1,
     };
 }
 
 /**
  * Create force simulation for animated waterfall reordering
  */
-export function createWaterfallForceConfig(
-    animationDuration: number = 1000
-): ForceSimulationConfig {
+export function createWaterfallForceConfig(animationDuration: number = 1000): ForceSimulationConfig {
     return {
         enabled: true,
         forces: {
             collision: true,
             positioning: true,
             centering: false,
-            links: false
+            links: false,
         },
         strength: {
             collision: 0.8,
-            positioning: 0.6
+            positioning: 0.6,
         },
-        duration: animationDuration
+        duration: animationDuration,
     };
 }

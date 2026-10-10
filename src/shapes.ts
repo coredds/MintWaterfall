@@ -51,16 +51,19 @@ export interface TrendLineConfig {
 export interface ShapeGeneratorSystem {
     // Area generators
     createConfidenceBand(data: ConfidenceBandData[], config?: AreaConfig): string;
-    createEnvelopeArea(data: Array<{x: number, y0: number, y1: number}>, config?: AreaConfig): string;
-    
+    createEnvelopeArea(data: Array<{ x: number; y0: number; y1: number }>, config?: AreaConfig): string;
+
     // Symbol generators
-    createDataPointMarkers(data: DataPointMarker[], config?: SymbolConfig): Array<{path: string, transform: string, config: SymbolConfig}>;
+    createDataPointMarkers(
+        data: DataPointMarker[],
+        config?: SymbolConfig
+    ): Array<{ path: string; transform: string; config: SymbolConfig }>;
     createCustomSymbol(type: string, size?: number): string;
-    
+
     // Enhanced trend lines
-    createSmoothTrendLine(data: Array<{x: number, y: number}>, config?: TrendLineConfig): string;
-    createMultipleTrendLines(datasets: Array<{data: Array<{x: number, y: number}>, config?: TrendLineConfig}>): string[];
-    
+    createSmoothTrendLine(data: Array<{ x: number; y: number }>, config?: TrendLineConfig): string;
+    createMultipleTrendLines(datasets: Array<{ data: Array<{ x: number; y: number }>; config?: TrendLineConfig }>): string[];
+
     // Utility functions
     getCurveTypes(): { [key: string]: d3.CurveFactory };
     getSymbolTypes(): { [key: string]: d3.SymbolType };
@@ -71,7 +74,6 @@ export interface ShapeGeneratorSystem {
 // ============================================================================
 
 export function createShapeGenerators(): ShapeGeneratorSystem {
-    
     // Available curve types for enhanced visualization
     const curveTypes = {
         linear: d3.curveLinear,
@@ -85,7 +87,7 @@ export function createShapeGenerators(): ShapeGeneratorSystem {
         stepBefore: d3.curveStepBefore,
         stepAfter: d3.curveStepAfter,
         bumpX: d3.curveBumpX,
-        bumpY: d3.curveBumpY
+        bumpY: d3.curveBumpY,
     };
 
     // Available symbol types for data point markers
@@ -96,7 +98,7 @@ export function createShapeGenerators(): ShapeGeneratorSystem {
         diamond: d3.symbolDiamond,
         star: d3.symbolStar,
         cross: d3.symbolCross,
-        wye: d3.symbolWye
+        wye: d3.symbolWye,
     };
 
     // ========================================================================
@@ -108,11 +110,10 @@ export function createShapeGenerators(): ShapeGeneratorSystem {
      * Perfect for showing confidence intervals around waterfall projections
      */
     function createConfidenceBand(data: ConfidenceBandData[], config: AreaConfig = {}): string {
-        const {
-            curve = d3.curveMonotoneX
-        } = config;
+        const { curve = d3.curveMonotoneX } = config;
 
-        const areaGenerator = d3.area<ConfidenceBandData>()
+        const areaGenerator = d3
+            .area<ConfidenceBandData>()
             .x(d => d.x)
             .y0(d => d.yLower)
             .y1(d => d.yUpper)
@@ -125,15 +126,11 @@ export function createShapeGenerators(): ShapeGeneratorSystem {
      * Create envelope area between two data series
      * Useful for showing range between scenarios in waterfall analysis
      */
-    function createEnvelopeArea(
-        data: Array<{x: number, y0: number, y1: number}>, 
-        config: AreaConfig = {}
-    ): string {
-        const {
-            curve = d3.curveMonotoneX
-        } = config;
+    function createEnvelopeArea(data: Array<{ x: number; y0: number; y1: number }>, config: AreaConfig = {}): string {
+        const { curve = d3.curveMonotoneX } = config;
 
-        const areaGenerator = d3.area<{x: number, y0: number, y1: number}>()
+        const areaGenerator = d3
+            .area<{ x: number; y0: number; y1: number }>()
             .x(d => d.x)
             .y0(d => d.y0)
             .y1(d => d.y1)
@@ -151,23 +148,16 @@ export function createShapeGenerators(): ShapeGeneratorSystem {
      * Perfect for marking important milestones in waterfall progression
      */
     function createDataPointMarkers(
-        data: DataPointMarker[], 
+        data: DataPointMarker[],
         config: SymbolConfig = {}
-    ): Array<{path: string, transform: string, config: SymbolConfig}> {
-        const {
-            size = 64,
-            fillColor = "#3498db",
-            strokeColor = "#ffffff",
-            strokeWidth = 2
-        } = config;
+    ): Array<{ path: string; transform: string; config: SymbolConfig }> {
+        const { size = 64, fillColor = "#3498db", strokeColor = "#ffffff", strokeWidth = 2 } = config;
 
         return data.map(point => {
             const symbolType = symbolTypes[point.type as keyof typeof symbolTypes] || d3.symbolCircle;
             const symbolSize = point.size || size;
-            
-            const symbolGenerator = d3.symbol()
-                .type(symbolType)
-                .size(symbolSize);
+
+            const symbolGenerator = d3.symbol().type(symbolType).size(symbolSize);
 
             return {
                 path: symbolGenerator() || "",
@@ -176,8 +166,8 @@ export function createShapeGenerators(): ShapeGeneratorSystem {
                     ...config,
                     fillColor: point.color || fillColor,
                     strokeColor,
-                    strokeWidth
-                }
+                    strokeWidth,
+                },
             };
         });
     }
@@ -188,9 +178,7 @@ export function createShapeGenerators(): ShapeGeneratorSystem {
      */
     function createCustomSymbol(type: string, size: number = 64): string {
         const symbolType = symbolTypes[type as keyof typeof symbolTypes] || d3.symbolCircle;
-        const symbolGenerator = d3.symbol()
-            .type(symbolType)
-            .size(size);
+        const symbolGenerator = d3.symbol().type(symbolType).size(size);
 
         return symbolGenerator() || "";
     }
@@ -203,15 +191,11 @@ export function createShapeGenerators(): ShapeGeneratorSystem {
      * Create smooth trend line with enhanced curve support
      * Provides better visual flow for waterfall trend analysis
      */
-    function createSmoothTrendLine(
-        data: Array<{x: number, y: number}>, 
-        config: TrendLineConfig = {}
-    ): string {
-        const {
-            curve = d3.curveMonotoneX
-        } = config;
+    function createSmoothTrendLine(data: Array<{ x: number; y: number }>, config: TrendLineConfig = {}): string {
+        const { curve = d3.curveMonotoneX } = config;
 
-        const lineGenerator = d3.line<{x: number, y: number}>()
+        const lineGenerator = d3
+            .line<{ x: number; y: number }>()
             .x(d => d.x)
             .y(d => d.y)
             .curve(curve);
@@ -223,9 +207,7 @@ export function createShapeGenerators(): ShapeGeneratorSystem {
      * Create multiple trend lines for comparison analysis
      * Useful for comparing different scenarios or time periods
      */
-    function createMultipleTrendLines(
-        datasets: Array<{data: Array<{x: number, y: number}>, config?: TrendLineConfig}>
-    ): string[] {
+    function createMultipleTrendLines(datasets: Array<{ data: Array<{ x: number; y: number }>; config?: TrendLineConfig }>): string[] {
         return datasets.map(dataset => {
             return createSmoothTrendLine(dataset.data, dataset.config);
         });
@@ -251,18 +233,18 @@ export function createShapeGenerators(): ShapeGeneratorSystem {
         // Area generators
         createConfidenceBand,
         createEnvelopeArea,
-        
+
         // Symbol generators
         createDataPointMarkers,
         createCustomSymbol,
-        
+
         // Enhanced trend lines
         createSmoothTrendLine,
         createMultipleTrendLines,
-        
+
         // Utility functions
         getCurveTypes,
-        getSymbolTypes
+        getSymbolTypes,
     };
 }
 
@@ -294,28 +276,28 @@ function centerOf(x: XPosition, label: string): number {
  * `start` reset every running total to their own (or the scenario's) value.
  */
 export function createWaterfallConfidenceBands(
-    baselineData: Array<{label: string, value: number, subtotal?: boolean, start?: boolean}>,
+    baselineData: Array<{ label: string; value: number; subtotal?: boolean; start?: boolean }>,
     scenarios: {
-        optimistic: Array<{label: string, value: number}>,
-        pessimistic: Array<{label: string, value: number}>
+        optimistic: Array<{ label: string; value: number }>;
+        pessimistic: Array<{ label: string; value: number }>;
     },
     xScale: XPosition,
     yScale: d3.ScaleLinear<number, number>
 ): {
-    confidencePath: string,
-    optimisticPath: string,
-    pessimisticPath: string
+    confidencePath: string;
+    optimisticPath: string;
+    pessimisticPath: string;
 } {
     const shapeGenerator = createShapeGenerators();
-    
+
     // Calculate cumulative values for each scenario
     let baselineCumulative = 0;
     let optimisticCumulative = 0;
     let pessimisticCumulative = 0;
-    
-    const lookup = (entries: Array<{label: string, value: number}>) => {
+
+    const lookup = (entries: Array<{ label: string; value: number }>) => {
         const byLabel = new Map(entries.filter(e => e.label != null).map(e => [e.label, e.value]));
-        return (item: {label: string}, i: number): number | undefined =>
+        return (item: { label: string }, i: number): number | undefined =>
             byLabel.has(item.label) ? byLabel.get(item.label) : entries[i]?.label == null ? entries[i]?.value : undefined;
     };
     const optimisticValue = lookup(scenarios.optimistic);
@@ -334,37 +316,37 @@ export function createWaterfallConfidenceBands(
         }
 
         const x = centerOf(xScale, item.label);
-        
+
         return {
             x,
             y: yScale(baselineCumulative),
             yUpper: yScale(optimisticCumulative),
             yLower: yScale(pessimisticCumulative),
-            label: item.label
+            label: item.label,
         };
     });
-    
+
     // Create trend lines for each scenario
     const optimisticTrendData = confidenceData.map(d => ({ x: d.x, y: d.yUpper }));
     const pessimisticTrendData = confidenceData.map(d => ({ x: d.x, y: d.yLower }));
-    
+
     return {
         confidencePath: shapeGenerator.createConfidenceBand(confidenceData, {
             fillColor: "rgba(52, 152, 219, 0.2)",
-            curve: d3.curveMonotoneX
+            curve: d3.curveMonotoneX,
         }),
         optimisticPath: shapeGenerator.createSmoothTrendLine(optimisticTrendData, {
             strokeColor: "#27ae60",
             strokeWidth: 2,
             strokeDasharray: "5,5",
-            curve: d3.curveMonotoneX
+            curve: d3.curveMonotoneX,
         }),
         pessimisticPath: shapeGenerator.createSmoothTrendLine(pessimisticTrendData, {
             strokeColor: "#e74c3c",
             strokeWidth: 2,
             strokeDasharray: "5,5",
-            curve: d3.curveMonotoneX
-        })
+            curve: d3.curveMonotoneX,
+        }),
     };
 }
 
@@ -374,39 +356,39 @@ export function createWaterfallConfidenceBands(
  */
 export function createWaterfallMilestones(
     milestones: Array<{
-        label: string,
-        value: number,
-        type: "target" | "threshold" | "alert" | "achievement",
-        description?: string
+        label: string;
+        value: number;
+        type: "target" | "threshold" | "alert" | "achievement";
+        description?: string;
     }>,
     xScale: XPosition,
     yScale: d3.ScaleLinear<number, number>
-): Array<{path: string, transform: string, config: SymbolConfig}> {
+): Array<{ path: string; transform: string; config: SymbolConfig }> {
     const shapeGenerator = createShapeGenerators();
-    
+
     const markerData: DataPointMarker[] = milestones.map(milestone => {
         const typeMapping = {
             target: { type: "star" as const, color: "#f39c12", size: 100 },
             threshold: { type: "diamond" as const, color: "#9b59b6", size: 80 },
             alert: { type: "triangle" as const, color: "#e74c3c", size: 90 },
-            achievement: { type: "circle" as const, color: "#27ae60", size: 85 }
+            achievement: { type: "circle" as const, color: "#27ae60", size: 85 },
         };
-        
+
         const styling = typeMapping[milestone.type as keyof typeof typeMapping] || typeMapping.target;
-        
+
         return {
             x: centerOf(xScale, milestone.label),
             y: yScale(milestone.value),
             type: styling.type,
             size: styling.size,
             color: styling.color,
-            label: milestone.description || milestone.label
+            label: milestone.description || milestone.label,
         };
     });
-    
+
     return shapeGenerator.createDataPointMarkers(markerData, {
         strokeColor: "#ffffff",
-        strokeWidth: 2
+        strokeWidth: 2,
     });
 }
 

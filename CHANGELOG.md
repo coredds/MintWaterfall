@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `createScaleSystem().createTimeScale()` replaced the scale's `tickFormat` with a date formatter, so
   D3 axes on it showed `NaN` ticks and `scaleUtils.formatTickValue` threw. The automatic format is
   now returned by `tickFormat()` while keeping D3's `tickFormat(count, specifier)` contract.
-- Scale system edge cases: empty input gave `NaN` linear/time domains and an adaptive *time* scale
+- Scale system edge cases: empty input gave `NaN` linear/time domains and an adaptive _time_ scale
   (now d3's default domain and a band scale); `getScaleInfo` reports log scales as `"log"`.
 - `groupWaterfallData` ignored its `labelAccessor`; it is now called with the first record of each group.
 

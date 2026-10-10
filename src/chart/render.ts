@@ -98,9 +98,7 @@ export function legendItems(data: ProcessedData[], config: ChartConfig, style: R
         byKind.get(kind)!.add(getBarColor(d, i, pseudo));
     });
     const order: BarKind[] = ["start", "increase", "decrease", "subtotal", "total"];
-    return order
-        .filter(k => byKind.get(k)?.size === 1)
-        .map(k => ({ label: names[k], color: [...byKind.get(k)!][0] }));
+    return order.filter(k => byKind.get(k)?.size === 1).map(k => ({ label: names[k], color: [...byKind.get(k)!][0] }));
 }
 
 /** Pack legend items into rows that fit `availableWidth`. */
@@ -131,9 +129,7 @@ export function drawLegend(svg: AnySelection, ctx: RenderContext): void {
         .attr("transform", `translate(${ctx.margins.left},8)`)
         .attr("role", items.length ? "list" : null)
         .attr("aria-label", items.length ? "Legend" : null);
-    const sel = group
-        .selectAll<SVGGElement, LegendLayout["items"][number]>("g.legend-item")
-        .data(items, d => d.label);
+    const sel = group.selectAll<SVGGElement, LegendLayout["items"][number]>("g.legend-item").data(items, d => d.label);
     sel.exit().remove();
     const entered = sel.enter().append("g").attr("class", "legend-item").attr("role", "listitem");
     entered.append("rect").attr("rx", 2);
@@ -206,7 +202,7 @@ export function animate(selection: AnySelection, ctx: RenderContext, delay?: (d:
  * D3 selections here hold heterogeneous elements and data across layers, so they are
  * intentionally loosely typed; datum callbacks and scales are typed explicitly.
  */
- 
+
 export type AnySelection = d3.Selection<any, any, any, any>;
 
 /** Select a direct child layer by class, creating it if necessary. */
@@ -244,7 +240,11 @@ const barWidthCache = new WeakMap<RenderContext, number>();
 export function barWidth(ctx: RenderContext): number {
     let w = barWidthCache.get(ctx);
     if (w === undefined) {
-        w = getBarWidth(ctx.xScale, ctx.data.map(d => d.label), plotWidth(ctx));
+        w = getBarWidth(
+            ctx.xScale,
+            ctx.data.map(d => d.label),
+            plotWidth(ctx)
+        );
         barWidthCache.set(ctx, w);
     }
     return w;
@@ -297,7 +297,9 @@ export function getBarColor(d: ProcessedData, i: number, ctx: RenderContext): st
 }
 
 export function drawBackground(svg: AnySelection, ctx: RenderContext): void {
-    const bg = svg.selectAll<SVGRectElement, string>(":scope > rect.mw-background").data(ctx.style.background ? [ctx.style.background] : []);
+    const bg = svg
+        .selectAll<SVGRectElement, string>(":scope > rect.mw-background")
+        .data(ctx.style.background ? [ctx.style.background] : []);
     bg.exit().remove();
     bg.enter()
         .insert("rect", ":first-child")
@@ -322,8 +324,16 @@ export function drawGrid(container: AnySelection, ctx: RenderContext): void {
     // Grid lines run across the plot at each value tick (horizontal lines for columns, vertical for bars)
     const across = (sel: AnySelection, v: (d: number) => number) =>
         ctx.horizontal
-            ? sel.attr("x1", v).attr("x2", v).attr("y1", margins.top).attr("y2", ctx.height - margins.bottom)
-            : sel.attr("x1", margins.left).attr("x2", ctx.width - margins.right).attr("y1", v).attr("y2", v);
+            ? sel
+                  .attr("x1", v)
+                  .attr("x2", v)
+                  .attr("y1", margins.top)
+                  .attr("y2", ctx.height - margins.bottom)
+            : sel
+                  .attr("x1", margins.left)
+                  .attr("x2", ctx.width - margins.right)
+                  .attr("y1", v)
+                  .attr("y2", v);
 
     const entered = lines.enter().append("line").attr("class", "grid-line");
     across(entered, (d: number) => yScale(d));
@@ -382,14 +392,15 @@ function drawHorizontalAxes(container: AnySelection, ctx: RenderContext): void {
 
     const max = ctx.categoryLabelChars;
     const categoryAxis = axisLayer(container, "x-axis", ctx).attr("transform", `translate(${margins.left},0)`);
-    categoryAxis
-        .interrupt()
-        .call(d3.axisLeft(xScale).tickSize(0).tickSizeOuter(0).tickPadding(10).tickFormat(l => truncateLabel(l, max)));
-    categoryAxis
-        .select(".domain")
-        .attr("stroke", style.axis)
-        .attr("stroke-width", 1)
-        .attr("shape-rendering", "crispEdges");
+    categoryAxis.interrupt().call(
+        d3
+            .axisLeft(xScale)
+            .tickSize(0)
+            .tickSizeOuter(0)
+            .tickPadding(10)
+            .tickFormat(l => truncateLabel(l, max))
+    );
+    categoryAxis.select(".domain").attr("stroke", style.axis).attr("stroke-width", 1).attr("shape-rendering", "crispEdges");
     styleAxisText(categoryAxis, ctx);
     const every = Math.max(1, ctx.xLabelEvery);
     categoryAxis
@@ -428,21 +439,13 @@ export function drawAxes(container: AnySelection, ctx: RenderContext): void {
         .tickPadding(10);
     // Not transitioned: d3-axis would re-apply text/dy at transition start and undo wrapping/rotation
     xAxisGroup.interrupt().call(xAxis);
-    xAxisGroup
-        .select(".domain")
-        .attr("stroke", style.axis)
-        .attr("stroke-width", 1)
-        .attr("shape-rendering", "crispEdges");
+    xAxisGroup.select(".domain").attr("stroke", style.axis).attr("stroke-width", 1).attr("shape-rendering", "crispEdges");
     styleAxisText(xAxisGroup, ctx);
     xAxisGroup.selectAll(".tick text").style("font-weight", "500");
 
     const tickText = xAxisGroup.selectAll<SVGTextElement, unknown>(".tick text");
     if (ctx.rotateXLabels) {
-        tickText
-            .attr("text-anchor", "end")
-            .attr("dx", "-0.5em")
-            .attr("dy", "0.4em")
-            .attr("transform", "rotate(-35)");
+        tickText.attr("text-anchor", "end").attr("dx", "-0.5em").attr("dy", "0.4em").attr("transform", "rotate(-35)");
     } else {
         tickText.attr("text-anchor", "middle").attr("dx", null).attr("transform", null);
     }
@@ -527,9 +530,15 @@ function drawSingleBar(group: AnySelection, d: ProcessedData, i: number, w: numb
     const start = isAnchoredBar(d) ? 0 : d.prevCumulativeTotal || 0;
 
     const rect = group.selectAll<SVGRectElement, ProcessedData>("rect.waterfall-bar").data([d]);
-    const entered = setRect(rect.enter().append("rect").attr("class", "waterfall-bar"), valueRect(ctx, start, start, w)).attr("fill", color);
+    const entered = setRect(rect.enter().append("rect").attr("class", "waterfall-bar"), valueRect(ctx, start, start, w)).attr(
+        "fill",
+        color
+    );
 
-    setRect(animate(entered.merge(rect), ctx, () => delay), r)
+    setRect(
+        animate(entered.merge(rect), ctx, () => delay),
+        r
+    )
         .attr("rx", roundedRadius(ctx, r.width, r.height))
         .attr("fill", color);
 }
@@ -771,12 +780,7 @@ export function drawTrendLine(container: AnySelection, ctx: RenderContext): void
     const dash = config.trendLineStyle === "dashed" ? "6 4" : config.trendLineStyle === "dotted" ? "2 4" : null;
 
     const path = group.selectAll<SVGPathElement, Point[]>("path.trend-line").data([points]);
-    const entered = path
-        .enter()
-        .append("path")
-        .attr("class", "trend-line")
-        .attr("fill", "none")
-        .attr("d", line);
+    const entered = path.enter().append("path").attr("class", "trend-line").attr("fill", "none").attr("d", line);
 
     animate(entered.merge(path), ctx)
         .attr("d", line)

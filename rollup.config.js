@@ -13,11 +13,11 @@ const banner = `/*!
  * Released under the MIT License
  */`;
 
-const external = (id) => {
+const external = id => {
   return id === "d3" || id.startsWith("d3-");
 };
 // Source imports only from "d3"; subpackage globals are a safety net for UMD builds.
-const globals = (id) => (id === "d3" || id.startsWith("d3-") ? "d3" : undefined);
+const globals = id => (id === "d3" || id.startsWith("d3-") ? "d3" : undefined);
 
 const plugins = [
   resolve({

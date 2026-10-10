@@ -20,8 +20,7 @@ export interface ResolvedStyle {
     fontFamily: string;
 }
 
-export const FONT_FAMILY =
-    "Inter, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif";
+export const FONT_FAMILY = 'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
 function isDark(hex: string): boolean {
     const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());

@@ -137,11 +137,7 @@ export function flatRollupBy<T, R>(data: T[], reducer: ReduceFunction<T, R>, ...
  * Cross-tabulation using D3.js cross() API
  * Creates cartesian product with optional combiner function
  */
-export function crossTabulate<T1, T2, R>(
-    data1: T1[],
-    data2: T2[],
-    combiner?: (a: T1, b: T2) => R
-): Array<CrossTabResult<T1, T2, R>> {
+export function crossTabulate<T1, T2, R>(data1: T1[], data2: T2[], combiner?: (a: T1, b: T2) => R): Array<CrossTabResult<T1, T2, R>> {
     if (!Array.isArray(data1) || !Array.isArray(data2)) {
         throw new Error("Both data arrays must be arrays");
     }
@@ -150,13 +146,13 @@ export function crossTabulate<T1, T2, R>(
         return d3.cross(data1, data2, (a, b) => ({
             row: a,
             col: b,
-            value: combiner(a, b)
+            value: combiner(a, b),
         }));
     } else {
         return d3.cross(data1, data2, (a, b) => ({
             row: a,
             col: b,
-            value: undefined as R
+            value: undefined as R,
         }));
     }
 }
@@ -201,7 +197,7 @@ export function aggregateByTime(data: any[], options: TemporalOptions): DataItem
     // Group by time interval
     const grouped = d3.rollup(
         data,
-        (values) => {
+        values => {
             switch (aggregation) {
                 case "sum":
                     return d3.sum(values, valueAccessor);
@@ -215,17 +211,19 @@ export function aggregateByTime(data: any[], options: TemporalOptions): DataItem
                     return d3.sum(values, valueAccessor);
             }
         },
-        (d) => interval(timeAccessor(d))
+        d => interval(timeAccessor(d))
     );
 
     // Convert to waterfall format
     return Array.from(grouped.entries()).map(([date, value]) => ({
         label: d3.timeFormat("%Y-%m-%d")(date),
-        stacks: [{
-            value: value,
-            color: value >= 0 ? "#2ecc71" : "#e74c3c",
-            label: `${value >= 0 ? "+" : ""}${d3.format(".2f")(value)}`
-        }]
+        stacks: [
+            {
+                value: value,
+                color: value >= 0 ? "#2ecc71" : "#e74c3c",
+                label: `${value >= 0 ? "+" : ""}${d3.format(".2f")(value)}`,
+            },
+        ],
     }));
 }
 
@@ -233,11 +231,7 @@ export function aggregateByTime(data: any[], options: TemporalOptions): DataItem
  * Create multi-dimensional waterfall from hierarchical data
  * Groups by multiple keys and creates stacked waterfall segments
  */
-export function createMultiDimensionalWaterfall(
-    data: any[],
-    groupKeys: string[],
-    valueKey: string
-): DataItem[] {
+export function createMultiDimensionalWaterfall(data: any[], groupKeys: string[], valueKey: string): DataItem[] {
     if (!Array.isArray(data) || !Array.isArray(groupKeys)) {
         throw new Error("Data and groupKeys must be arrays");
     }
@@ -250,27 +244,31 @@ export function createMultiDimensionalWaterfall(
     const accessors = groupKeys.map(key => (d: any) => d[key]);
 
     // Use flatRollup to get flat aggregated data
-    const aggregated = d3.flatRollup(
-        data,
-        (values) => d3.sum(values, (d: any) => d[valueKey] || 0),
-        ...accessors
-    );
+    const aggregated = d3.flatRollup(data, values => d3.sum(values, (d: any) => d[valueKey] || 0), ...accessors);
 
     // Convert to waterfall format
-    return aggregated.map((item) => {
+    return aggregated.map(item => {
         const keys = item.slice(0, -1); // All but last element
         const value = item[item.length - 1]; // Last element
         const label = keys.join(" → ");
         const colors = ["#3498db", "#2ecc71", "#f39c12", "#e74c3c", "#9b59b6"];
-        const colorIndex = Math.abs(keys.join("").split("").reduce((a, b) => a + b.charCodeAt(0), 0)) % colors.length;
+        const colorIndex =
+            Math.abs(
+                keys
+                    .join("")
+                    .split("")
+                    .reduce((a, b) => a + b.charCodeAt(0), 0)
+            ) % colors.length;
 
         return {
             label,
-            stacks: [{
-                value: value as number,
-                color: colors[colorIndex],
-                label: `${value >= 0 ? "+" : ""}${d3.format(".2f")(value as number)}`
-            }]
+            stacks: [
+                {
+                    value: value as number,
+                    color: colors[colorIndex],
+                    label: `${value >= 0 ? "+" : ""}${d3.format(".2f")(value as number)}`,
+                },
+            ],
         };
     });
 }
@@ -279,17 +277,13 @@ export function createMultiDimensionalWaterfall(
  * Aggregate existing waterfall data by time periods
  * Useful for rolling up daily waterfalls into weekly/monthly
  */
-export function aggregateWaterfallByPeriod(
-    data: DataItem[],
-    timeKey: string,
-    interval: d3.TimeInterval
-): DataItem[] {
+export function aggregateWaterfallByPeriod(data: DataItem[], timeKey: string, interval: d3.TimeInterval): DataItem[] {
     validateData(data);
 
     // Extract time values and group by interval
     const timeGrouped = d3.rollup(
         data,
-        (items) => {
+        items => {
             // Aggregate all stacks across items in this time period
             const allStacks: StackItem[] = [];
             items.forEach(item => allStacks.push(...item.stacks));
@@ -297,17 +291,17 @@ export function aggregateWaterfallByPeriod(
             // Group stacks by color and sum values
             const stacksByColor = d3.rollup(
                 allStacks,
-                (stacks) => ({
+                stacks => ({
                     value: d3.sum(stacks, s => s.value),
                     label: stacks[0].label,
-                    color: stacks[0].color
+                    color: stacks[0].color,
                 }),
-                (s) => s.color
+                s => s.color
             );
 
             return Array.from(stacksByColor.values());
         },
-        (item) => {
+        item => {
             // Try to parse time from the item (assuming it's in the label or a property)
             const timeStr = (item as any)[timeKey] || item.label;
             const date = new Date(timeStr);
@@ -318,7 +312,7 @@ export function aggregateWaterfallByPeriod(
     // Convert to waterfall format
     return Array.from(timeGrouped.entries()).map(([date, stacks]) => ({
         label: d3.timeFormat("%Y-%m-%d")(date),
-        stacks: stacks
+        stacks: stacks,
     }));
 }
 
@@ -326,12 +320,7 @@ export function aggregateWaterfallByPeriod(
  * Create breakdown waterfall showing primary categories and their breakdowns
  * Useful for drill-down analysis
  */
-export function createBreakdownWaterfall(
-    data: any[],
-    primaryKey: string,
-    breakdownKey: string,
-    valueKey: string
-): DataItem[] {
+export function createBreakdownWaterfall(data: any[], primaryKey: string, breakdownKey: string, valueKey: string): DataItem[] {
     if (!Array.isArray(data)) {
         throw new Error("Data must be an array");
     }
@@ -339,7 +328,7 @@ export function createBreakdownWaterfall(
     // First group by primary key, then by breakdown key
     const nested = d3.rollup(
         data,
-        (values) => d3.sum(values, (d: any) => d[valueKey] || 0),
+        values => d3.sum(values, (d: any) => d[valueKey] || 0),
         (d: any) => d[primaryKey],
         (d: any) => d[breakdownKey]
     );
@@ -351,13 +340,13 @@ export function createBreakdownWaterfall(
             return {
                 value: value as number,
                 color: colors[index % colors.length],
-                label: `${breakdownValue}: ${value >= 0 ? "+" : ""}${d3.format(".2f")(value as number)}`
+                label: `${breakdownValue}: ${value >= 0 ? "+" : ""}${d3.format(".2f")(value as number)}`,
             };
         });
 
         return {
             label: String(primaryValue),
-            stacks
+            stacks,
         };
     });
 }
@@ -400,21 +389,21 @@ export interface DataOrderingOptions {
 export interface AdvancedDataProcessor {
     // Sequence analysis using d3.pairs()
     analyzeSequence(data: any[]): SequenceAnalysis[];
-    
+
     // Data reordering using d3.permute()
     optimizeDataOrder(data: any[], options: DataOrderingOptions): any[];
-    
+
     // Complex dataset merging using d3.merge()
     mergeDatasets(datasets: any[][], options: DataMergeOptions): any[];
-    
+
     // Custom axis tick generation using d3.ticks()
     generateCustomTicks(domain: [number, number], options: TickGenerationOptions): number[];
-    
+
     // Advanced data transformation utilities
     createDataPairs(data: any[], accessor?: (d: any) => any): any[];
     permuteByIndices(data: any[], indices: number[]): any[];
     mergeSimilarItems(data: any[], similarityThreshold: number): any[];
-    
+
     // Data quality and validation
     validateSequentialData(data: any[]): { isValid: boolean; errors: string[] };
     detectDataAnomalies(data: any[]): any[];
@@ -429,7 +418,6 @@ export interface AdvancedDataProcessor {
  * Creates an advanced data processor with D3.js data manipulation functions
  */
 export function createAdvancedDataProcessor() {
-    
     // Group data by key using d3.group
     function groupBy<T>(data: T[], accessor: (d: T) => string): Map<string, T[]> {
         if (!data || !Array.isArray(data) || !accessor) {
@@ -437,7 +425,7 @@ export function createAdvancedDataProcessor() {
         }
         return group(data, accessor);
     }
-    
+
     // Rollup data with reducer using d3.rollup
     function rollupBy<T, R>(data: T[], reducer: (values: T[]) => R, accessor: (d: T) => string): Map<string, R> {
         if (!data || !Array.isArray(data) || !reducer || !accessor) {
@@ -445,7 +433,7 @@ export function createAdvancedDataProcessor() {
         }
         return rollup(data, reducer, accessor);
     }
-    
+
     // Flat rollup using d3.flatRollup
     function flatRollupBy<T, R>(data: T[], reducer: (values: T[]) => R, accessor: (d: T) => string): [string, R][] {
         if (!data || !Array.isArray(data) || !reducer || !accessor) {
@@ -453,7 +441,7 @@ export function createAdvancedDataProcessor() {
         }
         return flatRollup(data, reducer, accessor);
     }
-    
+
     // Cross tabulate two arrays using d3.cross
     function crossTabulate<A, B, R>(a: A[], b: B[], reducer?: (a: A, b: B) => R): (R | [A, B])[] {
         if (!Array.isArray(a) || !Array.isArray(b)) {
@@ -465,13 +453,13 @@ export function createAdvancedDataProcessor() {
             return cross(a, b) as [A, B][];
         }
     }
-    
+
     // Index data by key using d3.index
     function indexBy<T>(data: T[], accessor: (d: T) => string): Map<string, T> {
         if (!data || !Array.isArray(data) || !accessor) {
             return new Map();
         }
-        
+
         try {
             return index(data, accessor);
         } catch (error) {
@@ -486,22 +474,22 @@ export function createAdvancedDataProcessor() {
             return result;
         }
     }
-    
+
     // Aggregate data by time periods
     function aggregateByTime<T>(
-        data: T[], 
-        timeAccessor: (d: T) => Date, 
+        data: T[],
+        timeAccessor: (d: T) => Date,
         granularity: "day" | "week" | "month" | "year",
         reducer: (values: T[]) => any
     ): any[] {
         if (!data || !Array.isArray(data) || !timeAccessor || !reducer) {
             return [];
         }
-        
+
         const timeGroups = group(data, (d: T) => {
             const date = timeAccessor(d);
             if (!date || !(date instanceof Date)) return "invalid";
-            
+
             switch (granularity) {
                 case "day":
                     return date.toISOString().split("T")[0];
@@ -518,14 +506,14 @@ export function createAdvancedDataProcessor() {
                     return date.toISOString().split("T")[0];
             }
         });
-        
+
         return Array.from(timeGroups.entries()).map(([period, values]) => ({
             period,
             data: reducer(values),
-            count: values.length
+            count: values.length,
         }));
     }
-    
+
     // Create multi-dimensional waterfall
     function createMultiDimensionalWaterfall(
         multiData: Record<string, any[]>,
@@ -537,20 +525,20 @@ export function createAdvancedDataProcessor() {
     ): any[] {
         const result: any[] = [];
         const { aggregationMethod = "sum" } = options;
-        
+
         if (!multiData || typeof multiData !== "object") {
             return result;
         }
-        
+
         const regions = Object.keys(multiData);
         let grandTotal = 0;
-        
+
         for (const region of regions) {
             const data = multiData[region];
             if (!Array.isArray(data)) continue;
-            
+
             let regionTotal = 0;
-            
+
             for (const item of data) {
                 let value = 0;
                 if (item.value !== undefined) {
@@ -558,14 +546,14 @@ export function createAdvancedDataProcessor() {
                 } else if (item.stacks && Array.isArray(item.stacks)) {
                     value = item.stacks.reduce((sum: number, stack: any) => sum + (stack.value || 0), 0);
                 }
-                
+
                 result.push({
                     ...item,
                     region,
                     value,
-                    label: `${region}: ${item.label}`
+                    label: `${region}: ${item.label}`,
                 });
-                
+
                 switch (aggregationMethod) {
                     case "sum":
                         regionTotal += value;
@@ -584,30 +572,30 @@ export function createAdvancedDataProcessor() {
                         break;
                 }
             }
-            
+
             if (options.includeRegionalTotals) {
                 result.push({
                     label: `${region} Total`,
                     value: aggregationMethod === "average" ? regionTotal / data.length : regionTotal,
                     region,
-                    isRegionalTotal: true
+                    isRegionalTotal: true,
                 });
             }
-            
+
             grandTotal += regionTotal;
         }
-        
+
         if (options.includeGrandTotal) {
             result.push({
                 label: "Grand Total",
                 value: grandTotal,
-                isGrandTotal: true
+                isGrandTotal: true,
             });
         }
-        
+
         return result;
     }
-    
+
     // Aggregate waterfall by period with additional metrics
     function aggregateWaterfallByPeriod(
         data: any[],
@@ -622,7 +610,7 @@ export function createAdvancedDataProcessor() {
         if (!data || !Array.isArray(data)) {
             return [];
         }
-        
+
         const periodGroups = group(data, (d: any) => d[periodField] || "unknown");
         const result = Array.from(periodGroups.entries()).map(([period, items]) => {
             const total = items.reduce((sum, item) => {
@@ -632,7 +620,7 @@ export function createAdvancedDataProcessor() {
                 }
                 return sum;
             }, 0);
-            
+
             return {
                 period,
                 items,
@@ -640,10 +628,10 @@ export function createAdvancedDataProcessor() {
                 count: items.length,
                 average: total / items.length,
                 movingAverage: 0, // Will be calculated if requested
-                growthRate: 0 // Will be calculated if requested
+                growthRate: 0, // Will be calculated if requested
             };
         });
-        
+
         // Add moving average if requested
         if (options.includeMovingAverage) {
             const window = options.movingAverageWindow || 3;
@@ -654,7 +642,7 @@ export function createAdvancedDataProcessor() {
                 item.movingAverage = windowData.reduce((sum, w) => sum + w.total, 0) / windowData.length;
             });
         }
-        
+
         // Add growth rates if requested
         if (options.calculateGrowthRates) {
             result.forEach((item, index) => {
@@ -664,10 +652,10 @@ export function createAdvancedDataProcessor() {
                 }
             });
         }
-        
+
         return result;
     }
-    
+
     // Create breakdown waterfall with sub-items
     function createBreakdownWaterfall(
         data: any[],
@@ -681,18 +669,18 @@ export function createAdvancedDataProcessor() {
         if (!data || !Array.isArray(data)) {
             return [];
         }
-        
+
         const result: any[] = [];
-        
+
         for (const item of data) {
             const breakdowns = item[breakdownField];
-            
+
             if (breakdowns && Array.isArray(breakdowns)) {
                 // Add main item
                 if (options.maintainOriginalStructure) {
                     result.push({ ...item, isMainItem: true });
                 }
-                
+
                 // Add breakdown items
                 let subtotal = 0;
                 breakdowns.forEach((breakdown: any, index: number) => {
@@ -701,19 +689,19 @@ export function createAdvancedDataProcessor() {
                         parentLabel: item.label,
                         isBreakdown: true,
                         breakdownIndex: index,
-                        color: options.colorByBreakdown ? `hsl(${index * 360 / breakdowns.length}, 70%, 60%)` : breakdown.color
+                        color: options.colorByBreakdown ? `hsl(${(index * 360) / breakdowns.length}, 70%, 60%)` : breakdown.color,
                     };
                     result.push(breakdownItem);
                     subtotal += breakdown.value || 0;
                 });
-                
+
                 // Add subtotal if requested
                 if (options.includeSubtotals && breakdowns.length > 1) {
                     result.push({
                         label: `${item.label} Subtotal`,
                         value: subtotal,
                         parentLabel: item.label,
-                        isSubtotal: true
+                        isSubtotal: true,
                     });
                 }
             } else {
@@ -721,24 +709,24 @@ export function createAdvancedDataProcessor() {
                 result.push({ ...item, hasBreakdown: false });
             }
         }
-        
+
         return result;
     }
-    
+
     // Additional methods needed by existing code
     function analyzeSequence(data: any[]): any[] {
         // Simplified implementation for compatibility
         if (!Array.isArray(data) || data.length < 2) {
             return [];
         }
-        
+
         return data.slice(1).map((item, index) => {
             const prev = data[index];
             const current = item;
             const prevValue = extractValue(prev);
             const currentValue = extractValue(current);
             const change = currentValue - prevValue;
-            
+
             return {
                 index,
                 from: prev.label || `Item ${index}`,
@@ -748,37 +736,37 @@ export function createAdvancedDataProcessor() {
                 change,
                 percentChange: prevValue !== 0 ? (change / prevValue) * 100 : 0,
                 direction: change > 0 ? "increase" : change < 0 ? "decrease" : "stable",
-                magnitude: Math.abs(change) > 1000 ? "large" : Math.abs(change) > 100 ? "medium" : "small"
+                magnitude: Math.abs(change) > 1000 ? "large" : Math.abs(change) > 100 ? "medium" : "small",
             };
         });
     }
-    
+
     function suggestDataOptimizations(data: any[]): any[] {
         // Simplified implementation for compatibility
         const suggestions: any[] = [];
-        
+
         if (!Array.isArray(data) || data.length === 0) {
             return suggestions;
         }
-        
+
         if (data.length > 20) {
             suggestions.push({
                 type: "aggregation",
                 priority: "medium",
                 description: "Consider grouping similar items for better readability",
-                impact: "Reduces visual clutter"
+                impact: "Reduces visual clutter",
             });
         }
-        
+
         return suggestions;
     }
-    
+
     function generateCustomTicks(domain: [number, number], options: any): number[] {
         // Simplified implementation using d3.ticks
         const tickCount = options.targetTickCount || 8;
         return d3.ticks(domain[0], domain[1], tickCount);
     }
-    
+
     function extractValue(item: any): number {
         if (typeof item === "number") return item;
         if (item.value !== undefined) return item.value;
@@ -801,6 +789,6 @@ export function createAdvancedDataProcessor() {
         createBreakdownWaterfall,
         analyzeSequence,
         suggestDataOptimizations,
-        generateCustomTicks
+        generateCustomTicks,
     };
 }

@@ -11,7 +11,7 @@ const banner = `/*!
  * Released under the MIT License
  */`;
 
-const external = (id) => id === "d3" || id.startsWith("d3-");
+const external = id => id === "d3" || id.startsWith("d3-");
 
 export default {
   input: "src/index.ts",

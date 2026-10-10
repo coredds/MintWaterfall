@@ -93,7 +93,6 @@ export interface PerformanceManager {
 }
 
 export function createPerformanceManager(): PerformanceManager {
-    
     // Performance metrics tracking
     let performanceMetrics: PerformanceMetrics = {
         renderTime: 0,
@@ -105,9 +104,9 @@ export function createPerformanceManager(): PerformanceManager {
         lastFrameTime: 0,
         averageFrameTime: 0,
         peakMemoryUsage: 0,
-        renderCalls: 0
+        renderCalls: 0,
     };
-    
+
     // Virtualization configuration
     const virtualizationConfig: VirtualizationConfig = {
         enabled: false,
@@ -115,17 +114,17 @@ export function createPerformanceManager(): PerformanceManager {
         renderThreshold: 10000,
         bufferSize: 200,
         preloadCount: 3,
-        recycleNodes: true
+        recycleNodes: true,
     };
-    
+
     const virtualViewport: VirtualViewport = {
         start: 0,
         end: 100,
         visible: [],
         bufferStart: 0,
-        bufferEnd: 100
+        bufferEnd: 100,
     };
-    
+
     // Performance optimization settings
     const optimizationConfig: PerformanceOptimization = {
         debouncing: true,
@@ -133,124 +132,122 @@ export function createPerformanceManager(): PerformanceManager {
         batchUpdates: true,
         memoryPooling: true,
         geometryOptimization: true,
-        cssOptimization: true
+        cssOptimization: true,
     };
-    
+
     // Memory pool for reusing DOM elements
     const memoryPool: MemoryPool = {
         elements: new Map(),
         maxSize: 1000,
         currentSize: 0,
         hitCount: 0,
-        missCount: 0
+        missCount: 0,
     };
-    
+
     // Performance profiling
     const profilers = new Map<string, PerformanceProfiler>();
     let dashboardElement: HTMLElement | null = null;
-    
+
     // Frame rate tracking
     let frameCount = 0;
     let lastFpsTime = performance.now();
-    
+
     function enableVirtualization(options: Partial<VirtualizationConfig> = {}): PerformanceManager {
         Object.assign(virtualizationConfig, options);
         virtualizationConfig.enabled = true;
-        
+
         console.log("MintWaterfall: Virtualization enabled with config:", virtualizationConfig);
         return performanceManager;
     }
-    
+
     function disableVirtualization(): PerformanceManager {
         virtualizationConfig.enabled = false;
         console.log("MintWaterfall: Virtualization disabled");
         return performanceManager;
     }
-    
+
     function calculateVisibleRange(scrollTop: number, containerHeight: number, itemHeight: number): [number, number] {
         const start = Math.floor(scrollTop / itemHeight);
         const visibleCount = Math.ceil(containerHeight / itemHeight);
         const end = start + visibleCount;
-        
+
         // Add buffer for smooth scrolling
         const bufferStart = Math.max(0, start - virtualizationConfig.bufferSize);
         const bufferEnd = end + virtualizationConfig.bufferSize;
-        
+
         return [bufferStart, bufferEnd];
     }
-    
+
     function optimizeRendering(container: d3.Selection<d3.BaseType, any, any, any>, data: any[]): PerformanceManager {
         const startTime = performance.now();
-        
+
         performanceMetrics.totalElements = data.length;
-        
+
         if (virtualizationConfig.enabled && data.length > virtualizationConfig.renderThreshold) {
             renderVirtualized(container, data);
         } else {
             renderDirect(container, data);
         }
-        
+
         const endTime = performance.now();
         performanceMetrics.renderTime = endTime - startTime;
         performanceMetrics.renderCalls++;
-        
+
         updateFPS();
         return performanceManager;
     }
-    
+
     function renderVirtualized(container: d3.Selection<d3.BaseType, any, any, any>, data: any[]): void {
         // Implement virtualization logic
         const containerNode = container.node() as Element;
         if (!containerNode) return;
-        
+
         const containerHeight = containerNode.clientHeight;
         const scrollTop = (containerNode as HTMLElement).scrollTop || 0;
         const itemHeight = 30; // Estimate or calculate from data
-        
+
         const [visibleStart, visibleEnd] = calculateVisibleRange(scrollTop, containerHeight, itemHeight);
         const visibleData = data.slice(visibleStart, Math.min(visibleEnd, data.length));
-        
+
         virtualViewport.start = visibleStart;
         virtualViewport.end = visibleEnd;
         virtualViewport.visible = visibleData.map((_, i) => i + visibleStart);
-        
+
         performanceMetrics.visibleElements = visibleData.length;
-        
+
         // Render only visible elements with proper typing
-        const elements = container.selectAll<SVGGElement, any>(".virtual-item")
+        const elements = container
+            .selectAll<SVGGElement, any>(".virtual-item")
             .data(visibleData, (d: any, i: number) => `item-${i + visibleStart}`);
-        
+
         elements.exit().remove();
-        
-        const enter = elements.enter().append<SVGGElement>("g")
-            .attr("class", "virtual-item");
-        
+
+        const enter = elements.enter().append<SVGGElement>("g").attr("class", "virtual-item");
+
         const merged = elements.merge(enter);
         merged.attr("transform", (d: any, i: number) => `translate(0, ${(i + visibleStart) * itemHeight})`);
     }
-    
+
     function renderDirect(container: d3.Selection<d3.BaseType, any, any, any>, data: any[]): void {
         // Standard rendering for smaller datasets
         performanceMetrics.visibleElements = data.length;
-        
-        const elements = container.selectAll<SVGGElement, any>(".chart-element")
-            .data(data);
-        
+
+        const elements = container.selectAll<SVGGElement, any>(".chart-element").data(data);
+
         elements.exit().remove();
-        
-        const enter = elements.enter().append<SVGGElement>("g")
-            .attr("class", "chart-element");
-        
+
+        const enter = elements.enter().append<SVGGElement>("g").attr("class", "chart-element");
+
         elements.merge(enter);
         // Apply transformations and styles here
     }
-    
+
     function profileOperation(name: string, operation: () => any): any {
         const startTime = performance.now();
         const result = operation();
         const endTime = performance.now();
         const duration = endTime - startTime;
-        
+
         if (!profilers.has(name)) {
             profilers.set(name, {
                 startTime: 0,
@@ -258,24 +255,24 @@ export function createPerformanceManager(): PerformanceManager {
                 samples: [],
                 averageTime: 0,
                 minTime: Infinity,
-                maxTime: 0
+                maxTime: 0,
             });
         }
-        
+
         const profiler = profilers.get(name)!;
         profiler.samples.push(duration);
         profiler.minTime = Math.min(profiler.minTime, duration);
         profiler.maxTime = Math.max(profiler.maxTime, duration);
         profiler.averageTime = profiler.samples.reduce((a, b) => a + b, 0) / profiler.samples.length;
-        
+
         // Keep only recent samples for rolling average
         if (profiler.samples.length > 100) {
             profiler.samples.shift();
         }
-        
+
         return result;
     }
-    
+
     function getMetrics(): PerformanceMetrics {
         // Update memory usage if available
         if ("memory" in performance) {
@@ -283,10 +280,10 @@ export function createPerformanceManager(): PerformanceManager {
             performanceMetrics.memoryUsage = memInfo.usedJSHeapSize;
             performanceMetrics.peakMemoryUsage = Math.max(performanceMetrics.peakMemoryUsage, memInfo.usedJSHeapSize);
         }
-        
+
         return { ...performanceMetrics };
     }
-    
+
     function resetMetrics(): PerformanceManager {
         performanceMetrics = {
             renderTime: 0,
@@ -298,56 +295,56 @@ export function createPerformanceManager(): PerformanceManager {
             lastFrameTime: 0,
             averageFrameTime: 0,
             peakMemoryUsage: 0,
-            renderCalls: 0
+            renderCalls: 0,
         };
-        
+
         profilers.clear();
         frameCount = 0;
         lastFpsTime = performance.now();
-        
+
         return performanceManager;
     }
-    
+
     function enableMemoryPooling(options: Partial<MemoryPool> = {}): PerformanceManager {
         Object.assign(memoryPool, options);
         optimizationConfig.memoryPooling = true;
-        
+
         console.log("MintWaterfall: Memory pooling enabled");
         return performanceManager;
     }
-    
+
     function createRenderBatch(): RenderBatch {
         return {
             operations: [],
             priority: 1,
             timestamp: performance.now(),
-            elementCount: 0
+            elementCount: 0,
         };
     }
-    
+
     function flushRenderBatch(batch: RenderBatch): PerformanceManager {
         const startTime = performance.now();
-        
+
         // Sort operations by priority and type for optimal rendering
         batch.operations.sort((a, b) => {
             const typeOrder = ["remove", "create", "update", "style", "attribute"];
             return typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type);
         });
-        
+
         // Execute operations in batch
         batch.operations.forEach(operation => {
             executeRenderOperation(operation);
         });
-        
+
         const endTime = performance.now();
         performanceMetrics.renderTime += endTime - startTime;
-        
+
         return performanceManager;
     }
-    
+
     function executeRenderOperation(operation: RenderOperation): void {
         const { type, element, properties } = operation;
-        
+
         switch (type) {
             case "create":
                 // Create new element logic
@@ -379,26 +376,26 @@ export function createPerformanceManager(): PerformanceManager {
                 break;
         }
     }
-    
+
     function setUpdateStrategy(strategy: "immediate" | "debounced" | "throttled" | "batched"): PerformanceManager {
         console.log(`MintWaterfall: Update strategy set to ${strategy}`);
         return performanceManager;
     }
-    
+
     function updateFPS(): void {
         frameCount++;
         const currentTime = performance.now();
-        
+
         if (currentTime - lastFpsTime >= 1000) {
             performanceMetrics.fps = Math.round((frameCount * 1000) / (currentTime - lastFpsTime));
             performanceMetrics.averageFrameTime = (currentTime - lastFpsTime) / frameCount;
             frameCount = 0;
             lastFpsTime = currentTime;
         }
-        
+
         performanceMetrics.lastFrameTime = currentTime;
     }
-    
+
     function createDashboard(): HTMLElement {
         const dashboard = document.createElement("div");
         dashboard.className = "mintwaterfall-performance-dashboard";
@@ -415,17 +412,17 @@ export function createPerformanceManager(): PerformanceManager {
             z-index: 10000;
             max-width: 300px;
         `;
-        
+
         return dashboard;
     }
-    
+
     function updateDashboard(): void {
         if (!dashboardElement) return;
-        
+
         const metrics = getMetrics();
         const memoryMB = (metrics.memoryUsage / 1024 / 1024).toFixed(2);
         const peakMemoryMB = (metrics.peakMemoryUsage / 1024 / 1024).toFixed(2);
-        
+
         dashboardElement.innerHTML = `
             <div><strong>MintWaterfall Performance</strong></div>
             <div>FPS: ${metrics.fps}</div>
@@ -434,27 +431,30 @@ export function createPerformanceManager(): PerformanceManager {
             <div>Visible Elements: ${metrics.visibleElements}/${metrics.totalElements}</div>
             <div>Render Calls: ${metrics.renderCalls}</div>
             <div>Virtualization: ${virtualizationConfig.enabled ? "ON" : "OFF"}</div>
-            <div>Pool Hit Rate: ${memoryPool.hitCount + memoryPool.missCount > 0 ? 
-                ((memoryPool.hitCount / (memoryPool.hitCount + memoryPool.missCount)) * 100).toFixed(1) : 0}%</div>
+            <div>Pool Hit Rate: ${
+                memoryPool.hitCount + memoryPool.missCount > 0
+                    ? ((memoryPool.hitCount / (memoryPool.hitCount + memoryPool.missCount)) * 100).toFixed(1)
+                    : 0
+            }%</div>
         `;
     }
-    
+
     function enableDashboard(container?: HTMLElement): PerformanceManager {
         if (!dashboardElement) {
             dashboardElement = createDashboard();
         }
-        
+
         const targetContainer = container || document.body;
         if (targetContainer && !targetContainer.contains(dashboardElement)) {
             targetContainer.appendChild(dashboardElement);
         }
-        
+
         // Update dashboard periodically
         setInterval(updateDashboard, 500);
-        
+
         return performanceManager;
     }
-    
+
     function disableDashboard(): PerformanceManager {
         if (dashboardElement && dashboardElement.parentNode) {
             dashboardElement.parentNode.removeChild(dashboardElement);
@@ -462,63 +462,64 @@ export function createPerformanceManager(): PerformanceManager {
         }
         return performanceManager;
     }
-    
+
     function getDashboard(): HTMLElement | null {
         return dashboardElement;
     }
-    
+
     function optimizeMemory(): PerformanceManager {
         // Force garbage collection if available
         if ((window as any).gc) {
             (window as any).gc();
         }
-        
+
         // Clear unused pools
         memoryPool.elements.forEach((pool, _type) => {
             if (pool.length > 50) {
                 pool.splice(25); // Keep only recent 25 elements
             }
         });
-        
+
         // Clear old profiler samples
         profilers.forEach(profiler => {
             if (profiler.samples.length > 50) {
                 profiler.samples.splice(0, profiler.samples.length - 50);
             }
         });
-        
+
         console.log("MintWaterfall: Memory optimization completed");
         return performanceManager;
     }
-    
+
     function getRecommendations(): string[] {
         const recommendations: string[] = [];
         const metrics = getMetrics();
-        
+
         if (metrics.totalElements > 5000 && !virtualizationConfig.enabled) {
             recommendations.push("Enable virtualization for improved performance with large datasets");
         }
-        
+
         if (metrics.fps < 30) {
             recommendations.push("Consider reducing visual complexity or enabling performance optimizations");
         }
-        
-        if (metrics.memoryUsage > 100 * 1024 * 1024) { // 100MB
+
+        if (metrics.memoryUsage > 100 * 1024 * 1024) {
+            // 100MB
             recommendations.push("Memory usage is high - consider enabling memory pooling or reducing data size");
         }
-        
+
         if (metrics.renderTime > 100) {
             recommendations.push("Render time is slow - consider batching updates or optimizing render operations");
         }
-        
+
         const poolEfficiency = memoryPool.hitCount / (memoryPool.hitCount + memoryPool.missCount || 1);
         if (poolEfficiency < 0.5 && optimizationConfig.memoryPooling) {
             recommendations.push("Memory pool efficiency is low - consider adjusting pool size or strategy");
         }
-        
+
         return recommendations;
     }
-    
+
     const performanceManager: PerformanceManager = {
         enableVirtualization,
         disableVirtualization,
@@ -534,13 +535,11 @@ export function createPerformanceManager(): PerformanceManager {
         enableDashboard,
         disableDashboard,
         optimizeMemory,
-        getRecommendations
+        getRecommendations,
     };
-    
+
     return performanceManager;
 }
-
-
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -582,7 +581,10 @@ export interface SpatialIndex {
 
 export interface VirtualScrollManager {
     getVisibleRange(scrollTop: number): { start: number; end: number };
-    getVirtualizedData<T>(data: T[], scrollTop: number): {
+    getVirtualizedData<T>(
+        data: T[],
+        scrollTop: number
+    ): {
         visibleData: T[];
         offsetY: number;
         totalHeight: number;
@@ -603,16 +605,16 @@ export interface CanvasRenderer {
 export interface AdvancedPerformanceSystem {
     // Spatial indexing
     createSpatialIndex(): SpatialIndex;
-    
+
     // Virtual scrolling
     createVirtualScrollManager(config: VirtualScrollConfig): VirtualScrollManager;
-    
+
     // Canvas rendering
     createCanvasRenderer(container: HTMLElement): CanvasRenderer;
-    
+
     // Performance monitoring
     createPerformanceMonitor(): PerformanceMonitor;
-    
+
     // Data optimization
     optimizeDataForRendering<T>(data: T[], maxItems?: number): T[];
     createDataSampler<T>(strategy: "uniform" | "random" | "importance"): (data: T[], count: number) => T[];
@@ -632,21 +634,20 @@ export interface PerformanceMonitor {
 // ============================================================================
 
 function createSpatialIndexImpl(): SpatialIndex {
-    let quadTree = d3.quadtree<QuadTreeNode>()
+    let quadTree = d3
+        .quadtree<QuadTreeNode>()
         .x(d => d.x)
         .y(d => d.y);
 
     function search(x: number, y: number, radius: number = 10): QuadTreeNode[] {
         const results: QuadTreeNode[] = [];
-        
+
         quadTree.visit((node, x1, y1, x2, y2) => {
             if (!node.length) {
                 // Leaf node
                 const leaf = node as any;
                 if (leaf.data) {
-                    const distance = Math.sqrt(
-                        Math.pow(leaf.data.x - x, 2) + Math.pow(leaf.data.y - y, 2)
-                    );
+                    const distance = Math.sqrt(Math.pow(leaf.data.x - x, 2) + Math.pow(leaf.data.y - y, 2));
                     if (distance <= radius) {
                         results.push(leaf.data);
                     }
@@ -672,7 +673,8 @@ function createSpatialIndexImpl(): SpatialIndex {
     }
 
     function clear(): void {
-        quadTree = d3.quadtree<QuadTreeNode>()
+        quadTree = d3
+            .quadtree<QuadTreeNode>()
             .x(d => d.x)
             .y(d => d.y);
     }
@@ -693,7 +695,7 @@ function createSpatialIndexImpl(): SpatialIndex {
         add,
         remove,
         clear,
-        size
+        size,
     };
 }
 
@@ -709,9 +711,7 @@ function createVirtualScrollManagerImpl(config: VirtualScrollConfig): VirtualScr
 
     function getVisibleRange(scrollTop: number): { start: number; end: number } {
         const visibleStart = Math.floor(scrollTop / currentConfig.itemHeight);
-        const visibleEnd = Math.ceil(
-            (scrollTop + currentConfig.containerHeight) / currentConfig.itemHeight
-        );
+        const visibleEnd = Math.ceil((scrollTop + currentConfig.containerHeight) / currentConfig.itemHeight);
 
         // Add overscan
         const start = Math.max(0, visibleStart - currentConfig.overscan);
@@ -720,7 +720,10 @@ function createVirtualScrollManagerImpl(config: VirtualScrollConfig): VirtualScr
         return { start, end };
     }
 
-    function getVirtualizedData<T>(data: T[], scrollTop: number): {
+    function getVirtualizedData<T>(
+        data: T[],
+        scrollTop: number
+    ): {
         visibleData: T[];
         offsetY: number;
         totalHeight: number;
@@ -744,8 +747,8 @@ function createVirtualScrollManagerImpl(config: VirtualScrollConfig): VirtualScr
                     frameRate,
                     itemsRendered: data.length,
                     totalItems: data.length,
-                    virtualizationActive: false
-                }
+                    virtualizationActive: false,
+                },
             };
         }
 
@@ -777,8 +780,8 @@ function createVirtualScrollManagerImpl(config: VirtualScrollConfig): VirtualScr
                 frameRate,
                 itemsRendered: visibleData.length,
                 totalItems: data.length,
-                virtualizationActive: true
-            }
+                virtualizationActive: true,
+            },
         };
     }
 
@@ -794,7 +797,7 @@ function createVirtualScrollManagerImpl(config: VirtualScrollConfig): VirtualScr
         getVisibleRange,
         getVirtualizedData,
         updateConfig,
-        destroy
+        destroy,
     };
 }
 
@@ -805,18 +808,18 @@ function createVirtualScrollManagerImpl(config: VirtualScrollConfig): VirtualScr
 function createCanvasRendererImpl(container: HTMLElement): CanvasRenderer {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d")!;
-    
+
     container.appendChild(canvas);
 
     function render(data: any[], scales: any): void {
         const { xScale, yScale } = scales;
-        
+
         // Clear canvas
         context.clearRect(0, 0, canvas.width, canvas.height);
 
         // Set drawing properties for better performance
         context.save();
-        
+
         // Render data points efficiently
         data.forEach((item, _index) => {
             const x = xScale(item.label) || 0;
@@ -855,12 +858,12 @@ function createCanvasRendererImpl(container: HTMLElement): CanvasRenderer {
     function enableHighDPI(): void {
         const dpr = window.devicePixelRatio || 1;
         const rect = canvas.getBoundingClientRect();
-        
+
         canvas.width = rect.width * dpr;
         canvas.height = rect.height * dpr;
         canvas.style.width = `${rect.width}px`;
         canvas.style.height = `${rect.height}px`;
-        
+
         context.scale(dpr, dpr);
     }
 
@@ -869,7 +872,7 @@ function createCanvasRendererImpl(container: HTMLElement): CanvasRenderer {
         clear,
         getCanvas,
         setDimensions,
-        enableHighDPI
+        enableHighDPI,
     };
 }
 
@@ -895,13 +898,13 @@ function createPerformanceMonitorImpl(): PerformanceMonitor {
         }
 
         const duration = performance.now() - startTime;
-        
+
         // Store completed timing
         if (!completed.has(label)) {
             completed.set(label, []);
         }
         completed.get(label)!.push(duration);
-        
+
         // Keep only last 100 measurements
         const measurements = completed.get(label)!;
         if (measurements.length > 100) {
@@ -915,7 +918,7 @@ function createPerformanceMonitorImpl(): PerformanceMonitor {
     function getMetrics(): AdvancedPerformanceMetrics {
         const renderTimes = completed.get("render") || [];
         const processingTimes = completed.get("dataProcessing") || [];
-        
+
         return {
             renderTime: renderTimes.length > 0 ? d3.mean(renderTimes) || 0 : 0,
             dataProcessingTime: processingTimes.length > 0 ? d3.mean(processingTimes) || 0 : 0,
@@ -923,7 +926,7 @@ function createPerformanceMonitorImpl(): PerformanceMonitor {
             frameRate: frameCount > 0 ? 1000 / ((performance.now() - frameStartTime) / frameCount) : 0,
             itemsRendered: 0, // To be set by caller
             totalItems: 0, // To be set by caller
-            virtualizationActive: false // To be set by caller
+            virtualizationActive: false, // To be set by caller
         };
     }
 
@@ -953,7 +956,7 @@ Performance Report:
         getMetrics,
         getMemoryUsage,
         trackFrameRate,
-        generateReport
+        generateReport,
     };
 }
 
@@ -1016,19 +1019,16 @@ function createDataSamplerImpl<T>(strategy: "uniform" | "random" | "importance")
                 // For importance sampling, we'd need a way to assess importance
                 // For now, take first and last items plus uniform sampling in between
                 const result: T[] = [data[0]]; // Always include first
-                
+
                 if (count > 2) {
-                    const middle = createDataSamplerImpl<T>("uniform")(
-                        data.slice(1, -1), 
-                        count - 2
-                    );
+                    const middle = createDataSamplerImpl<T>("uniform")(data.slice(1, -1), count - 2);
                     result.push(...middle);
                 }
-                
+
                 if (count > 1) {
                     result.push(data[data.length - 1]); // Always include last
                 }
-                
+
                 return result;
             };
 
@@ -1048,7 +1048,7 @@ export function createAdvancedPerformanceSystem(): AdvancedPerformanceSystem {
         createCanvasRenderer: createCanvasRendererImpl,
         createPerformanceMonitor: createPerformanceMonitorImpl,
         optimizeDataForRendering: optimizeDataForRenderingImpl,
-        createDataSampler: createDataSamplerImpl
+        createDataSampler: createDataSamplerImpl,
     };
 }
 
@@ -1060,25 +1060,21 @@ export function createAdvancedPerformanceSystem(): AdvancedPerformanceSystem {
  * Create optimized spatial index for waterfall chart interactions
  * Enables O(log n) hover detection for large datasets
  */
-export function createWaterfallSpatialIndex(
-    data: Array<{label: string, value: number}>,
-    xScale: any,
-    yScale: any
-): SpatialIndex {
+export function createWaterfallSpatialIndex(data: Array<{ label: string; value: number }>, xScale: any, yScale: any): SpatialIndex {
     const spatialIndex = createSpatialIndexImpl();
-    
+
     data.forEach((item, index) => {
         const x = (xScale(item.label) || 0) + (xScale.bandwidth ? xScale.bandwidth() / 2 : 0);
         const y = yScale(item.value) || 0;
-        
+
         spatialIndex.add({
             x,
             y,
             data: item,
-            index
+            index,
         });
     });
-    
+
     return spatialIndex;
 }
 
@@ -1097,23 +1093,23 @@ export function createVirtualWaterfallRenderer(
     const system = createAdvancedPerformanceSystem();
     const virtualScrollManager = system.createVirtualScrollManager(config);
     const performanceMonitor = system.createPerformanceMonitor();
-    
+
     function render(data: any[], scrollTop: number): void {
         performanceMonitor.startTiming("render");
-        
+
         virtualScrollManager.getVirtualizedData(data, scrollTop);
-        
+
         // Here you would render only the visible data
         // This is a simplified version - in practice, you'd integrate with D3.js rendering
-        
+
         performanceMonitor.endTiming("render");
         performanceMonitor.trackFrameRate();
     }
-    
+
     return {
         virtualScrollManager,
         performanceMonitor,
-        render
+        render,
     };
 }
 

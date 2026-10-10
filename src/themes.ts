@@ -113,10 +113,10 @@ export const themes: ThemeCollection = {
 };
 export function applyTheme(chart: ChartWithTheme, themeName: keyof ThemeCollection = "default"): Theme {
     const theme = themes[themeName] || themes.default;
-    
+
     // Apply theme colors to chart configuration
     chart.totalColor(theme.totalColor);
-    
+
     return theme;
 }
 
@@ -133,15 +133,11 @@ export function getThemeColorPalette(themeName: keyof ThemeCollection = "default
  * Create a sequential color scale for continuous data visualization
  * Perfect for heat-map style conditional formatting in waterfall charts
  */
-export function createSequentialScale(
-    domain: [number, number], 
-    themeName: keyof ThemeCollection = "default"
-): d3.ScaleSequential<string> {
+export function createSequentialScale(domain: [number, number], themeName: keyof ThemeCollection = "default"): d3.ScaleSequential<string> {
     const theme = themes[themeName] || themes.default;
     const interpolator = theme.sequentialScale?.interpolator || d3.interpolateBlues;
-    
-    return d3.scaleSequential(interpolator)
-        .domain(domain);
+
+    return d3.scaleSequential(interpolator).domain(domain);
 }
 
 /**
@@ -149,32 +145,27 @@ export function createSequentialScale(
  * Perfect for positive/negative value emphasis in waterfall charts
  */
 export function createDivergingScale(
-    domain: [number, number, number], 
+    domain: [number, number, number],
     themeName: keyof ThemeCollection = "default"
 ): d3.ScaleDiverging<string> {
     const theme = themes[themeName] || themes.default;
     const interpolator = theme.divergingScale?.interpolator || d3.interpolateRdYlBu;
-    
-    return d3.scaleDiverging(interpolator)
-        .domain(domain);
+
+    return d3.scaleDiverging(interpolator).domain(domain);
 }
 
 /**
  * Get conditional formatting color based on value
  * Returns appropriate color for positive, negative, or neutral values
  */
-export function getConditionalColor(
-    value: number, 
-    themeName: keyof ThemeCollection = "default",
-    neutralThreshold: number = 0
-): string {
+export function getConditionalColor(value: number, themeName: keyof ThemeCollection = "default", neutralThreshold: number = 0): string {
     const theme = themes[themeName] || themes.default;
     const formatting = theme.conditionalFormatting || {
         positive: "#2ecc71",
-        negative: "#e74c3c", 
-        neutral: "#95a5a6"
+        negative: "#e74c3c",
+        neutral: "#95a5a6",
     };
-    
+
     if (Math.abs(value) <= Math.abs(neutralThreshold)) {
         return formatting.neutral;
     }
@@ -186,19 +177,19 @@ export function getConditionalColor(
  * Automatically chooses between sequential or diverging based on data characteristics
  */
 export function createWaterfallColorScale(
-    data: Array<{value: number}>, 
+    data: Array<{ value: number }>,
     themeName: keyof ThemeCollection = "default",
     scaleType: "auto" | "sequential" | "diverging" = "auto"
 ): d3.ScaleSequential<string> | d3.ScaleDiverging<string> {
     const values = data.map(d => d.value);
     const extent = d3.extent(values) as [number, number];
     const hasPositiveAndNegative = extent[0] < 0 && extent[1] > 0;
-    
+
     // Auto-detect scale type
     if (scaleType === "auto") {
         scaleType = hasPositiveAndNegative ? "diverging" : "sequential";
     }
-    
+
     if (scaleType === "diverging" && hasPositiveAndNegative) {
         const maxAbs = Math.max(Math.abs(extent[0]), Math.abs(extent[1]));
         return createDivergingScale([-maxAbs, 0, maxAbs], themeName);
@@ -211,14 +202,10 @@ export function createWaterfallColorScale(
  * Apply color interpolation to a value within a range
  * Useful for creating smooth color transitions in large datasets
  */
-export function interpolateThemeColor(
-    value: number,
-    domain: [number, number],
-    themeName: keyof ThemeCollection = "default"
-): string {
+export function interpolateThemeColor(value: number, domain: [number, number], themeName: keyof ThemeCollection = "default"): string {
     const theme = themes[themeName] || themes.default;
     const interpolator = theme.sequentialScale?.interpolator || d3.interpolateBlues;
-    
+
     const span = domain[1] - domain[0];
     // A degenerate domain (all values equal) maps to the midpoint, like d3.scaleSequential
     const normalizedValue = span ? (value - domain[0]) / span : 0.5;
@@ -232,14 +219,14 @@ export function interpolateThemeColor(
 export function getAdvancedBarColor(
     value: number,
     defaultColor: string,
-    allData: Array<{barTotal?: number; value?: number}> = [],
+    allData: Array<{ barTotal?: number; value?: number }> = [],
     themeName: keyof ThemeCollection = "default",
     colorMode: "default" | "conditional" | "sequential" | "diverging" = "conditional"
 ): string {
     switch (colorMode) {
         case "conditional":
             return getConditionalColor(value, themeName);
-            
+
         case "sequential":
             if (allData.length > 0) {
                 const values = allData.map(d => d.barTotal || d.value || 0);
@@ -247,7 +234,7 @@ export function getAdvancedBarColor(
                 return interpolateThemeColor(value, domain, themeName);
             }
             return defaultColor;
-            
+
         case "diverging":
             if (allData.length > 0) {
                 const values = allData.map(d => d.barTotal || d.value || 0);
@@ -256,12 +243,11 @@ export function getAdvancedBarColor(
                 return scale(value);
             }
             return getConditionalColor(value, themeName);
-            
+
         default:
             return defaultColor;
     }
 }
-
 
 /**
  * Additional finance-oriented themes (merged into `themes`).

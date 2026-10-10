@@ -19,7 +19,9 @@ const isColor = (c: string) => d3.color(c) !== null && !/NaN/.test(c);
 describe("theme collection", () => {
     test("every theme is complete and its colors parse", () => {
         const names = Object.keys(themes);
-        expect(names).toEqual(expect.arrayContaining(["default", "dark", "accessible", "colorful", "financial", "professional", "heatmap"]));
+        expect(names).toEqual(
+            expect.arrayContaining(["default", "dark", "accessible", "colorful", "financial", "professional", "heatmap"])
+        );
         for (const name of names) {
             const t = (themes as any)[name];
             for (const key of ["background", "gridColor", "axisColor", "textColor", "totalColor"]) {

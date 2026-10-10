@@ -130,8 +130,17 @@ test.describe("export", () => {
         const result = await page.evaluate(async () => {
             const { MintWaterfall: MW, d3 } = window as any;
             const f = d3.format(",.0f");
-            const chart = MW.waterfallChart().width(600).height(300).theme("dark").formatNumber((n: number) => "€" + f(n));
-            d3.select("#chart").datum([{ label: "Umsatz €", stacks: [{ value: 500 }] }, { label: "Kosten", stacks: [{ value: -200 }] }]).call(chart);
+            const chart = MW.waterfallChart()
+                .width(600)
+                .height(300)
+                .theme("dark")
+                .formatNumber((n: number) => "€" + f(n));
+            d3.select("#chart")
+                .datum([
+                    { label: "Umsatz €", stacks: [{ value: 500 }] },
+                    { label: "Kosten", stacks: [{ value: -200 }] },
+                ])
+                .call(chart);
             const png = await chart.export("png");
             const img = new Image();
             await new Promise((res, rej) => {
@@ -167,15 +176,21 @@ test.describe("export", () => {
             // Minimal stand-in with jsPDF 2.x's UMD shape
             class FakeJsPDF {
                 internal = { pageSize: { getWidth: () => 297, getHeight: () => 210 } };
-                constructor(opts: any) { calls.push(["new", opts]); }
+                constructor(opts: any) {
+                    calls.push(["new", opts]);
+                }
                 addImage(data: string, type: string, x: number, y: number, w: number, h: number) {
                     calls.push(["addImage", data.slice(0, 22), type, Math.round(w), Math.round(h)]);
                 }
-                output() { return new Blob(["%PDF"], { type: "application/pdf" }); }
+                output() {
+                    return new Blob(["%PDF"], { type: "application/pdf" });
+                }
             }
             (window as any).jspdf = { jsPDF: FakeJsPDF };
             const chart = MW.waterfallChart().width(600).height(300);
-            d3.select("#chart").datum([{ label: "A", stacks: [{ value: 5 }] }]).call(chart);
+            d3.select("#chart")
+                .datum([{ label: "A", stacks: [{ value: 5 }] }])
+                .call(chart);
             const pdf = await MW.createExportSystem().exportPDF(d3.select("#chart"), { filename: "x" });
             return { type: pdf.blob.type, calls };
         });

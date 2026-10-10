@@ -31,12 +31,24 @@ describe("prepareData", () => {
 
 describe("computeYDomain", () => {
     test("always includes zero", () => {
-        const data = prepareData([{ label: "a", stacks: [{ value: 500 }] }, { label: "b", stacks: [{ value: 100 }] }], cfg);
+        const data = prepareData(
+            [
+                { label: "a", stacks: [{ value: 500 }] },
+                { label: "b", stacks: [{ value: 100 }] },
+            ],
+            cfg
+        );
         expect(computeYDomain(data, false)).toEqual([0, 600]);
     });
 
     test("covers negative running totals", () => {
-        const data = prepareData([{ label: "a", stacks: [{ value: -50 }] }, { label: "b", stacks: [{ value: 20 }] }], cfg);
+        const data = prepareData(
+            [
+                { label: "a", stacks: [{ value: -50 }] },
+                { label: "b", stacks: [{ value: 20 }] },
+            ],
+            cfg
+        );
         expect(computeYDomain(data, false)).toEqual([-50, 0]);
     });
 
@@ -55,7 +67,13 @@ describe("computeYDomain", () => {
 
 describe("getBarExtent", () => {
     test("deltas span previous→current, totals span 0→current", () => {
-        const [a, b, total] = prepareData([{ label: "a", stacks: [{ value: 10 }] }, { label: "b", stacks: [{ value: -3 }] }], cfg);
+        const [a, b, total] = prepareData(
+            [
+                { label: "a", stacks: [{ value: 10 }] },
+                { label: "b", stacks: [{ value: -3 }] },
+            ],
+            cfg
+        );
         expect(getBarExtent(a)).toEqual([0, 10]);
         expect(getBarExtent(b)).toEqual([7, 10]);
         expect(getBarExtent(total)).toEqual([0, 7]);
@@ -97,7 +115,13 @@ describe("computeLayout", () => {
 describe("formatBarValue", () => {
     const fmt = (n: number) => String(n);
     test("signs deltas, not totals", () => {
-        const [a, b, total] = prepareData([{ label: "a", stacks: [{ value: 5 }] }, { label: "b", stacks: [{ value: -2 }] }], cfg);
+        const [a, b, total] = prepareData(
+            [
+                { label: "a", stacks: [{ value: 5 }] },
+                { label: "b", stacks: [{ value: -2 }] },
+            ],
+            cfg
+        );
         expect(formatBarValue(a, fmt)).toBe("+5");
         expect(formatBarValue(b, fmt)).toBe("\u22122");
         expect(formatBarValue(total, fmt)).toBe("3");

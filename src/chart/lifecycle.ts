@@ -9,10 +9,7 @@ import { ChartConfig, ProcessedData, ChartData } from "./config.js";
  *   not change it.
  * - When `config.showTotal` is set, a final total bar is appended.
  */
-export function prepareData(
-    data: ChartData[],
-    config: Pick<ChartConfig, "showTotal" | "totalLabel" | "totalColor">
-): ProcessedData[] {
+export function prepareData(data: ChartData[], config: Pick<ChartConfig, "showTotal" | "totalLabel" | "totalColor">): ProcessedData[] {
     let cumulativeTotal = 0;
 
     const processedData: ProcessedData[] = data.map(bar => {

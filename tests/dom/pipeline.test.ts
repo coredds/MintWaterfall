@@ -54,7 +54,10 @@ describe("createDataProcessor", () => {
     test("loadData accepts arrays and transformToWaterfallFormat maps fields", async () => {
         const rows = await createDataProcessor().loadData([{ label: "A", stacks: [{ value: 1 }] }]);
         expect(rows).toHaveLength(1);
-        const out = createDataProcessor().transformToWaterfallFormat([{ name: "X", amount: 4 }], { labelColumn: "name", valueColumn: "amount" });
+        const out = createDataProcessor().transformToWaterfallFormat([{ name: "X", amount: 4 }], {
+            labelColumn: "name",
+            valueColumn: "amount",
+        });
         expect(labels(out)).toEqual(["X"]);
         expect(values(out)).toEqual([[4]]);
     });
@@ -85,11 +88,7 @@ describe("standalone helpers", () => {
 
     test("createVarianceWaterfall: actual minus budget, coloured and labelled by sign", () => {
         const out = createVarianceWaterfall(
-            [
-                { cat: "Sales", actual: 120, budget: 100 },
-                { cat: "Costs", actual: 80, budget: 90.5 },
-                { cat: "Other" },
-            ],
+            [{ cat: "Sales", actual: 120, budget: 100 }, { cat: "Costs", actual: 80, budget: 90.5 }, { cat: "Other" }],
             "cat"
         );
         expect(labels(out)).toEqual(["Sales", "Costs", "Other"]);
@@ -113,7 +112,12 @@ describe("standalone helpers", () => {
             { region: "S", name: "South", revenue: 7 },
             { region: "N", name: "North", revenue: 5 },
         ];
-        const out = groupWaterfallData(regions, [d => d.region], d => d.revenue, d => `${d.name} region`);
+        const out = groupWaterfallData(
+            regions,
+            [d => d.region],
+            d => d.revenue,
+            d => `${d.name} region`
+        );
         expect(labels(out)).toEqual(["North region", "South region"]);
         expect(values(out)).toEqual([[15], [7]]);
         expect(out[1].stacks[0].label).toBe("+7.00");
@@ -149,19 +153,23 @@ describe("standalone helpers", () => {
 
     test("helpers produce data the chart renders", () => {
         const div = document.body.appendChild(document.createElement("div"));
-        const data = createVarianceWaterfall([{ cat: "A", actual: 5, budget: 2 }, { cat: "B", actual: 1, budget: 4 }], "cat");
-        d3.select(div).datum(data).call(waterfallChart().duration(0) as any);
+        const data = createVarianceWaterfall(
+            [
+                { cat: "A", actual: 5, budget: 2 },
+                { cat: "B", actual: 1, budget: 4 },
+            ],
+            "cat"
+        );
+        d3.select(div)
+            .datum(data)
+            .call(waterfallChart().duration(0) as any);
         expect(div.querySelectorAll("g.bar-group")).toHaveLength(2);
         div.remove();
     });
 });
 
 describe("financialReducers", () => {
-    const rows = [
-        { value: 10, weight: 1 },
-        { value: 20, weight: 3 },
-        { value: 30 },
-    ];
+    const rows = [{ value: 10, weight: 1 }, { value: 20, weight: 3 }, { value: 30 }];
 
     test("sum, average, variance", () => {
         expect(financialReducers.sum(rows)).toBe(60);

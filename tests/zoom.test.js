@@ -8,8 +8,8 @@ const d3Mock = require("../tests/__mocks__/d3.js");
 global.d3 = d3Mock;
 
 describe("Zoom System", () => {
-  test("should create zoom system", () => {
-    const zoom = createZoomSystem();
-    expect(zoom).toBeDefined();
-  });
+    test("should create zoom system", () => {
+        const zoom = createZoomSystem();
+        expect(zoom).toBeDefined();
+    });
 });

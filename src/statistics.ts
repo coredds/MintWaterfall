@@ -122,15 +122,15 @@ export interface StatisticalSystem {
     calculateSummary(data: number[]): StatisticalSummary;
     detectOutliers(data: number[], labels?: string[]): OutlierAnalysis;
     assessDataQuality(data: any[], options?: DataQualityOptions): DataQualityAssessment;
-    
+
     // Advanced analysis
-    analyzeVariance(data: Array<{label: string, value: number}>): VarianceAnalysis;
-    analyzeTrend(data: Array<{x: number, y: number}>): TrendAnalysis;
-    
+    analyzeVariance(data: Array<{ label: string; value: number }>): VarianceAnalysis;
+    analyzeTrend(data: Array<{ x: number; y: number }>): TrendAnalysis;
+
     // Data search and optimization
     createBisector<T>(accessor: (d: T) => number): d3.Bisector<T, number>;
     createSearch<T>(data: T[], accessor: (d: T) => number): (value: number) => T | undefined;
-    
+
     // Utility functions
     calculateMovingAverage(data: number[], window: number): number[];
     calculateExponentialSmoothing(data: number[], alpha: number): number[];
@@ -149,7 +149,6 @@ export interface DataQualityOptions {
 // ============================================================================
 
 export function createStatisticalSystem(): StatisticalSystem {
-
     // ========================================================================
     // CORE STATISTICAL FUNCTIONS
     // ========================================================================
@@ -161,7 +160,7 @@ export function createStatisticalSystem(): StatisticalSystem {
     function calculateSummary(data: number[]): StatisticalSummary {
         // Filter out null/undefined values
         const cleanData = data.filter(d => d != null && !isNaN(d)).sort(d3.ascending);
-        
+
         if (cleanData.length === 0) {
             // Return empty statistical summary instead of throwing
             return {
@@ -176,7 +175,7 @@ export function createStatisticalSystem(): StatisticalSystem {
                 max: 0,
                 range: 0,
                 quartiles: [0, 0, 0],
-                percentiles: { p5: 0, p10: 0, p25: 0, p75: 0, p90: 0, p95: 0 }
+                percentiles: { p5: 0, p10: 0, p25: 0, p75: 0, p90: 0, p95: 0 },
             };
         }
 
@@ -198,11 +197,11 @@ export function createStatisticalSystem(): StatisticalSystem {
         // Calculate percentiles
         const percentiles = {
             p5: quantile(cleanData, 0.05) || 0,
-            p10: quantile(cleanData, 0.10) || 0,
+            p10: quantile(cleanData, 0.1) || 0,
             p25: q1,
             p75: q3,
-            p90: quantile(cleanData, 0.90) || 0,
-            p95: quantile(cleanData, 0.95) || 0
+            p90: quantile(cleanData, 0.9) || 0,
+            p95: quantile(cleanData, 0.95) || 0,
         };
 
         // Calculate mode (most frequent value)
@@ -210,7 +209,7 @@ export function createStatisticalSystem(): StatisticalSystem {
         cleanData.forEach(value => {
             valueFreq.set(value, (valueFreq.get(value) || 0) + 1);
         });
-        
+
         let maxFreq = 0;
         const modes: number[] = [];
         valueFreq.forEach((freq, value) => {
@@ -235,7 +234,7 @@ export function createStatisticalSystem(): StatisticalSystem {
             max,
             range,
             quartiles: [q1, q2, q3],
-            percentiles
+            percentiles,
         };
     }
 
@@ -247,7 +246,7 @@ export function createStatisticalSystem(): StatisticalSystem {
         const summary = calculateSummary(data);
         const [q1, , q3] = summary.quartiles;
         const iqr = q3 - q1;
-        
+
         // IQR method boundaries
         const lowerBound = q1 - 1.5 * iqr;
         const upperBound = q3 + 1.5 * iqr;
@@ -269,13 +268,13 @@ export function createStatisticalSystem(): StatisticalSystem {
                     index,
                     label: labels[index],
                     severity: isExtreme ? "extreme" : "mild",
-                    type: value < lowerBound ? "lower" : "upper"
+                    type: value < lowerBound ? "lower" : "upper",
                 });
             } else {
                 cleanData.push({
                     value,
                     index,
-                    label: labels[index]
+                    label: labels[index],
                 });
             }
         });
@@ -293,14 +292,14 @@ export function createStatisticalSystem(): StatisticalSystem {
                 median: summary.median,
                 q1,
                 q3,
-                iqr
+                iqr,
             },
             summary: {
                 totalOutliers: outliers.length,
                 mildOutliers,
                 extremeOutliers,
-                outlierPercentage: data.length > 0 ? (outliers.length / data.length) * 100 : 0
-            }
+                outlierPercentage: data.length > 0 ? (outliers.length / data.length) * 100 : 0,
+            },
         };
     }
 
@@ -308,15 +307,12 @@ export function createStatisticalSystem(): StatisticalSystem {
      * Assess overall data quality
      * Provides actionable recommendations for data improvement
      */
-    function assessDataQuality(
-        data: any[], 
-        options: DataQualityOptions = {}
-    ): DataQualityAssessment {
+    function assessDataQuality(data: any[], options: DataQualityOptions = {}): DataQualityAssessment {
         const {
             expectedRange,
             allowedTypes = ["number"],
             nullTolerance = 0.05, // 5% null tolerance
-            duplicateTolerance = 0.1 // 10% duplicate tolerance
+            duplicateTolerance = 0.1, // 10% duplicate tolerance
         } = options;
 
         const totalCount = data.length;
@@ -363,42 +359,44 @@ export function createStatisticalSystem(): StatisticalSystem {
         const completeness = (totalCount - nullCount) / totalCount;
         const validity = typeValidCount / totalCount;
         const accuracy = rangeValidCount / totalCount;
-        
+
         // Consistency (coefficient of variation for numeric data)
         const numericData = data.filter(d => typeof d === "number" && !isNaN(d));
-        const cv = numericData.length > 0 ? 
-            (deviation(numericData) || 0) / (d3.mean(numericData) || 1) : 0;
-        const consistency = Math.max(0, 100 - (cv * 100)); // Invert CV for consistency score
+        const cv = numericData.length > 0 ? (deviation(numericData) || 0) / (d3.mean(numericData) || 1) : 0;
+        const consistency = Math.max(0, 100 - cv * 100); // Invert CV for consistency score
 
         // Outlier analysis for numeric data
-        const anomalies = numericData.length > 0 ? 
-            detectOutliers(numericData) : 
-            { 
-                outliers: [], 
-                cleanData: [], 
-                method: "None - No numeric data",
-                threshold: {},
-                statistics: { mean: 0, median: 0, q1: 0, q3: 0, iqr: 0 },
-                summary: { totalOutliers: 0, mildOutliers: 0, extremeOutliers: 0, outlierPercentage: 0 } 
-            };
+        const anomalies =
+            numericData.length > 0
+                ? detectOutliers(numericData)
+                : {
+                      outliers: [],
+                      cleanData: [],
+                      method: "None - No numeric data",
+                      threshold: {},
+                      statistics: { mean: 0, median: 0, q1: 0, q3: 0, iqr: 0 },
+                      summary: { totalOutliers: 0, mildOutliers: 0, extremeOutliers: 0, outlierPercentage: 0 },
+                  };
 
         // Generate recommendations
         const recommendations: string[] = [];
-        if (completeness < (1 - nullTolerance)) {
+        if (completeness < 1 - nullTolerance) {
             recommendations.push(`Improve data completeness: ${nullCount} missing values detected`);
             recommendations.push("Remove or impute missing values");
         }
         if (validity < 0.95) {
             recommendations.push(`Validate data types: ${totalCount - typeValidCount} invalid types found`);
         }
-        if (accuracy < 0.90 && expectedRange) {
+        if (accuracy < 0.9 && expectedRange) {
             recommendations.push(`Check data accuracy: ${totalCount - rangeValidCount} values outside expected range`);
         }
         if (duplicates.size > duplicateTolerance * totalCount) {
             recommendations.push(`Remove duplicates: ${duplicates.size} duplicate values detected`);
         }
         if (anomalies.summary.outlierPercentage > 5) {
-            recommendations.push(`Investigate outliers: ${anomalies.summary.totalOutliers} outliers detected (${anomalies.summary.outlierPercentage.toFixed(1)}%)`);
+            recommendations.push(
+                `Investigate outliers: ${anomalies.summary.totalOutliers} outliers detected (${anomalies.summary.outlierPercentage.toFixed(1)}%)`
+            );
         }
 
         // Generate issues list
@@ -427,7 +425,7 @@ export function createStatisticalSystem(): StatisticalSystem {
             duplicates: duplicates.size,
             issues,
             anomalies,
-            recommendations
+            recommendations,
         };
     }
 
@@ -439,16 +437,16 @@ export function createStatisticalSystem(): StatisticalSystem {
      * Analyze variance contributions in waterfall data
      * Identifies key drivers of variability
      */
-    function analyzeVariance(data: Array<{label: string, value: number}>): VarianceAnalysis {
+    function analyzeVariance(data: Array<{ label: string; value: number }>): VarianceAnalysis {
         const values = data.map(d => d.value);
         const totalVariance = variance(values) || 0;
-        
+
         // Separate positive and negative contributions
         const positiveValues = values.filter(v => v > 0);
         const negativeValues = values.filter(v => v < 0);
-        
-        const positiveVariance = positiveValues.length > 0 ? (variance(positiveValues) || 0) : 0;
-        const negativeVariance = negativeValues.length > 0 ? (variance(negativeValues) || 0) : 0;
+
+        const positiveVariance = positiveValues.length > 0 ? variance(positiveValues) || 0 : 0;
+        const negativeVariance = negativeValues.length > 0 ? variance(negativeValues) || 0 : 0;
 
         // Calculate individual contributions
         const mean = d3.mean(values) || 0;
@@ -459,7 +457,7 @@ export function createStatisticalSystem(): StatisticalSystem {
                 label: item.label,
                 value: item.value,
                 variance,
-                contribution
+                contribution,
             };
         });
 
@@ -467,57 +465,60 @@ export function createStatisticalSystem(): StatisticalSystem {
         const sortedContributions = [...varianceContributions].sort((a, b) => b.contribution - a.contribution);
         const significantFactors = sortedContributions.slice(0, Math.min(5, sortedContributions.length)).map(item => ({
             label: item.label,
-            impact: item.contribution > 20 ? "high" as const : 
-                   item.contribution > 10 ? "medium" as const : "low" as const,
-            variance: item.variance
+            impact: item.contribution > 20 ? ("high" as const) : item.contribution > 10 ? ("medium" as const) : ("low" as const),
+            variance: item.variance,
         }));
 
         // Calculate additional statistical measures for ANOVA-style analysis
         const groupMean = d3.mean(values) || 0;
-        
+
         // Group data by categories (try to extract category from label, fallback to positive/negative)
         const categoryGroups = new Map();
         data.forEach(item => {
             // Try to extract category from label (e.g., "A1" -> "A", "Category1" -> "Category")
-            const category = item.label.match(/^([A-Za-z]+)/)?.[1] || 
-                           (item.value > 0 ? "positive" : "negative");
-            
+            const category = item.label.match(/^([A-Za-z]+)/)?.[1] || (item.value > 0 ? "positive" : "negative");
+
             if (!categoryGroups.has(category)) {
                 categoryGroups.set(category, []);
             }
             categoryGroups.get(category).push(item.value);
         });
-        
-        const groups = Array.from(categoryGroups.entries()).map(([name, values]) => ({
-            name, values
-        })).filter(g => g.values.length > 0);
-        
+
+        const groups = Array.from(categoryGroups.entries())
+            .map(([name, values]) => ({
+                name,
+                values,
+            }))
+            .filter(g => g.values.length > 0);
+
         // Calculate between-group variance
         let betweenGroupVariance = 0;
         if (groups.length > 1) {
             const groupMeans = groups.map(g => d3.mean(g.values) || 0);
             const groupSizes = groups.map(g => g.values.length);
-            betweenGroupVariance = groups.reduce((sum, group, i) => {
-                const groupMeanValue = groupMeans[i];
-                const groupSize = groupSizes[i];
-                return sum + (groupSize * Math.pow(groupMeanValue - groupMean, 2));
-            }, 0) / (groups.length - 1);
+            betweenGroupVariance =
+                groups.reduce((sum, group, i) => {
+                    const groupMeanValue = groupMeans[i];
+                    const groupSize = groupSizes[i];
+                    return sum + groupSize * Math.pow(groupMeanValue - groupMean, 2);
+                }, 0) /
+                (groups.length - 1);
         }
-        
+
         // Within-group variance
-        const withinGroupVariance = groups.length > 0 ? 
-            groups.reduce((sum, group) => {
-                const groupVar = variance(group.values) || 0;
-                return sum + (groupVar * (group.values.length - 1));
-            }, 0) / Math.max(1, values.length - groups.length) : totalVariance;
-        
+        const withinGroupVariance =
+            groups.length > 0
+                ? groups.reduce((sum, group) => {
+                      const groupVar = variance(group.values) || 0;
+                      return sum + groupVar * (group.values.length - 1);
+                  }, 0) / Math.max(1, values.length - groups.length)
+                : totalVariance;
+
         // F-statistic for variance analysis
-        const fStatistic = betweenGroupVariance > 0 && withinGroupVariance > 0 ? 
-            betweenGroupVariance / withinGroupVariance : 0;
-        
+        const fStatistic = betweenGroupVariance > 0 && withinGroupVariance > 0 ? betweenGroupVariance / withinGroupVariance : 0;
+
         // Significance level (simplified p-value approximation)
-        const significance = fStatistic > 4 ? "significant" : 
-                           fStatistic > 2 ? "moderate" : "not significant";
+        const significance = fStatistic > 4 ? "significant" : fStatistic > 2 ? "moderate" : "not significant";
 
         return {
             totalVariance,
@@ -528,7 +529,7 @@ export function createStatisticalSystem(): StatisticalSystem {
             fStatistic,
             significance,
             varianceContributions,
-            significantFactors
+            significantFactors,
         };
     }
 
@@ -536,7 +537,7 @@ export function createStatisticalSystem(): StatisticalSystem {
      * Analyze trend patterns in time series data
      * Provides statistical trend analysis with confidence intervals
      */
-    function analyzeTrend(data: Array<{x: number, y: number}>): TrendAnalysis {
+    function analyzeTrend(data: Array<{ x: number; y: number }>): TrendAnalysis {
         if (data.length < 2) {
             // Return empty trend analysis instead of throwing
             return {
@@ -549,38 +550,37 @@ export function createStatisticalSystem(): StatisticalSystem {
                 confidence: 0,
                 trend: "stable",
                 projectedValues: [],
-                forecast: []
+                forecast: [],
             };
         }
 
         const xValues = data.map(d => d.x);
         const yValues = data.map(d => d.y);
-        
+
         // Calculate linear regression
         const xMean = d3.mean(xValues) || 0;
         const yMean = d3.mean(yValues) || 0;
-        
+
         let numerator = 0;
         let denominator = 0;
-        
+
         for (let i = 0; i < data.length; i++) {
             const xDiff = xValues[i] - xMean;
             const yDiff = yValues[i] - yMean;
             numerator += xDiff * yDiff;
             denominator += xDiff * xDiff;
         }
-        
+
         const slope = denominator !== 0 ? numerator / denominator : 0;
-        
+
         // Calculate correlation coefficient
         const xStd = deviation(xValues) || 0;
         const yStd = deviation(yValues) || 0;
-        const correlation = (xStd * yStd) !== 0 ? numerator / (Math.sqrt(denominator) * yStd * Math.sqrt(data.length - 1)) : 0;
-        
+        const correlation = xStd * yStd !== 0 ? numerator / (Math.sqrt(denominator) * yStd * Math.sqrt(data.length - 1)) : 0;
+
         // Determine trend characteristics
         const direction = slope > 0.01 ? "increasing" : slope < -0.01 ? "decreasing" : "stable";
-        const strength = Math.abs(correlation) > 0.7 ? "strong" : 
-                        Math.abs(correlation) > 0.3 ? "moderate" : "weak";
+        const strength = Math.abs(correlation) > 0.7 ? "strong" : Math.abs(correlation) > 0.3 ? "moderate" : "weak";
         const confidence = Math.abs(correlation) * 100;
 
         // Generate projections (simple linear extrapolation)
@@ -589,16 +589,16 @@ export function createStatisticalSystem(): StatisticalSystem {
             const period = lastX + (i + 1);
             const value = yMean + slope * (period - xMean);
             const standardError = Math.sqrt(variance(yValues) || 0) / Math.sqrt(data.length);
-            
+
             return {
                 period,
                 value,
                 x: period, // alias for backward compatibility
-                y: value,  // alias for backward compatibility
+                y: value, // alias for backward compatibility
                 confidence: {
-                    lower: value - (1.96 * standardError),
-                    upper: value + (1.96 * standardError)
-                }
+                    lower: value - 1.96 * standardError,
+                    upper: value + 1.96 * standardError,
+                },
             };
         });
 
@@ -616,7 +616,7 @@ export function createStatisticalSystem(): StatisticalSystem {
             confidence,
             trend: direction, // alias for backward compatibility
             projectedValues,
-            forecast: projectedValues // alias for backward compatibility
+            forecast: projectedValues, // alias for backward compatibility
         };
     }
 
@@ -639,20 +639,20 @@ export function createStatisticalSystem(): StatisticalSystem {
     function createSearch<T>(data: T[], accessor: (d: T) => number): (value: number) => T | undefined {
         const bisector = createBisector(accessor);
         const sortedData = [...data].sort((a, b) => ascending(accessor(a), accessor(b)));
-        
+
         return (value: number): T | undefined => {
             const index = bisector.left(sortedData, value);
-            
+
             if (index === 0) return sortedData[0];
             if (index >= sortedData.length) return sortedData[sortedData.length - 1];
-            
+
             // Return the closest value
             const leftItem = sortedData[index - 1];
             const rightItem = sortedData[index];
-            
+
             const leftDistance = Math.abs(accessor(leftItem) - value);
             const rightDistance = Math.abs(accessor(rightItem) - value);
-            
+
             return leftDistance <= rightDistance ? leftItem : rightItem;
         };
     }
@@ -720,7 +720,7 @@ export function createStatisticalSystem(): StatisticalSystem {
         }
 
         const autocorrelation = denominator !== 0 ? numerator / denominator : 0;
-        
+
         // Consider seasonal if autocorrelation is above threshold
         return Math.abs(autocorrelation) > 0.3;
     }
@@ -734,19 +734,19 @@ export function createStatisticalSystem(): StatisticalSystem {
         calculateSummary,
         detectOutliers,
         assessDataQuality,
-        
+
         // Advanced analysis
         analyzeVariance,
         analyzeTrend,
-        
+
         // Data search and optimization
         createBisector,
         createSearch,
-        
+
         // Utility functions
         calculateMovingAverage,
         calculateExponentialSmoothing,
-        detectSeasonality
+        detectSeasonality,
     };
 }
 
@@ -759,40 +759,40 @@ export function createStatisticalSystem(): StatisticalSystem {
  * Provides insights specific to waterfall financial data
  */
 export function analyzeWaterfallStatistics(
-    data: Array<{label: string, value: number}>,
-    options: { includeTotal?: boolean, currency?: boolean } = {}
+    data: Array<{ label: string; value: number }>,
+    options: { includeTotal?: boolean; currency?: boolean } = {}
 ): {
-    summary: StatisticalSummary,
-    variance: VarianceAnalysis,
-    quality: DataQualityAssessment,
-    insights: string[]
+    summary: StatisticalSummary;
+    variance: VarianceAnalysis;
+    quality: DataQualityAssessment;
+    insights: string[];
 } {
     const stats = createStatisticalSystem();
     const values = data.map(d => d.value);
-    
+
     // Calculate core statistics
     const summary = stats.calculateSummary(values);
     const variance = stats.analyzeVariance(data);
     const quality = stats.assessDataQuality(values, {
-        expectedRange: options.currency ? [-1000000, 1000000] : undefined
+        expectedRange: options.currency ? [-1000000, 1000000] : undefined,
     });
 
     // Generate business insights
     const insights: string[] = [];
-    
+
     if (variance.significantFactors.length > 0) {
         const topFactor = variance.significantFactors[0];
         insights.push(`${topFactor.label} is the primary driver of variance (${topFactor.impact} impact)`);
     }
-    
+
     if (summary.standardDeviation > Math.abs(summary.mean)) {
         insights.push("High volatility detected - consider risk management strategies");
     }
-    
+
     const positiveCount = values.filter(v => v > 0).length;
     const negativeCount = values.filter(v => v < 0).length;
     const ratio = positiveCount / negativeCount;
-    
+
     if (ratio > 2) {
         insights.push("Predominantly positive contributors - strong growth pattern");
     } else if (ratio < 0.5) {
@@ -807,7 +807,7 @@ export function analyzeWaterfallStatistics(
         summary,
         variance,
         quality,
-        insights
+        insights,
     };
 }
 

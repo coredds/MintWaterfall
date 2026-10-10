@@ -4,7 +4,18 @@ import globals from "globals";
 
 export default tseslint.config(
   {
-    ignores: ["dist/**", "node_modules/**", "coverage/**", "build/**", "_site/**", ".codegraph/**", "test-results/**", "playwright-report/**", "api-docs/**", ".playwright-mcp/**"],
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      "coverage/**",
+      "build/**",
+      "_site/**",
+      ".codegraph/**",
+      "test-results/**",
+      "playwright-report/**",
+      "api-docs/**",
+      ".playwright-mcp/**",
+    ],
   },
   {
     files: ["src/**/*.ts"],
@@ -21,7 +32,7 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrors: "none" }],
       // d3 is a peer dependency; d3-* subpackages are not declared dependencies.
-      "no-restricted-imports": ["error", { patterns: [{ group: ["d3-*"], message: "Import from \"d3\" (peer dependency) instead." }] }],
+      "no-restricted-imports": ["error", { patterns: [{ group: ["d3-*"], message: 'Import from "d3" (peer dependency) instead.' }] }],
     },
   },
   {

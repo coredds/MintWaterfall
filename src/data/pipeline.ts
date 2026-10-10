@@ -80,7 +80,6 @@ export interface DataProcessor extends AdvancedDataOperations {
 }
 
 export function createDataProcessor(): DataProcessor {
-
     // Internal wrapper functions for the standalone functions
     async function loadDataWrapper(source: string | any[], options: LoadDataOptions = {}): Promise<DataItem[]> {
         return await loadData(source, options);
@@ -117,7 +116,7 @@ export function createDataProcessor(): DataProcessor {
         aggregateByTime,
         createMultiDimensionalWaterfall,
         aggregateWaterfallByPeriod,
-        createBreakdownWaterfall
+        createBreakdownWaterfall,
     };
 }
 
@@ -130,11 +129,7 @@ export const dataProcessor = createDataProcessor();
  * Create revenue waterfall by grouping sales data by multiple dimensions
  * Example: Group by Region → Product → Channel
  */
-export function createRevenueWaterfall(
-    salesData: any[],
-    dimensions: string[],
-    valueField: string = "revenue"
-): DataItem[] {
+export function createRevenueWaterfall(salesData: any[], dimensions: string[], valueField: string = "revenue"): DataItem[] {
     return dataProcessor.createMultiDimensionalWaterfall(salesData, dimensions, valueField);
 }
 
@@ -153,14 +148,14 @@ export function createTemporalWaterfall(
         week: d3.timeWeek,
         month: d3.timeMonth,
         quarter: d3.timeMonth.every(3)!,
-        year: d3.timeYear
+        year: d3.timeYear,
     };
 
     return dataProcessor.aggregateByTime(data, {
-        timeAccessor: (d) => new Date(d[timeField]),
-        valueAccessor: (d) => d[valueField] || 0,
+        timeAccessor: d => new Date(d[timeField]),
+        valueAccessor: d => d[valueField] || 0,
         interval: timeIntervals[interval],
-        aggregation: "sum"
+        aggregation: "sum",
     });
 }
 
@@ -181,11 +176,13 @@ export function createVarianceWaterfall(
 
         return {
             label: item[categoryField],
-            stacks: [{
-                value: variance,
-                color: variance >= 0 ? "#2ecc71" : "#e74c3c",
-                label: `Variance: ${variance >= 0 ? "+" : ""}${d3.format(".2f")(variance)}`
-            }]
+            stacks: [
+                {
+                    value: variance,
+                    color: variance >= 0 ? "#2ecc71" : "#e74c3c",
+                    label: `Variance: ${variance >= 0 ? "+" : ""}${d3.format(".2f")(variance)}`,
+                },
+            ],
         };
     });
 }
@@ -215,11 +212,13 @@ export function groupWaterfallData<T extends Record<string, any>>(
 
         return {
             label,
-            stacks: [{
-                value: value as number,
-                color: colors[index % colors.length],
-                label: `${value >= 0 ? "+" : ""}${d3.format(".2f")(value as number)}`
-            }]
+            stacks: [
+                {
+                    value: value as number,
+                    color: colors[index % colors.length],
+                    label: `${value >= 0 ? "+" : ""}${d3.format(".2f")(value as number)}`,
+                },
+            ],
         };
     });
 }
@@ -246,11 +245,13 @@ export function createComparisonWaterfall<T1, T2>(
 
         return {
             label: category,
-            stacks: [{
-                value: change,
-                color: change >= 0 ? "#2ecc71" : "#e74c3c",
-                label: `Change: ${change >= 0 ? "+" : ""}${d3.format(".2f")(change)}`
-            }]
+            stacks: [
+                {
+                    value: change,
+                    color: change >= 0 ? "#2ecc71" : "#e74c3c",
+                    label: `Change: ${change >= 0 ? "+" : ""}${d3.format(".2f")(change)}`,
+                },
+            ],
         };
     });
 }
@@ -268,17 +269,12 @@ export function transformTransactionData(
 ): DataItem[] {
     if (subcategoryField) {
         // Two-level breakdown
-        return dataProcessor.createBreakdownWaterfall(
-            transactions,
-            categoryField,
-            subcategoryField,
-            valueField
-        );
+        return dataProcessor.createBreakdownWaterfall(transactions, categoryField, subcategoryField, valueField);
     } else {
         // Simple category aggregation
         const aggregated = dataProcessor.rollupBy(
             transactions,
-            (values) => d3.sum(values, (d: any) => d[valueField] || 0),
+            values => d3.sum(values, (d: any) => d[valueField] || 0),
             (d: any) => d[categoryField]
         ) as Map<string, number>;
 
@@ -287,11 +283,13 @@ export function transformTransactionData(
 
         return Array.from(aggregated.entries()).map(([category, value]) => ({
             label: String(category),
-            stacks: [{
-                value: value,
-                color: colors[colorIndex++ % colors.length],
-                label: `${value >= 0 ? "+" : ""}${d3.format(".2f")(value)}`
-            }]
+            stacks: [
+                {
+                    value: value,
+                    color: colors[colorIndex++ % colors.length],
+                    label: `${value >= 0 ? "+" : ""}${d3.format(".2f")(value)}`,
+                },
+            ],
         }));
     }
 }
@@ -314,7 +312,7 @@ export const financialReducers = {
     percentile: (p: number) => (values: any[]) => {
         const sorted = values.map((d: any) => d.value || 0).sort(d3.ascending);
         return d3.quantile(sorted, p / 100) || 0;
-    }
+    },
 };
 
 /**
@@ -334,5 +332,5 @@ export const d3DataUtils = {
     max: d3.max,
     extent: d3.extent,
     ascending: d3.ascending,
-    descending: d3.descending
+    descending: d3.descending,
 };

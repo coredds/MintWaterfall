@@ -2,7 +2,14 @@
  * Scale system (src/scales.ts) with the real D3.
  */
 import * as d3 from "d3";
-import { createScaleSystem, createTimeScale, createBandScale, createLinearScale, createOrdinalScale, scaleUtilities } from "../../src/scales.js";
+import {
+    createScaleSystem,
+    createTimeScale,
+    createBandScale,
+    createLinearScale,
+    createOrdinalScale,
+    scaleUtilities,
+} from "../../src/scales.js";
 
 const day = (d: number, m = 0, y = 2024) => new Date(y, m, d);
 
@@ -14,7 +21,10 @@ afterEach(() => {
 function tickLabels(axis: d3.Axis<any>): string[] {
     const g = d3.select(document.body).append("svg").append("g");
     g.call(axis);
-    return g.selectAll<SVGTextElement, unknown>(".tick text").nodes().map(n => n.textContent ?? "");
+    return g
+        .selectAll<SVGTextElement, unknown>(".tick text")
+        .nodes()
+        .map(n => n.textContent ?? "");
 }
 
 describe("time scales", () => {

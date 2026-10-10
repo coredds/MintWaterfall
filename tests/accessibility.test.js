@@ -8,8 +8,8 @@ const d3Mock = require("../tests/__mocks__/d3.js");
 global.d3 = d3Mock;
 
 describe("Accessibility System", () => {
-  test("should create accessibility system", () => {
-    const accessibilitySystem = createAccessibilitySystem();
-    expect(accessibilitySystem).toBeDefined();
-  });
+    test("should create accessibility system", () => {
+        const accessibilitySystem = createAccessibilitySystem();
+        expect(accessibilitySystem).toBeDefined();
+    });
 });
