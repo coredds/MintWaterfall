@@ -1,6 +1,6 @@
 {
   "name": "mintwaterfall",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Accessible, themeable waterfall charts for D3.js v7 — subtotals, stacked segments, tooltips, keyboard navigation, brush/zoom and SVG/PNG/CSV export. Written in TypeScript.",
   "main": "dist/mintwaterfall.cjs",
   "module": "dist/mintwaterfall.esm.js",

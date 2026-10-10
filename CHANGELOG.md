@@ -5,7 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.2.0] - 2026-10-10
+
+Bug-fix release. Confidence bands and milestones can be enabled again, and CSV export
+now escapes values that a spreadsheet would run as formulas. Both change behaviour, hence a minor version.
 
 ### Fixed
 
@@ -47,7 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `d3-array`, `d3-color`, `d3-drag` and `d3-force` are no longer dependencies: everything is imported
   from the `d3` peer dependency, so installs no longer pull separate copies.
 - `version` is generated from `package.json` (`npm version` runs `scripts/sync-version.mjs`).
-- Test coverage 51% → 64% (shapes, themes, scales, data pipeline and accessibility now tested against real D3).
+- Test coverage 51% → 63% (shapes, themes, scales, data pipeline and accessibility now tested against real D3).
+- The codebase is formatted with Prettier (config matches the existing style); CI checks formatting.
 
 ## [2.1.0] - 2026-10-04
 
