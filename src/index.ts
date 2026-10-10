@@ -83,7 +83,7 @@ export type {
 } from "./chart/config.js";
 
 // Supporting types referenced by the public API
-export type { BrushOptions, TooltipConfig, ExportConfig, ZoomConfig } from "./chart/config.js";
+export type { BrushOptions, TooltipConfig, ExportConfig, ZoomConfig, ConfidenceBandConfig, MilestoneConfig, Milestone } from "./chart/config.js";
 export type { Theme, ThemeCollection, ChartWithTheme } from "./themes.js";
 export type { XPosition, SymbolConfig, ShapeGeneratorSystem } from "./shapes.js";
 export type { StatisticalSystem, StatisticalSummary, DataQualityAssessment, VarianceAnalysis } from "./statistics.js";

@@ -14,6 +14,9 @@ import {
     isAnchoredBar,
     barKind,
     XScale,
+    ConfidenceBandConfig,
+    MilestoneConfig,
+    Milestone,
 } from "./config.js";
 import { prepareData } from "./lifecycle.js";
 import { resolveStyle, resolvedThemeName, ResolvedStyle } from "./style.js";
@@ -752,6 +755,19 @@ export function waterfallChart(): WaterfallChart {
     chart.colorMode = accessor(() => config.colorMode, v => { config.colorMode = v; });
     chart.colorTheme = accessor(() => config.advancedColorConfig.themeName || "default", v => { config.advancedColorConfig.themeName = v; });
     chart.neutralThreshold = accessor(() => config.advancedColorConfig.neutralThreshold || 0, v => { config.advancedColorConfig.neutralThreshold = v; });
+    // Partial objects merge into the current config (as in 1.x)
+    chart.confidenceBands = accessor(() => config.confidenceBandConfig, (v: Partial<ConfidenceBandConfig>) => {
+        config.confidenceBandConfig = { ...config.confidenceBandConfig, ...v };
+    });
+    chart.enableConfidenceBands = accessor(() => config.confidenceBandConfig.enabled, v => { config.confidenceBandConfig.enabled = v; });
+    chart.milestones = accessor(() => config.milestoneConfig, (v: Partial<MilestoneConfig>) => {
+        config.milestoneConfig = { ...config.milestoneConfig, ...v, milestones: [...(v.milestones ?? config.milestoneConfig.milestones)] };
+    });
+    chart.enableMilestones = accessor(() => config.milestoneConfig.enabled, v => { config.milestoneConfig.enabled = v; });
+    chart.addMilestone = function (milestone: Milestone): WaterfallChart {
+        config.milestoneConfig.milestones.push(milestone);
+        return chart;
+    };
 
     chart.data = function (value?: ChartData[] | null): any {
         if (arguments.length === 0) return boundData;

@@ -804,7 +804,7 @@ export function drawConfidenceBands(container: AnySelection, ctx: RenderContext)
     }
     const group = layer(container, "confidence-bands-group").attr("aria-hidden", "true");
     const bands = createWaterfallConfidenceBands(
-        data.map(d => ({ label: d.label, value: d.barTotal })),
+        data.map(d => ({ label: d.label, value: d.barTotal, subtotal: Boolean(d.isSubtotal || d.isTotal), start: Boolean(d.isStart) })),
         config.confidenceBandConfig.scenarios,
         xCenter(ctx),
         yScale

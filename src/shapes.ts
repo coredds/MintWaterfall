@@ -286,10 +286,15 @@ function centerOf(x: XPosition, label: string): number {
 
 /**
  * Create confidence bands specifically for waterfall financial projections
- * Combines multiple projection scenarios into visual uncertainty bands
+ * Combines multiple projection scenarios into visual uncertainty bands.
+ *
+ * Values are changes, accumulated into running totals per scenario. Scenario entries are
+ * matched to baseline items by label (falling back to position for entries without a label).
+ * Baseline items flagged `subtotal` show the running total without changing it; items flagged
+ * `start` reset every running total to their own (or the scenario's) value.
  */
 export function createWaterfallConfidenceBands(
-    baselineData: Array<{label: string, value: number}>,
+    baselineData: Array<{label: string, value: number, subtotal?: boolean, start?: boolean}>,
     scenarios: {
         optimistic: Array<{label: string, value: number}>,
         pessimistic: Array<{label: string, value: number}>
@@ -308,11 +313,25 @@ export function createWaterfallConfidenceBands(
     let optimisticCumulative = 0;
     let pessimisticCumulative = 0;
     
+    const lookup = (entries: Array<{label: string, value: number}>) => {
+        const byLabel = new Map(entries.filter(e => e.label != null).map(e => [e.label, e.value]));
+        return (item: {label: string}, i: number): number | undefined =>
+            byLabel.has(item.label) ? byLabel.get(item.label) : entries[i]?.label == null ? entries[i]?.value : undefined;
+    };
+    const optimisticValue = lookup(scenarios.optimistic);
+    const pessimisticValue = lookup(scenarios.pessimistic);
+
     const confidenceData: ConfidenceBandData[] = baselineData.map((item, i) => {
-        baselineCumulative += item.value;
-        // `??` so an explicit scenario value of 0 is respected
-        optimisticCumulative += scenarios.optimistic[i]?.value ?? item.value;
-        pessimisticCumulative += scenarios.pessimistic[i]?.value ?? item.value;
+        if (item.start) {
+            baselineCumulative = item.value;
+            optimisticCumulative = optimisticValue(item, i) ?? item.value;
+            pessimisticCumulative = pessimisticValue(item, i) ?? item.value;
+        } else if (!item.subtotal) {
+            baselineCumulative += item.value;
+            // `??` so an explicit scenario value of 0 is respected
+            optimisticCumulative += optimisticValue(item, i) ?? item.value;
+            pessimisticCumulative += pessimisticValue(item, i) ?? item.value;
+        }
 
         const x = centerOf(xScale, item.label);
         

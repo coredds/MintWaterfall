@@ -66,3 +66,17 @@ void opening;
 chart.orientation("horizontal");
 // @ts-expect-error not an orientation
 chart.orientation("diagonal");
+
+// Confidence bands and milestones (partial updates are merged)
+chart
+    .confidenceBands({ enabled: true, scenarios: { optimistic: [{ label: "A", value: 1 }], pessimistic: [] } })
+    .confidenceBands({ opacity: 0.3 })
+    .enableMilestones(true)
+    .addMilestone({ label: "A", value: 10, type: "target", description: "Plan" })
+    .milestones({ milestones: [] });
+const bandsOn: boolean = chart.confidenceBands().enabled;
+const milestoneCount: number = chart.milestones().milestones.length;
+void bandsOn;
+void milestoneCount;
+// @ts-expect-error not a milestone type
+chart.addMilestone({ label: "A", value: 1, type: "goal" });

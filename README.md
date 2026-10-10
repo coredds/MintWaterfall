@@ -102,6 +102,8 @@ All settings are getter/setters: call with no argument to read, with a value to 
 | `enableZoom` / `zoomConfig` | `false` / `{}` | Horizontal zoom & pan (`{ scaleExtent: [1, 8] }`). |
 | `enableExport` / `exportConfig` | `true` / `{}` | Allow `chart.export()`; `exportConfig({ filename })`. |
 | `showTrendLine`, `trendLineType`, `trendLineColor`, `trendLineWidth`, `trendLineStyle`, `trendLineOpacity`, `trendLineWindow`, `trendLineDegree` | off | Trend of the running total: `linear`, `polynomial` (least squares), `moving-average`. |
+| `confidenceBands` / `enableConfidenceBands` | off | Shaded band between optimistic and pessimistic running totals: `confidenceBands({ enabled: true, scenarios: { optimistic, pessimistic }, opacity, showTrendLines })`. Scenario entries are `{ label, value }` changes matched to bars by label; subtotal, total and opening bars behave as in the chart. Partial objects are merged. Vertical only. |
+| `milestones` / `enableMilestones` / `addMilestone` | off | Markers at a value above a bar: `addMilestone({ label, value, type: "target" \| "threshold" \| "alert" \| "achievement", description })`. Vertical only. |
 | `scaleType` | `"auto"` | `"time"` positions bars on a time scale (labels must parse as dates); otherwise categorical. |
 | `data` | `null` | Data to use when the selection has no bound datum. |
 

@@ -171,7 +171,7 @@ describe("rendering", () => {
         expect(bars(el)).toHaveLength(PL.length);
     });
 
-    test("trend line, confidence bands and milestones render and can be removed", () => {
+    test("trend line renders and can be removed", () => {
         const { el, chart } = render(PL, c => c.showTrendLine(true).trendLineType("polynomial"));
         expect(el.querySelector("path.trend-line")!.getAttribute("d")).toBeTruthy();
         chart.showTrendLine(false);
@@ -597,5 +597,140 @@ describe("horizontal orientation", () => {
         expect(document.activeElement).toBe(second);
         second.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
         expect(click.mock.calls[0][1].label).toBe("Cost of sales");
+    });
+
+    test("confidence bands and milestones are ignored with a warning", () => {
+        const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+        const { el } = render(PL, c =>
+            c
+                .orientation("horizontal")
+                .confidenceBands({ enabled: true, scenarios: { optimistic: [], pessimistic: [] } })
+                .enableMilestones(true)
+                .addMilestone({ label: "Revenue", value: 5000, type: "target" })
+        );
+        expect(el.querySelector(".confidence-bands-group")).toBeNull();
+        expect(el.querySelector(".milestones-group")).toBeNull();
+        const messages = warn.mock.calls.map(c => String(c[0]));
+        expect(messages.some(m => m.includes("confidence bands"))).toBe(true);
+        expect(messages.some(m => m.includes("milestones"))).toBe(true);
+        warn.mockRestore();
+    });
+});
+
+/** Vertices of an SVG path (the end point of each M/L/C command). */
+function pathVertices(d: string): Array<[number, number]> {
+    return d
+        .split(/[MLC]/)
+        .filter(Boolean)
+        .map(seg => {
+            const nums = seg.split(/[ ,]+/).filter(Boolean).map(Number);
+            return [nums[nums.length - 2], nums[nums.length - 1]] as [number, number];
+        });
+}
+
+/** Centre of a bar group: translate(x,0) plus half the bar width. */
+function barCenter(g: Element): number {
+    const x = Number(g.getAttribute("transform")!.match(/translate\(([-\d.]+)/)![1]);
+    return x + Number(g.querySelector("rect")!.getAttribute("width")) / 2;
+}
+
+describe("confidence bands", () => {
+    const scenarios = {
+        optimistic: [
+            { label: "Revenue", value: 6000 },
+            { label: "Cost of sales", value: -1800 },
+            { label: "Opex", value: -1500 },
+        ],
+        pessimistic: [
+            { label: "Revenue", value: 4500 },
+            { label: "Cost of sales", value: -2500 },
+            { label: "Opex", value: -2200 },
+        ],
+    };
+
+    test("renders a band and scenario lines, and can be turned off", () => {
+        const { el, chart } = render(PL, c => c.confidenceBands({ enabled: true, scenarios, opacity: 0.4 }));
+        const band = el.querySelector("path.confidence-band")!;
+        expect(band.getAttribute("d")).toMatch(/^M/);
+        expect(band.getAttribute("d")).not.toContain("NaN");
+        expect(band.getAttribute("fill-opacity")).toBe("0.4");
+        expect(el.querySelectorAll("path.scenario-line")).toHaveLength(2);
+
+        chart.confidenceBands({ showTrendLines: false });
+        d3.select(el).datum(PL).call(chart as any);
+        expect(el.querySelectorAll("path.scenario-line")).toHaveLength(0);
+        expect(chart.confidenceBands().opacity).toBe(0.4); // partial update merged
+
+        chart.enableConfidenceBands(false);
+        d3.select(el).datum(PL).call(chart as any);
+        expect(el.querySelector(".confidence-bands-group")).toBeNull();
+    });
+
+    test("scenario running totals follow subtotals, totals and opening balances", () => {
+        const data: ChartData[] = [
+            { label: "Opening", start: true, stacks: [{ value: 1000 }] },
+            { label: "Revenue", stacks: [{ value: 5200 }] },
+            { label: "Gross profit", subtotal: true },
+            { label: "Opex", stacks: [{ value: -1950 }] },
+        ];
+        const { el, chart } = render(data, c =>
+            c.showTotal(true).showConnectors(false).confidenceBands({ enabled: true, scenarios, showTrendLines: true })
+        );
+        const y = (v: number) => {
+            // recover the y scale from two bars: Opening (1000) top and baseline
+            const opening = rectOf(bars(el)[0]);
+            const zero = opening.y + opening.height;
+            return zero - (v / 1000) * opening.height;
+        };
+        const opt = pathVertices(el.querySelector("path.optimistic-trend")!.getAttribute("d")!).map(p => p[1]);
+        const pes = pathVertices(el.querySelector("path.pessimistic-trend")!.getAttribute("d")!).map(p => p[1]);
+        // Opening (no scenario entry) 1000; +6000 → 7000; subtotal holds 7000; −1500 → 5500; total holds 5500
+        [1000, 7000, 7000, 5500, 5500].forEach((v, i) => expect(opt[i]).toBeCloseTo(y(v), 3));
+        // Opening 1000; +4500 → 5500; holds; −2200 → 3300; holds
+        [1000, 5500, 5500, 3300, 3300].forEach((v, i) => expect(pes[i]).toBeCloseTo(y(v), 3));
+        // and the band is centred on the bars
+        const xs = pathVertices(el.querySelector("path.optimistic-trend")!.getAttribute("d")!).map(p => p[0]);
+        bars(el).forEach((g, i) => expect(xs[i]).toBeCloseTo(barCenter(g), 3));
+        expect(chart.enableConfidenceBands()).toBe(true);
+    });
+});
+
+describe("milestones", () => {
+    test("draws one marker per milestone at its bar and value", () => {
+        const { el, chart } = render(PL, c =>
+            c
+                .enableMilestones(true)
+                .addMilestone({ label: "Revenue", value: 5200, type: "target" })
+                .addMilestone({ label: "Opex", value: 1150, type: "alert", description: "Below plan" })
+        );
+        const markers = Array.from(el.querySelectorAll("path.milestone-marker"));
+        expect(markers).toHaveLength(2);
+        const revenueTop = rectOf(bars(el)[0]).y; // Revenue bar top is 5200
+        const [, mx, my] = markers[0].getAttribute("transform")!.match(/translate\(([-\d.]+), ?([-\d.]+)\)/)!.map(Number);
+        expect(mx).toBeCloseTo(barCenter(bars(el)[0]), 3);
+        expect(my).toBeCloseTo(revenueTop, 3);
+        expect(markers[0].getAttribute("fill")).toBe("#f39c12"); // target
+        expect(markers[1].getAttribute("fill")).toBe("#e74c3c"); // alert
+        expect(markers.every(m => m.getAttribute("d"))).toBe(true);
+        expect(chart.milestones().milestones).toHaveLength(2);
+    });
+
+    test("milestones() replaces the list without sharing the caller's array; disabling removes markers", () => {
+        const list = [{ label: "Revenue", value: 5200, type: "achievement" as const }];
+        const { el, chart } = render(PL, c => c.milestones({ enabled: true, milestones: list }));
+        chart.addMilestone({ label: "Opex", value: 1150, type: "threshold" });
+        expect(list).toHaveLength(1);
+        d3.select(el).datum(PL).call(chart as any);
+        expect(el.querySelectorAll("path.milestone-marker")).toHaveLength(2);
+        chart.enableMilestones(false);
+        d3.select(el).datum(PL).call(chart as any);
+        expect(el.querySelector(".milestones-group")).toBeNull();
+    });
+
+    test("milestone charts don't share state between instances", () => {
+        const a = waterfallChart().addMilestone({ label: "A", value: 1, type: "target" });
+        const b = waterfallChart();
+        expect(a.milestones().milestones).toHaveLength(1);
+        expect(b.milestones().milestones).toHaveLength(0);
     });
 });

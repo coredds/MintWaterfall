@@ -109,14 +109,17 @@ export interface ConfidenceBandConfig {
     showTrendLines?: boolean;
 }
 
+/** A marker drawn at `value` (on the value axis) above the bar with the same `label`. */
+export interface Milestone {
+    label: string;
+    value: number;
+    type: "target" | "threshold" | "alert" | "achievement";
+    description?: string;
+}
+
 export interface MilestoneConfig {
     enabled: boolean;
-    milestones: Array<{
-        label: string;
-        value: number;
-        type: "target" | "threshold" | "alert" | "achievement";
-        description?: string;
-    }>;
+    milestones: Milestone[];
 }
 
 /** Handler signatures for each chart event. `this` is the bar's `<g>` (bar events) or the `<svg>`. */
@@ -262,6 +265,22 @@ export interface WaterfallChart {
      */
     orientation(): Orientation;
     orientation(value: Orientation): WaterfallChart;
+    /**
+     * Shaded band between optimistic and pessimistic running totals. Scenario values are
+     * per-bar changes matched to bars by label; subtotal, total and opening bars are handled
+     * like the bars themselves. A partial object is merged into the current settings.
+     * Vertical charts only.
+     */
+    confidenceBands(): ConfidenceBandConfig;
+    confidenceBands(value: Partial<ConfidenceBandConfig>): WaterfallChart;
+    enableConfidenceBands(): boolean;
+    enableConfidenceBands(value: boolean): WaterfallChart;
+    /** Milestone markers (target, threshold, alert, achievement). Vertical charts only. */
+    milestones(): MilestoneConfig;
+    milestones(value: Partial<MilestoneConfig>): WaterfallChart;
+    enableMilestones(): boolean;
+    enableMilestones(value: boolean): WaterfallChart;
+    addMilestone(milestone: Milestone): WaterfallChart;
     /**
      * Register an event listener. Bar events receive `(event, datum)`;
      * `chartUpdate` receives `(processedData)`; `brushSelection` receives `(event, selectedData)`.
