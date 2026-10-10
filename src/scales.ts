@@ -67,8 +67,8 @@ export function createScaleSystem(): ScaleFactory {
     function createAdaptiveScale(data: any[], dimension: DimensionType = "x"): d3.ScaleLinear<number, number> | d3.ScaleBand<string> | d3.ScaleTime<number, number> {
         const values = data.map(d => dimension === "x" ? d.label : d.cumulativeTotal);
         
-        // Detect data type and return appropriate scale
-        if (values.every(v => v instanceof Date)) {
+        // Detect data type and return appropriate scale (no data: an empty band scale)
+        if (values.length > 0 && values.every(v => v instanceof Date)) {
             return createTimeScale(values);
         } else if (values.every(v => typeof v === "string" || isNaN(v))) {
             // For categorical/string data, use band scale for positioning
@@ -90,30 +90,30 @@ export function createScaleSystem(): ScaleFactory {
         } = options;
         
         const extent = d3.extent(values) as [Date, Date];
-        const scale = d3.scaleTime()
-            .domain(extent)
-            .range(range);
+        const scale = d3.scaleTime().range(range);
+        // With no dates, keep d3's default domain rather than an invalid one
+        if (extent[0] != null && extent[1] != null) scale.domain(extent);
             
         if (nice) {
             scale.nice();
         }
         
         // Auto-detect appropriate time format
-        if (tickFormat === "auto" && extent[0] && extent[1] && extent[0] instanceof Date && extent[1] instanceof Date) {
+        let specifier: string | null = null;
+        if (tickFormat === "auto" && extent[0] instanceof Date && extent[1] instanceof Date) {
             const timeSpan = extent[1].getTime() - extent[0].getTime();
             const days = timeSpan / (1000 * 60 * 60 * 24);
-            
-            if (days < 1) {
-                (scale as any).tickFormat = d3.timeFormat("%H:%M");
-            } else if (days < 30) {
-                (scale as any).tickFormat = d3.timeFormat("%m/%d");
-            } else if (days < 365) {
-                (scale as any).tickFormat = d3.timeFormat("%b %Y");
-            } else {
-                (scale as any).tickFormat = d3.timeFormat("%Y");
-            }
-        } else if (typeof tickFormat === "string") {
-            (scale as any).tickFormat = d3.timeFormat(tickFormat);
+            specifier = days < 1 ? "%H:%M" : days < 30 ? "%m/%d" : days < 365 ? "%b %Y" : "%Y";
+        } else if (typeof tickFormat === "string" && tickFormat !== "auto") {
+            specifier = tickFormat;
+        }
+        
+        if (specifier) {
+            // Keep d3's tickFormat(count?, specifier?) contract (axes call it and expect a
+            // formatter back); only the default format changes. An explicit specifier still wins.
+            const original = scale.tickFormat.bind(scale);
+            const format = d3.timeFormat(specifier);
+            (scale as any).tickFormat = (count?: number, spec?: string) => (spec ? original(count, spec) : format);
         }
         
         return scale;
@@ -172,7 +172,9 @@ export function createScaleSystem(): ScaleFactory {
             clamp = false
         } = options;
         
-        let domain = d3.extent(values) as [number, number];
+        const extent = d3.extent(values);
+        // No finite values: d3's default domain instead of [NaN, NaN]
+        let domain: [number, number] = extent[0] === undefined ? [0, 1] : (extent as [number, number]);
         
         // Include zero in domain if requested
         if (zero) {
@@ -220,6 +222,8 @@ export function createScaleSystem(): ScaleFactory {
                 // Check if it's a time scale by testing if domain contains dates
                 if (info.domain.length > 0 && info.domain[0] instanceof Date) {
                     info.type = "time";
+                } else if (typeof scale.base === "function") {
+                    info.type = "log";
                 } else {
                     info.type = "linear";
                 }
@@ -237,7 +241,7 @@ export function createScaleSystem(): ScaleFactory {
     // Log scale with fallback to linear for non-positive values
     function createLogScale(values: number[], options: LinearScaleOptions = {}): d3.ScaleLogarithmic<number, number> | d3.ScaleLinear<number, number> {
         // Check if all values are positive for log scale
-        const hasNonPositive = values.some(v => v <= 0);
+        const hasNonPositive = values.length === 0 || values.some(v => v <= 0);
         
         if (hasNonPositive) {
             // Fallback to linear scale
@@ -369,7 +373,7 @@ export function createScaleUtilities(): ScaleUtilities {
             // Band scales - find the band that contains the pixel
             const domain = scale.domain();
             const bandwidth = scale.bandwidth();
-            scale.step();
+            if (domain.length === 0) return undefined;
             
             for (let i = 0; i < domain.length; i++) {
                 const bandStart = scale(domain[i]);
@@ -389,7 +393,7 @@ export function createScaleUtilities(): ScaleUtilities {
     }
     
     function detectScaleType(values: any[]): ScaleType {
-        if (values.every(v => v instanceof Date)) {
+        if (values.length > 0 && values.every(v => v instanceof Date)) {
             return "time";
         } else if (values.every(v => typeof v === "string" || isNaN(v))) {
             return "band";
