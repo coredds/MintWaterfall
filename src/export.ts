@@ -46,6 +46,9 @@ export interface PDFExportOptions extends Partial<ExportConfig> {
     jsPDF?: new (options: { orientation?: string; unit?: string; format?: unknown }) => any;
 }
 
+const FORMULA_START = /^[=+\-@\t\r]/;
+const NUMERIC = /^[+-]?(\d+(\.\d*)?|\.\d+)(e[+-]?\d+)?$/i;
+
 function resolveJsPDF(option: PDFExportOptions["jsPDF"]): PDFExportOptions["jsPDF"] | undefined {
     if (option) return option;
     if (typeof window === "undefined") return undefined;
@@ -57,6 +60,12 @@ export interface DataExportOptions extends Partial<ExportConfig> {
     dataFormat?: "json" | "csv" | "tsv";
     includeMetadata?: boolean;
     delimiter?: string;
+    /**
+     * CSV/TSV: prefix text cells that a spreadsheet would run as a formula (starting with
+     * `=`, `+`, `-`, `@`, tab or carriage return) with `'`. Numbers and numeric text such as
+     * `"-5"` are left alone. Default `true`.
+     */
+    escapeFormulas?: boolean;
 }
 
 export interface ChartContainer {
@@ -358,13 +367,13 @@ export function createExportSystem(): ExportSystem {
                 }
                     
                 case "csv":
-                    content = convertToCSV(data, opts.delimiter || ",");
+                    content = convertToCSV(data, opts.delimiter || ",", opts.escapeFormulas !== false);
                     mimeType = "text/csv";
                     extension = "csv";
                     break;
                     
                 case "tsv":
-                    content = convertToCSV(data, "\t");
+                    content = convertToCSV(data, "\t", opts.escapeFormulas !== false);
                     mimeType = "text/tab-separated-values";
                     extension = "tsv";
                     break;
@@ -434,7 +443,7 @@ export function createExportSystem(): ExportSystem {
     }
     
     // Helper function to convert data to CSV
-    function convertToCSV(data: any[], delimiter: string = ","): string {
+    function convertToCSV(data: any[], delimiter: string = ",", escapeFormulas: boolean = true): string {
         if (!data || data.length === 0) return "";
         
         // Get headers from first object
@@ -446,8 +455,12 @@ export function createExportSystem(): ExportSystem {
             ...data.map(row => 
                 headers.map(header => {
                     const value = row[header];
+                    let stringValue = value != null ? String(value) : "";
+                    // CSV injection: text a spreadsheet would evaluate as a formula
+                    if (escapeFormulas && typeof value === "string" && FORMULA_START.test(stringValue) && !NUMERIC.test(stringValue)) {
+                        stringValue = `'${stringValue}`;
+                    }
                     // Escape quotes and wrap in quotes if contains delimiter
-                    const stringValue = value != null ? String(value) : "";
                     if (stringValue.includes(delimiter) || stringValue.includes('"') || stringValue.includes("\n")) {
                         return `"${stringValue.replace(/"/g, '""')}"`;
                     }

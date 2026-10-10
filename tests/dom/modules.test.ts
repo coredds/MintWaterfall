@@ -141,6 +141,35 @@ describe("export system", () => {
         expect(sys.exportData([{ a: 1, b: 2 }], { dataFormat: "csv", delimiter: ";" }).data).toBe("a;b\n1;2");
     });
 
+    test("CSV/TSV neutralise spreadsheet formulas but keep numbers", () => {
+        const sys = createExportSystem();
+        const rows = [
+            { label: "=HYPERLINK(\"http://x\")", n: -5, s: "-5", t: "+1.5e3" },
+            { label: "@SUM(A1)", n: 3, s: "-Opex", t: "\tcmd" },
+            { label: "Revenue", n: 0, s: "a=b", t: "" },
+        ];
+        expect(sys.exportData(rows, { dataFormat: "csv" }).data).toBe(
+            [
+                "label,n,s,t",
+                "\"'=HYPERLINK(\"\"http://x\"\")\",-5,-5,+1.5e3",
+                "'@SUM(A1),3,'-Opex,'\tcmd",
+                "Revenue,0,a=b,",
+            ].join("\n")
+        );
+        expect(sys.exportData([{ a: "=1+1" }], { dataFormat: "tsv" }).data).toBe("a\n'=1+1");
+        expect(sys.exportData([{ a: "=1+1" }], { dataFormat: "csv", escapeFormulas: false }).data).toBe("a\n=1+1");
+        // JSON is not a spreadsheet format: untouched
+        expect(JSON.parse(sys.exportData([{ a: "=1+1" }], { dataFormat: "json", includeMetadata: false }).data)).toEqual([{ a: "=1+1" }]);
+    });
+
+    test("chart CSV export escapes formula-like labels", async () => {
+        const div = document.body.appendChild(document.createElement("div"));
+        const chart = waterfallChart().duration(0);
+        d3.select(div).datum([{ label: "=cmd()", stacks: [{ value: -3 }] }]).call(chart as any);
+        const csv = await chart.export("csv");
+        expect(csv.data).toBe("label,type,value,runningTotal\n'=cmd(),decrease,-3,-3");
+    });
+
     test("PDF export requires jsPDF", async () => {
         await expect(createExportSystem().exportPDF(d3.select(document.body) as any)).rejects.toThrow(/requires jsPDF/);
     });
