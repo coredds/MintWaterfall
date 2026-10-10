@@ -28,13 +28,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `exportPDF` never found jsPDF loaded from its UMD build (which defines `window.jspdf.jsPDF`, not
   `window.jsPDF`). It also accepts the constructor directly: `exportPDF(container, { jsPDF })`.
 - `interpolateThemeColor` (and `colorMode("sequential")`) returned an invalid color when all values were equal.
+- `createScaleSystem().createTimeScale()` replaced the scale's `tickFormat` with a date formatter, so
+  D3 axes on it showed `NaN` ticks and `scaleUtils.formatTickValue` threw. The automatic format is
+  now returned by `tickFormat()` while keeping D3's `tickFormat(count, specifier)` contract.
+- Scale system edge cases: empty input gave `NaN` linear/time domains and an adaptive *time* scale
+  (now d3's default domain and a band scale); `getScaleInfo` reports log scales as `"log"`.
+- `groupWaterfallData` ignored its `labelAccessor`; it is now called with the first record of each group.
+
+### Security
+
+- CSV/TSV export (`chart.export("csv")`, `exportData`) prefixes text cells that a spreadsheet
+  would evaluate as a formula (`=`, `+`, `-`, `@`, tab, CR) with `'`, so chart labels from untrusted
+  data can't inject formulas. Numbers and numeric text like `"-5"` are unchanged. Opt out with
+  `exportData(rows, { escapeFormulas: false })`.
 
 ### Changed
 
 - `d3-array`, `d3-color`, `d3-drag` and `d3-force` are no longer dependencies: everything is imported
   from the `d3` peer dependency, so installs no longer pull separate copies.
 - `version` is generated from `package.json` (`npm version` runs `scripts/sync-version.mjs`).
-- Test coverage 51% → 61% (shapes, themes, data pipeline and accessibility now tested against real D3).
+- Test coverage 51% → 64% (shapes, themes, scales, data pipeline and accessibility now tested against real D3).
 
 ## [2.1.0] - 2026-10-04
 
