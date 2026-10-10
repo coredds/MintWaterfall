@@ -66,12 +66,24 @@ export interface AccessibilitySystem {
     getFocusableCount(): number;
 }
 
+/** WCAG 2.x relative luminance of an opaque sRGB color, or null if it can't be parsed. */
+function relativeLuminance(color: string): number | null {
+    const c = rgb(color);
+    if (![c.r, c.g, c.b].every(Number.isFinite)) return null;
+    const channel = (v: number): number => {
+        const s = v / 255;
+        return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * channel(c.r) + 0.7152 * channel(c.g) + 0.0722 * channel(c.b);
+}
+
 export function createAccessibilitySystem(): AccessibilitySystem {
     
     let currentFocusIndex: number = -1;
     let focusableElements: any[] = [];
     let announceFunction: ((message: string) => void) | null = null;
     let descriptionId: string | null = null;
+    let chartSvg: Element | null = null;
     
     // ARIA live region for dynamic announcements
     function createLiveRegion(container: d3.Selection<d3.BaseType, any, any, any>): d3.Selection<HTMLDivElement, any, any, any> {
@@ -169,6 +181,7 @@ export function createAccessibilitySystem(): AccessibilitySystem {
         config: AccessibilityConfig = {}
     ): AccessibilityResult {
         const svg = chartContainer.select("svg");
+        chartSvg = svg.node() as Element | null;
         
         // Add main chart ARIA attributes
         svg.attr("role", "img")
@@ -186,14 +199,15 @@ export function createAccessibilitySystem(): AccessibilitySystem {
         
         bars.each(function(d: any, i: number) {
             const bar = d3.select(this);
-            const data = d as WaterfallDataItem;
+            const barData = d as WaterfallDataItem;
             
             bar.attr("role", "button")
                .attr("tabindex", "-1")
-               .attr("aria-label", createBarAriaLabel(data, i, config))
+               .attr("aria-label", createBarAriaLabel(barData, i, config))
                .attr("aria-describedby", `bar-description-${i}`)
                .on("keydown", function(event: KeyboardEvent) {
-                   handleBarKeydown(event, data, i, [data], config);
+                   // all bars, so arrow keys can move to the neighbours
+                   handleBarKeydown(event, barData, i, data, config);
                })
                .on("focus", function() {
                    currentFocusIndex = i;
@@ -356,12 +370,10 @@ export function createAccessibilitySystem(): AccessibilitySystem {
     
     // Return focus to main chart container
     function returnFocusToChart(): void {
-        const svg = d3.select("svg[role='img']");
-        if (!svg.empty()) {
-            const svgNode = svg.node() as HTMLElement;
-            if (svgNode) {
-                svgNode.focus();
-            }
+        // The chart made accessible by this system (not just the first chart on the page)
+        const svgNode = (chartSvg ?? document.querySelector("svg[role='img']")) as HTMLElement | null;
+        if (svgNode) {
+            svgNode.focus?.();
             currentFocusIndex = -1;
         }
     }
@@ -580,20 +592,12 @@ export function createAccessibilitySystem(): AccessibilitySystem {
         return respectsReducedMotion() ? 0 : defaultDuration;
     }
     
-    // Color contrast validation
+    // Color contrast validation: WCAG 2.x contrast ratio (normal-size text thresholds).
+    // Unparseable colors give a ratio of 1 (fails).
     function validateColorContrast(foreground: string, background: string): ContrastResult {
-        // Simplified contrast ratio calculation
-        // In production, use a proper color contrast library
-        const getLuminance = (color: string): number => {
-            // This is a simplified version - use a proper color library
-            const colorRgb = rgb(color);
-            if (!colorRgb) return 0;
-            return (0.299 * colorRgb.r + 0.587 * colorRgb.g + 0.114 * colorRgb.b) / 255;
-        };
-        
-        const l1 = getLuminance(foreground);
-        const l2 = getLuminance(background);
-        const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+        const l1 = relativeLuminance(foreground);
+        const l2 = relativeLuminance(background);
+        const ratio = l1 === null || l2 === null ? 1 : (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
         
         return {
             ratio,
@@ -637,13 +641,9 @@ export function createAccessibilitySystem(): AccessibilitySystem {
     return accessibilitySystem;
 }
 
-// Global accessibility system instance
+// Global accessibility system instance. The forced-colors CSS is injected by
+// makeChartAccessible() or an explicit injectForcedColorsCSS() call, not on import.
 export const accessibilitySystem = createAccessibilitySystem();
-
-// Inject CSS support immediately for global instance (only in browser)
-if (typeof document !== "undefined") {
-    accessibilitySystem.injectForcedColorsCSS();
-}
 
 // Utility function to make any chart accessible
 export function makeChartAccessible(
