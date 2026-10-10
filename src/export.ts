@@ -39,6 +39,18 @@ export interface PDFExportOptions extends Partial<ExportConfig> {
     orientation?: "portrait" | "landscape";
     pageFormat?: "a4" | "letter" | "legal" | [number, number];
     margin?: number | { top: number; right: number; bottom: number; left: number };
+    /**
+     * The jsPDF constructor, e.g. `import { jsPDF } from "jspdf"`. When omitted, the global from
+     * jsPDF's UMD build (`window.jspdf.jsPDF`) or a legacy `window.jsPDF` is used.
+     */
+    jsPDF?: new (options: { orientation?: string; unit?: string; format?: unknown }) => any;
+}
+
+function resolveJsPDF(option: PDFExportOptions["jsPDF"]): PDFExportOptions["jsPDF"] | undefined {
+    if (option) return option;
+    if (typeof window === "undefined") return undefined;
+    const w = window as any;
+    return w.jspdf?.jsPDF ?? w.jsPDF;
 }
 
 export interface DataExportOptions extends Partial<ExportConfig> {
@@ -221,7 +233,7 @@ export function createExportSystem(): ExportSystem {
         });
     }
     
-    // Export chart as PDF (requires external library like jsPDF)
+    // Export chart as PDF (requires jsPDF, passed as an option or loaded globally)
     function exportPDF(chartContainer: ChartContainer, options: PDFExportOptions = {}): Promise<ExportResult> {
         const opts: ExportConfig & PDFExportOptions = { 
             ...config, 
@@ -231,9 +243,9 @@ export function createExportSystem(): ExportSystem {
         };
         
         return new Promise((resolve, reject) => {
-            // Check if jsPDF is available
-            if (typeof window === "undefined" || !(window as any).jsPDF) {
-                reject(new Error('jsPDF library is required for PDF export. Please include it: <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>'));
+            const JsPDF = resolveJsPDF(opts.jsPDF);
+            if (!JsPDF) {
+                reject(new Error("PDF export requires jsPDF: pass it as the `jsPDF` option (import { jsPDF } from \"jspdf\") or load jsPDF's UMD build."));
                 return;
             }
             
@@ -244,8 +256,7 @@ export function createExportSystem(): ExportSystem {
                     scale: 2,
                     quality: 0.95 
                 }).then((pngResult) => {
-                    const jsPDF = (window as any).jsPDF;
-                    const pdf = new jsPDF({
+                    const pdf = new JsPDF({
                         orientation: opts.orientation,
                         unit: "mm",
                         format: opts.pageFormat

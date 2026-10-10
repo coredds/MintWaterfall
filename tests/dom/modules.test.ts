@@ -89,8 +89,73 @@ describe("export system", () => {
         expect(div.querySelectorAll("svg > rect[fill='#fafafa']")).toHaveLength(0); // original untouched
     });
 
+    test("exportSVG inlines matching stylesheet rules only", () => {
+        const style = document.createElement("style");
+        style.textContent = ".mintwaterfall-bar { fill: red; } .unrelated { color: blue; } svg text { font-size: 11px; }";
+        document.head.appendChild(style);
+        try {
+            const div = document.body.appendChild(document.createElement("div"));
+            d3.select(div).datum([{ label: "a", stacks: [{ value: 1 }] }]).call(waterfallChart().duration(0) as any);
+            const withStyles = createExportSystem().exportSVG(d3.select(div) as any).data;
+            expect(withStyles).toContain(".mintwaterfall-bar");
+            expect(withStyles).toContain("svg text");
+            expect(withStyles).not.toContain(".unrelated");
+            const without = createExportSystem().exportSVG(d3.select(div) as any, { includeStyles: false, background: "transparent" }).data;
+            expect(without).not.toContain(".mintwaterfall-bar");
+            expect(without).not.toMatch(/<rect width="100%"/);
+        } finally {
+            style.remove();
+        }
+    });
+
+    test("exportSVG / exportPNG reject a container without an svg", async () => {
+        const spy = jest.spyOn(console, "error").mockImplementation(() => {});
+        const empty = d3.select(document.body.appendChild(document.createElement("div"))) as any;
+        expect(() => createExportSystem().exportSVG(empty)).toThrow(/No SVG/);
+        await expect(createExportSystem().exportPNG(empty)).rejects.toThrow(/No SVG/);
+        spy.mockRestore();
+    });
+
+    test("download(), downloadFile() and configure() use the configured filename", () => {
+        const clicked: Array<{ download: string; href: string }> = [];
+        const click = jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
+            clicked.push({ download: this.download, href: this.href });
+        });
+        try {
+            const sys = createExportSystem().configure({ filename: "report" });
+            sys.exportData(rows, { dataFormat: "csv" }).download();
+            sys.downloadFile("hello", "notes.txt");
+            sys.downloadFile(new Blob(["x"]), "raw.bin");
+            expect(clicked.map(c => c.download)).toEqual(["report.csv", "notes.txt", "raw.bin"]);
+            expect(clicked.every(c => c.href === "blob:mock")).toBe(true);
+            expect(document.querySelectorAll("a")).toHaveLength(0); // temporary link removed
+        } finally {
+            click.mockRestore();
+        }
+    });
+
+    test("CSV escapes quotes and newlines; empty data gives empty output", () => {
+        const sys = createExportSystem();
+        expect(sys.exportData([{ a: 'say "hi"', b: "x\ny", c: null }], { dataFormat: "csv" }).data).toBe('a,b,c\n"say ""hi""","x\ny",');
+        expect(sys.exportData([], { dataFormat: "csv" }).data).toBe("");
+        expect(sys.exportData([{ a: 1, b: 2 }], { dataFormat: "csv", delimiter: ";" }).data).toBe("a;b\n1;2");
+    });
+
     test("PDF export requires jsPDF", async () => {
-        await expect(createExportSystem().exportPDF(d3.select(document.body) as any)).rejects.toThrow(/jsPDF/);
+        await expect(createExportSystem().exportPDF(d3.select(document.body) as any)).rejects.toThrow(/requires jsPDF/);
+    });
+
+    test("PDF export accepts an injected jsPDF or the UMD global", async () => {
+        // No SVG in the container, so it fails later (in PNG export) — but not on the jsPDF lookup.
+        const FakeJsPDF = jest.fn() as any;
+        const injected = createExportSystem().exportPDF(d3.select(document.body) as any, { jsPDF: FakeJsPDF });
+        await expect(injected).rejects.not.toThrow(/requires jsPDF/);
+        (window as any).jspdf = { jsPDF: FakeJsPDF };
+        try {
+            await expect(createExportSystem().exportPDF(d3.select(document.body) as any)).rejects.not.toThrow(/requires jsPDF/);
+        } finally {
+            delete (window as any).jspdf;
+        }
     });
 });
 
