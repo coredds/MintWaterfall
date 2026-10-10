@@ -254,4 +254,19 @@ const d3Mock = {
   interpolateBlues: jest.fn(t => `rgb(${Math.floor(255 * (1 - t))}, ${Math.floor(255 * (1 - t))}, 255)`)
 };
 
+// Pure (non-DOM) functions the source imports by name from "d3" use the real implementations.
+// The subpackages are installed as dependencies of d3.
+const actualArray = jest.requireActual("d3-array");
+const actualColor = jest.requireActual("d3-color");
+const actualDrag = jest.requireActual("d3-drag");
+const actualForce = jest.requireActual("d3-force");
+for (const name of ["median", "variance", "deviation", "quantile", "bisector", "ascending", "group", "rollup", "flatRollup", "cross", "index"]) {
+  d3Mock[name] = actualArray[name];
+}
+d3Mock.rgb = actualColor.rgb;
+d3Mock.drag = actualDrag.drag;
+for (const name of ["forceSimulation", "forceCenter", "forceCollide"]) {
+  d3Mock[name] = actualForce[name];
+}
+
 module.exports = d3Mock;

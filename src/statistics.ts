@@ -2,7 +2,7 @@
 // Provides comprehensive statistical analysis features for waterfall chart data
 
 import * as d3 from "d3";
-import { median, variance, deviation, quantile, bisector, ascending } from "d3-array";
+import { median, variance, deviation, quantile, bisector, ascending } from "d3";
 
 // ============================================================================
 // TYPE DEFINITIONS

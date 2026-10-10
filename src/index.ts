@@ -98,8 +98,8 @@ export type { ExportSystem } from "./export.js";
 // Brush/zoom systems, performance, interactions and layouts moved to
 // "mintwaterfall/experimental" in 2.0.0.
 
-// Version information
-export const version = "2.1.0";
+// Version information (kept in sync with package.json by scripts/sync-version.mjs)
+export { version } from "./version.js";
 
 // Default export
 import { waterfallChart } from "./chart/chart.js";

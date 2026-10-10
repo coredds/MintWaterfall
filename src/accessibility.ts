@@ -2,7 +2,7 @@
 // Provides WCAG 2.1 AA compliance features for screen readers and keyboard navigation with full type safety
 
 import * as d3 from "d3";
-import { rgb } from "d3-color";
+import { rgb } from "d3";
 
 // Type definitions for accessibility system
 export interface AccessibilityConfig {

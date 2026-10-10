@@ -1,6 +1,6 @@
 // MintWaterfall Advanced D3.js Data Operations
 import * as d3 from "d3";
-import { group, rollup, flatRollup, cross, index } from "d3-array";
+import { group, rollup, flatRollup, cross, index } from "d3";
 import { DataItem, StackItem, AggregationType, validateData } from "./validation.js";
 
 export { DataItem, StackItem, AggregationType };

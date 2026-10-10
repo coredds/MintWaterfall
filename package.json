@@ -51,6 +51,7 @@
     "typecheck": "tsc --noEmit && tsc -p tests/types",
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots",
+    "version": "node scripts/sync-version.mjs && git add src/version.ts",
     "check:size": "node scripts/check-size.mjs",
     "check:package": "node scripts/check-package.mjs",
     "docs:api": "typedoc",
@@ -123,6 +124,9 @@
     "typescript-eslint": "^8.71.0"
   },
   "lint-staged": {
+    "*.ts": [
+      "eslint --fix"
+    ],
     "*.js": [
       "eslint --fix",
       "prettier --write"
@@ -130,12 +134,6 @@
     "*.md": [
       "prettier --write"
     ]
-  },
-  "dependencies": {
-    "d3-array": "^3.2.4",
-    "d3-color": "^3.1.0",
-    "d3-drag": "^3.0.0",
-    "d3-force": "^3.0.0"
   },
   "overrides": {
     "js-yaml": "^4.1.1",

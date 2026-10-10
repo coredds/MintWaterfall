@@ -16,14 +16,8 @@ const banner = `/*!
 const external = (id) => {
   return id === "d3" || id.startsWith("d3-");
 };
-const globals = {
-  d3: "d3",
-  "d3-array": "d3",
-  "d3-drag": "d3",
-  "d3-force": "d3",
-  "d3-color": "d3",
-  "d3-selection": "d3",
-};
+// Source imports only from "d3"; subpackage globals are a safety net for UMD builds.
+const globals = (id) => (id === "d3" || id.startsWith("d3-") ? "d3" : undefined);
 
 const plugins = [
   resolve({

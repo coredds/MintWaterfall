@@ -2,6 +2,9 @@
  * Standalone module tests with the real D3.
  */
 import * as d3 from "d3";
+import { readFileSync } from "fs";
+import { join } from "path";
+
 import { createTooltipSystem } from "../../src/tooltip.js";
 import { createExportSystem } from "../../src/export.js";
 import { createZoomSystem } from "../../src/zoom.js";
@@ -126,7 +129,9 @@ describe("entry points", () => {
             expect(typeof (experimental as any)[name]).toBe("function");
         }
         expect(typeof main.waterfallChart).toBe("function");
-        expect(main.version).toBe("2.1.0");
+        // Fails if src/version.ts drifts from package.json (run `node scripts/sync-version.mjs`)
+        const pkg = JSON.parse(readFileSync(join(__dirname, "../../package.json"), "utf8"));
+        expect(main.version).toBe(pkg.version);
     });
 
     test("removed no-op chart settings are gone", () => {

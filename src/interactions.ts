@@ -2,8 +2,7 @@
 // Sophisticated D3.js interaction capabilities for enhanced waterfall analysis
 
 import * as d3 from "d3";
-import { drag } from "d3-drag";
-import { forceSimulation, forceCenter, forceCollide } from "d3-force";
+import { drag, forceSimulation, forceCenter, forceCollide } from "d3";
 
 // ============================================================================
 // TYPE DEFINITIONS

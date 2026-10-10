@@ -20,6 +20,8 @@ export default tseslint.config(
       // The D3 selection-heavy code relies on `any`; tighten incrementally.
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrors: "none" }],
+      // d3 is a peer dependency; d3-* subpackages are not declared dependencies.
+      "no-restricted-imports": ["error", { patterns: [{ group: ["d3-*"], message: "Import from \"d3\" (peer dependency) instead." }] }],
     },
   },
   {
