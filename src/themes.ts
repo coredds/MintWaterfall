@@ -219,8 +219,10 @@ export function interpolateThemeColor(
     const theme = themes[themeName] || themes.default;
     const interpolator = theme.sequentialScale?.interpolator || d3.interpolateBlues;
     
-    const normalizedValue = (value - domain[0]) / (domain[1] - domain[0]);
-    return interpolator(Math.max(0, Math.min(1, normalizedValue)));
+    const span = domain[1] - domain[0];
+    // A degenerate domain (all values equal) maps to the midpoint, like d3.scaleSequential
+    const normalizedValue = span ? (value - domain[0]) / span : 0.5;
+    return interpolator(Math.max(0, Math.min(1, Number.isFinite(normalizedValue) ? normalizedValue : 0.5)));
 }
 
 /**
