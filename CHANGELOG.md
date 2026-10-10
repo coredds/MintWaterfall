@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Confidence bands and milestones were unreachable.** The `confidenceBands()`, `enableConfidenceBands()`,
+  `milestones()`, `enableMilestones()` and `addMilestone()` settings were lost in the chart
+  rewrite before 1.0.0, so the chart drew neither. They are back (typed, with `ConfidenceBandConfig`,
+  `MilestoneConfig` and `Milestone` exported).
+- Confidence bands added subtotal and total bars to the running totals again (they already show the
+  running total) and didn't reset at opening balances, so the band drifted away from the bars after
+  the first subtotal. `createWaterfallConfidenceBands` now accepts `subtotal` / `start` flags on
+  baseline items and matches scenario entries to bars **by label** (by position only for entries
+  without a label).
+- `validateColorContrast` now computes the WCAG 2.x contrast ratio (sRGB relative luminance). It
+  previously used a brightness approximation that badly underestimated mid-tone contrast
+  (`#767676` on white: 2.0:1 instead of 4.54:1). Unparseable colors give a ratio of 1 instead of `NaN`.
+- `createAccessibilitySystem().makeAccessible()`: arrow keys on a focused bar threw (each bar only
+  knew about itself); Escape now returns focus to this chart rather than the first chart on the page.
+- Importing the package no longer injects a `<style>` element into `document.head` (the package is
+  declared side-effect free). `makeChartAccessible()` and `injectForcedColorsCSS()` still inject it.
+- `exportPDF` never found jsPDF loaded from its UMD build (which defines `window.jspdf.jsPDF`, not
+  `window.jsPDF`). It also accepts the constructor directly: `exportPDF(container, { jsPDF })`.
+- `interpolateThemeColor` (and `colorMode("sequential")`) returned an invalid color when all values were equal.
+
+### Changed
+
+- `d3-array`, `d3-color`, `d3-drag` and `d3-force` are no longer dependencies: everything is imported
+  from the `d3` peer dependency, so installs no longer pull separate copies.
+- `version` is generated from `package.json` (`npm version` runs `scripts/sync-version.mjs`).
+- Test coverage 51% → 61% (shapes, themes, data pipeline and accessibility now tested against real D3).
+
 ## [2.1.0] - 2026-10-04
 
 ### Added
