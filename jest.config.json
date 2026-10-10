@@ -5,10 +5,10 @@
   "collectCoverageFrom": ["src/**/*.ts", "!src/**/*.d.ts"],
   "coverageThreshold": {
     "global": {
-      "statements": 61,
-      "branches": 53,
-      "functions": 61,
-      "lines": 61
+      "statements": 63,
+      "branches": 56,
+      "functions": 62,
+      "lines": 63
     }
   },
   "projects": [

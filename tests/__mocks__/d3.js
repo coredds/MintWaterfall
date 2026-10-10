@@ -260,7 +260,7 @@ const actualArray = jest.requireActual("d3-array");
 const actualColor = jest.requireActual("d3-color");
 const actualDrag = jest.requireActual("d3-drag");
 const actualForce = jest.requireActual("d3-force");
-for (const name of ["median", "variance", "deviation", "quantile", "bisector", "ascending", "group", "rollup", "flatRollup", "cross", "index"]) {
+for (const name of ["median", "variance", "deviation", "quantile", "bisector", "ascending", "group", "flatGroup", "rollup", "flatRollup", "cross", "index"]) {
   d3Mock[name] = actualArray[name];
 }
 d3Mock.rgb = actualColor.rgb;

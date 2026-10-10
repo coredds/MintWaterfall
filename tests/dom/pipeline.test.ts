@@ -104,6 +104,19 @@ describe("standalone helpers", () => {
         expect(values(out)).toEqual([[15], [7]]);
         const nested = groupWaterfallData(sales, [d => d.region, d => d.product], d => d.revenue);
         expect(labels(nested)).toEqual(["N → A", "N → B", "S → A"]);
+        expect(values(nested)).toEqual([[10], [5], [7]]);
+    });
+
+    test("groupWaterfallData labelAccessor labels each group from its first record", () => {
+        const regions = [
+            { region: "N", name: "North", revenue: 10 },
+            { region: "S", name: "South", revenue: 7 },
+            { region: "N", name: "North", revenue: 5 },
+        ];
+        const out = groupWaterfallData(regions, [d => d.region], d => d.revenue, d => `${d.name} region`);
+        expect(labels(out)).toEqual(["North region", "South region"]);
+        expect(values(out)).toEqual([[15], [7]]);
+        expect(out[1].stacks[0].label).toBe("+7.00");
     });
 
     test("createComparisonWaterfall: change vs. the previous period (missing = 0)", () => {

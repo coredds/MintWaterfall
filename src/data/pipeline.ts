@@ -192,7 +192,10 @@ export function createVarianceWaterfall(
 
 /**
  * Advanced data grouping with waterfall-optimized aggregation
- * Supports nested grouping with automatic color assignment
+ * Supports nested grouping with automatic color assignment.
+ *
+ * Each group becomes one bar whose value is the sum of `valueAccessor`. Labels are the group
+ * keys joined with " → ", or `labelAccessor(firstRecordOfGroup)` when given.
  */
 export function groupWaterfallData<T extends Record<string, any>>(
     data: T[],
@@ -200,20 +203,15 @@ export function groupWaterfallData<T extends Record<string, any>>(
     valueAccessor: (item: T) => number,
     labelAccessor?: (item: T) => string
 ): DataItem[] {
-    const grouped = dataProcessor.flatRollupBy(
-        data,
-        (values) => d3.sum(values, valueAccessor),
-        ...groupBy
-    );
+    const grouped = (d3.flatGroup as (data: T[], ...keys: GroupByFunction<T>[]) => any[][])(data, ...groupBy);
 
     const colors = ["#3498db", "#2ecc71", "#f39c12", "#e74c3c", "#9b59b6", "#1abc9c", "#34495e", "#95a5a6"];
 
     return grouped.map((item, index) => {
-        const keys = item.slice(0, -1); // All but last element
-        const value = item[item.length - 1]; // Last element
-        const label = labelAccessor && data[0]
-            ? keys.map((key, i) => `${Object.keys(data[0] as object)[i]}: ${key}`).join(" | ")
-            : keys.join(" → ");
+        const keys = item.slice(0, -1); // group keys
+        const members = item[item.length - 1] as T[]; // records in the group
+        const value = d3.sum(members, valueAccessor);
+        const label = labelAccessor ? labelAccessor(members[0]) : keys.join(" → ");
 
         return {
             label,
