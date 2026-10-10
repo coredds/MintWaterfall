@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<title>MintWaterfall — Waterfall charts for D3.js</title>
+<meta name="description" content="MintWaterfall is a TypeScript waterfall chart library built on D3.js v7.">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f6f7fb;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --accent: #6366f1;
+    --accent-soft: #eef2ff;
+    --green: #10b981;
+    --red: #ef4444;
+    --radius: 14px;
+    --font: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+  /* Header */
+  header.hero { padding: 4.5rem 1.5rem 3rem; text-align: center; background:
+      radial-gradient(1200px 400px at 50% -10%, rgba(99,102,241,0.16), transparent 70%),
+      radial-gradient(800px 300px at 85% 10%, rgba(16,185,129,0.12), transparent 70%); }
+  .hero .eyebrow { display: inline-flex; gap: .5rem; align-items: center; font-size: .78rem; font-weight: 600; color: var(--accent);
+    background: var(--accent-soft); padding: .3rem .75rem; border-radius: 999px; }
+  .hero h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 800; letter-spacing: -0.03em; margin-top: 1rem; }
+  .hero h1 span { background: linear-gradient(90deg, #6366f1, #10b981); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p { font-size: 1.08rem; color: var(--muted); margin: .75rem auto 0; max-width: 620px; }
+  .hero .cta { margin-top: 1.6rem; display: flex; gap: .6rem; justify-content: center; flex-wrap: wrap; }
+  .hero code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .85rem; background: #0f172a; color: #e2e8f0;
+    padding: .6rem 1rem; border-radius: 10px; }
+  .link-btn { display: inline-flex; align-items: center; padding: .6rem 1rem; border-radius: 10px; font-weight: 600; font-size: .88rem;
+    text-decoration: none; color: var(--text); background: var(--card); border: 1px solid var(--border); }
+  .link-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Layout */
+  .wrap { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 2rem; max-width: 1180px; margin: 0 auto; padding: 0 1.5rem 3rem; }
+  nav.toc { position: sticky; top: 1.5rem; align-self: start; display: flex; flex-direction: column; gap: .15rem; }
+  nav.toc .label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: .25rem .75rem .5rem; }
+  nav.toc a { padding: .45rem .75rem; border-radius: 8px; font-size: .85rem; color: var(--muted); text-decoration: none; }
+  nav.toc a:hover, nav.toc a:focus-visible { background: var(--card); color: var(--text); }
+
+  section.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(15,23,42,.08); padding: 1.6rem 1.6rem 1.2rem; margin-bottom: 1.5rem; }
+  .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .card h2 { font-size: 1.12rem; font-weight: 700; letter-spacing: -0.01em; }
+  .card .sub { font-size: .88rem; color: var(--muted); margin-top: .15rem; max-width: 560px; }
+  .chart { width: 100%; }
+  .chart svg { display: block; }
+
+  /* Segmented control */
+  .seg { display: inline-flex; background: #f1f5f9; border-radius: 10px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+  .seg button { border: 0; background: transparent; font: 600 .78rem var(--font); color: var(--muted); padding: .4rem .8rem;
+    border-radius: 8px; cursor: pointer; }
+  .seg button:hover { color: var(--text); }
+  .seg button[aria-pressed="true"] { background: #fff; color: var(--text); box-shadow: 0 1px 2px rgba(15,23,42,.12); }
+  .seg button:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .btn { border: 1px solid var(--border); background: #fff; font: 600 .78rem var(--font); color: var(--text); padding: .45rem .85rem;
+    border-radius: 9px; cursor: pointer; }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .actions { display: flex; gap: .4rem; flex-wrap: wrap; }
+
+  .readout { margin-top: .75rem; font-size: .84rem; color: var(--muted); min-height: 1.4em; }
+  .readout strong { color: var(--text); }
+
+  /* KPIs */
+  .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .75rem; }
+  .kpi { border: 1px solid var(--border); border-radius: 12px; padding: .9rem 1rem; }
+  .kpi .k { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+  .kpi .v { font-size: 1.25rem; font-weight: 700; margin-top: .15rem; font-variant-numeric: tabular-nums; }
+  .kpi .v.pos { color: var(--green); } .kpi .v.neg { color: var(--red); }
+
+  pre.snippet { margin-top: 1rem; background: #0f172a; color: #e2e8f0; border-radius: 12px; padding: 1rem 1.1rem; overflow-x: auto;
+    font: .8rem/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  pre.snippet .c { color: #64748b; } pre.snippet .s { color: #86efac; } pre.snippet .k { color: #c4b5fd; }
+
+  footer { text-align: center; padding: 2rem 1.5rem 3rem; font-size: .84rem; color: var(--muted); }
+  footer a { color: var(--accent); text-decoration: none; }
+
+  @media (max-width: 900px) {
+    .wrap { grid-template-columns: minmax(0, 1fr); padding: 0 .75rem 2rem; }
+    header.hero { padding: 3rem 1rem 2rem; }
+    .hero code { font-size: .75rem; }
+    nav.toc { display: none; }
+    section.card { padding: 1.2rem 1rem 1rem; }
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="dist/mintwaterfall.min.js"></script>
+</head>
+<body>
+
+<header class="hero">
+  <span class="eyebrow">TypeScript · D3.js v7 · Accessible</span>
+  <h1>Waterfall charts, <span>done right</span>.</h1>
+  <p>MintWaterfall turns a list of changes into a clear story — with subtotals, stacked segments, themes, tooltips, keyboard navigation and export built in.</p>
+  <div class="cta">
+    <code>npm install mintwaterfall d3</code>
+    <a class="link-btn" href="https://github.com/coredds/MintWaterfall">GitHub →</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="toc" aria-label="Examples">
+    <span class="label">Examples</span>
+    <a href="#pl">P&amp;L bridge</a>
+    <a href="#stacked">Stacked segments</a>
+    <a href="#themes">Themes</a>
+    <a href="#trend">Trend lines</a>
+    <a href="#interact">Brush, zoom &amp; export</a>
+    <a href="#stats">Statistics</a>
+  </nav>
+
+  <main>
+
+<section class="card" id="pl">
+  <div class="card-head">
+    <div>
+      <h2>Profit &amp; loss bridge</h2>
+      <p class="sub">Increases and decreases are colored automatically. <em>Gross profit</em> and <em>Operating income</em> are subtotals; <em>Net income</em> is the grand total. Hover, click, or tab through the bars.</p>
+    </div>
+    <div class="seg" id="orientation-bar" role="group" aria-label="Orientation">
+      <button aria-pressed="true" data-orientation="vertical">Vertical</button>
+      <button aria-pressed="false" data-orientation="horizontal">Horizontal</button>
+    </div>
+  </div>
+  <div class="chart" id="chart-pl"></div>
+  <div class="readout" id="pl-readout" aria-live="polite">Click a bar to inspect it.</div>
+  <pre class="snippet"><span class="k">const</span> chart = MintWaterfall.waterfallChart()
+  .showTotal(<span class="k">true</span>).totalLabel(<span class="s">"Net income"</span>)
+  .formatNumber(d3.format(<span class="s">"$,.0f"</span>))
+  .enableTooltips(<span class="k">true</span>).responsive(<span class="k">true</span>)
+  .on(<span class="s">"barClick"</span>, (event, d) =&gt; console.log(d.label, d.barTotal));
+
+d3.select(<span class="s">"#chart"</span>).datum([
+  { label: <span class="s">"Revenue"</span>, stacks: [{ value: 5200 }] },
+  { label: <span class="s">"Cost of sales"</span>, stacks: [{ value: -2100 }] },
+  { label: <span class="s">"Gross profit"</span>, subtotal: <span class="k">true</span> },  <span class="c">// running total so far</span>
+  ...
+]).call(chart);</pre>
+</section>
+
+<section class="card" id="stacked">
+  <div class="card-head">
+    <div>
+      <h2>Stacked segments</h2>
+      <p class="sub">Each step can be broken into labeled segments, with a legend. <em>Q1 opening</em> is an opening balance (<code>start: true</code>): drawn like a total, not as an increase.</p>
+    </div>
+  </div>
+  <div class="chart" id="chart-stacked"></div>
+</section>
+
+<section class="card" id="themes">
+  <div class="card-head">
+    <div>
+      <h2>Themes</h2>
+      <p class="sub">Built-in themes restyle bars, grid, axes and text. <em>Auto</em> follows the reader's light/dark setting.</p>
+    </div>
+    <div class="seg" id="theme-bar" role="group" aria-label="Theme">
+      <button aria-pressed="true" data-theme="default">Default</button>
+      <button aria-pressed="false" data-theme="auto">Auto</button>
+      <button aria-pressed="false" data-theme="dark">Dark</button>
+      <button aria-pressed="false" data-theme="corporate">Corporate</button>
+      <button aria-pressed="false" data-theme="financial">Financial</button>
+      <button aria-pressed="false" data-theme="accessible">Accessible</button>
+      <button aria-pressed="false" data-theme="colorful">Colorful</button>
+    </div>
+  </div>
+  <div class="chart" id="chart-theme"></div>
+</section>
+
+<section class="card" id="trend">
+  <div class="card-head">
+    <div>
+      <h2>Trend lines</h2>
+      <p class="sub">Overlay a linear, polynomial or moving-average fit of the running total.</p>
+    </div>
+    <div class="seg" id="trend-bar" role="group" aria-label="Trend type">
+      <button aria-pressed="true" data-type="linear">Linear</button>
+      <button aria-pressed="false" data-type="polynomial">Polynomial</button>
+      <button aria-pressed="false" data-type="moving-average">Moving avg</button>
+      <button aria-pressed="false" data-type="none">Off</button>
+    </div>
+  </div>
+  <div class="chart" id="chart-trend"></div>
+</section>
+
+<section class="card" id="interact">
+  <div class="card-head">
+    <div>
+      <h2>Brush, zoom &amp; export</h2>
+      <p class="sub">Drag to select bars, scroll to zoom, Shift+drag to pan. Export the current chart as SVG, PNG or CSV.</p>
+    </div>
+    <div class="actions">
+      <button class="btn" data-export="svg">Export SVG</button>
+      <button class="btn" data-export="png">Export PNG</button>
+      <button class="btn" data-export="csv">Export CSV</button>
+    </div>
+  </div>
+  <div class="chart" id="chart-interact"></div>
+  <div class="readout" id="brush-readout" aria-live="polite">Drag across the chart to select a range.</div>
+</section>
+
+<section class="card" id="stats">
+  <div class="card-head">
+    <div>
+      <h2>Statistics</h2>
+      <p class="sub">The statistics module summarises a series and fits a trend — useful alongside the chart.</p>
+    </div>
+  </div>
+  <div class="kpis" id="kpis"></div>
+</section>
+
+  </main>
+</div>
+
+<footer>
+  <a href="https://github.com/coredds/MintWaterfall">GitHub</a> ·
+  <a href="api/">API reference</a> ·
+  <a href="https://www.npmjs.com/package/mintwaterfall">npm</a> ·
+  MIT License
+</footer>
+
+<script>
+var MW = window.MintWaterfall;
+var money = d3.format("$,.0f");
+
+function bindSegmented(id, onSelect) {
+  var bar = document.getElementById(id);
+  bar.addEventListener("click", function (e) {
+    var b = e.target.closest("button");
+    if (!b) return;
+    bar.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+    onSelect(b);
+  });
+}
+
+// ─── P&L ──────────────────────────────────────────────────────────
+(function () {
+  var data = [
+    { label: "Revenue",          stacks: [{ value: 5200 }] },
+    { label: "Cost of sales",    stacks: [{ value: -2100 }] },
+    { label: "Gross profit",     subtotal: true },
+    { label: "Marketing",        stacks: [{ value: -950 }] },
+    { label: "R&D",              stacks: [{ value: -620 }] },
+    { label: "G&A",              stacks: [{ value: -380 }] },
+    { label: "Operating income", subtotal: true },
+    { label: "Other income",     stacks: [{ value: 180 }] },
+    { label: "Tax",              stacks: [{ value: -330 }] }
+  ];
+  var readout = document.getElementById("pl-readout");
+  var chart = MW.waterfallChart()
+    .width(880).height(380)
+    .showTotal(true).totalLabel("Net income")
+    .formatNumber(money)
+    .enableTooltips(true)
+    .tooltipContent(function (d, html) {
+      // Add a row to the default tooltip: share of revenue
+      var pct = d3.format(".1%")(Math.abs(d.barTotal) / 5200);
+      return html + '<div style="display:flex;justify-content:space-between;gap:20px;line-height:1.7">' +
+        '<span style="opacity:.72">Share of revenue</span><span style="font-weight:600">' + pct + "</span></div>";
+    })
+    .responsive(true)
+    .on("barClick", function (event, d) {
+      var kind = d.isTotal ? "total" : d.isSubtotal ? "subtotal" : (d.barTotal >= 0 ? "increase" : "decrease");
+      readout.innerHTML = "<strong>" + d.label + "</strong> — " + kind + " of " + money(Math.abs(d.barTotal)) +
+        "; running total " + money(d.cumulativeTotal) + ".";
+    });
+  var sel = d3.select("#chart-pl").datum(data).call(chart);
+  bindSegmented("orientation-bar", function (b) {
+    var horizontal = b.dataset.orientation === "horizontal";
+    chart.orientation(b.dataset.orientation).height(horizontal ? 440 : 380);
+    sel.call(chart);
+  });
+})();
+
+// ─── STACKED ──────────────────────────────────────────────────────
+(function () {
+  var data = [
+    { label: "Q1 opening", start: true, stacks: [{ value: 1800, label: "Core" }, { value: 600, label: "Add-ons" }] },
+    { label: "New sales",  stacks: [{ value: 900, label: "Core" }, { value: 350, label: "Add-ons" }, { value: 220, label: "Services" }] },
+    { label: "Expansion",  stacks: [{ value: 420, label: "Core" }, { value: 260, label: "Add-ons" }] },
+    { label: "Churn",      stacks: [{ value: -380, label: "Core" }, { value: -140, label: "Add-ons" }] },
+    { label: "Discounts",  stacks: [{ value: -210, label: "Core" }] }
+  ];
+  d3.select("#chart-stacked").datum(data).call(
+    MW.waterfallChart()
+      .width(880).height(380)
+      .stacked(true)
+      .showLegend(true)
+      .showTotal(true).totalLabel("Q1 closing")
+      .formatNumber(d3.format(",.0f"))
+      .enableTooltips(true)
+      .responsive(true)
+  );
+})();
+
+// ─── THEMES ───────────────────────────────────────────────────────
+(function () {
+  var data = [
+    { label: "Start",     stacks: [{ value: 3200 }] },
+    { label: "Product A", stacks: [{ value: 1400 }] },
+    { label: "Product B", stacks: [{ value: -800 }] },
+    { label: "Product C", stacks: [{ value: 950 }] },
+    { label: "Returns",   stacks: [{ value: -420 }] },
+    { label: "Overhead",  stacks: [{ value: -600 }] }
+  ];
+  var chart = MW.waterfallChart()
+    .width(880).height(360)
+    .showTotal(true).totalLabel("Net")
+    .enableTooltips(true)
+    .responsive(true);
+  var sel = d3.select("#chart-theme").datum(data).call(chart);
+  bindSegmented("theme-bar", function (b) {
+    var t = b.dataset.theme;
+    chart.theme(t === "default" ? null : t);
+    sel.call(chart);
+  });
+})();
+
+// ─── TREND ────────────────────────────────────────────────────────
+(function () {
+  var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var deltas = [420, 310, -180, 520, 260, -90, 610, 340, -240, 480, 390, 150];
+  var data = months.map(function (m, i) { return { label: m, stacks: [{ value: deltas[i] }] }; });
+  var chart = MW.waterfallChart()
+    .width(880).height(360)
+    .showTrendLine(true).trendLineType("linear").trendLineStyle("dashed")
+    .enableTooltips(true)
+    .responsive(true);
+  var sel = d3.select("#chart-trend").datum(data).call(chart);
+  bindSegmented("trend-bar", function (b) {
+    var t = b.dataset.type;
+    if (t === "none") chart.showTrendLine(false);
+    else chart.showTrendLine(true).trendLineType(t);
+    sel.call(chart);
+  });
+})();
+
+// ─── BRUSH / ZOOM / EXPORT ───────────────────────────────────────
+(function () {
+  var data = [];
+  var level = 0;
+  for (var i = 1; i <= 24; i++) {
+    var v = Math.round((Math.sin(i / 2.3) * 380 + (i % 5 === 0 ? -520 : 160)) / 10) * 10;
+    data.push({ label: "W" + i, stacks: [{ value: v }] });
+    level += v;
+  }
+  var readout = document.getElementById("brush-readout");
+  var chart = MW.waterfallChart()
+    .width(880).height(360)
+    .showTotal(true).totalLabel("Total")
+    .enableBrush(true)
+    .enableZoom(true)
+    .enableTooltips(true)
+    .responsive(true)
+    .exportConfig({ filename: "mintwaterfall-weekly" })
+    .on("brushSelection", function (event, selected) {
+      if (!selected.length) { readout.textContent = "Drag across the chart to select a range."; return; }
+      var net = selected.filter(function (d) { return !d.isTotal; }).reduce(function (s, d) { return s + d.barTotal; }, 0);
+      readout.innerHTML = "<strong>" + selected.length + " bars</strong> selected (" + selected[0].label + "–" +
+        selected[selected.length - 1].label + "), net change <strong>" + d3.format("+,")(net) + "</strong>.";
+    });
+  d3.select("#chart-interact").datum(data).call(chart);
+
+  document.querySelectorAll("[data-export]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      chart.export(btn.dataset.export).then(function (r) { r.download(); })
+        .catch(function (err) { readout.textContent = err.message; });
+    });
+  });
+})();
+
+// ─── STATISTICS ──────────────────────────────────────────────────
+(function () {
+  var el = document.getElementById("kpis");
+  try {
+    var stats = MW.createStatisticalSystem();
+    var values = [4200, 3800, 5100, 4700, 6000, 5500, 6900, 6400, 7200, 8100, 7800, 9400];
+    var s = stats.calculateSummary(values);
+    var trend = stats.analyzeTrend(values.map(function (v, i) { return { x: i + 1, y: v }; }));
+    var kpi = function (k, v, cls) { return '<div class="kpi"><div class="k">' + k + '</div><div class="v ' + (cls || "") + '">' + v + "</div></div>"; };
+    el.innerHTML =
+      kpi("Sum", money(s.sum)) +
+      kpi("Mean", money(s.mean)) +
+      kpi("Median", money(s.median)) +
+      kpi("Std dev", money(s.standardDeviation)) +
+      kpi("Range", money(s.range)) +
+      kpi("Slope", d3.format("+$,.0f")(trend.slope) + "/mo", trend.slope >= 0 ? "pos" : "neg") +
+      kpi("R²", (trend.rSquared * 100).toFixed(1) + "%") +
+      kpi("Direction", trend.direction);
+  } catch (err) {
+    el.textContent = "Statistics module unavailable: " + err.message;
+  }
+})();
+</script>
+</body>
+</html>
