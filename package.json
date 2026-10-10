@@ -55,8 +55,8 @@
     "check:size": "node scripts/check-size.mjs",
     "check:package": "node scripts/check-package.mjs",
     "docs:api": "typedoc",
-    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.{js,ts}\" \"*.{js,json,md}\"",
-    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.{js,ts}\" \"*.{js,json,md}\""
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.{js,ts}\" \"e2e/**/*.ts\" \"scripts/**/*.mjs\" \"*.{js,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.{js,ts}\" \"e2e/**/*.ts\" \"scripts/**/*.mjs\" \"*.{js,json,md}\""
   },
   "keywords": [
     "d3js",
@@ -125,9 +125,10 @@
   },
   "lint-staged": {
     "*.ts": [
-      "eslint --fix"
+      "eslint --fix",
+      "prettier --write"
     ],
-    "*.js": [
+    "*.{js,mjs}": [
       "eslint --fix",
       "prettier --write"
     ],

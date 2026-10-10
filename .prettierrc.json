@@ -1,0 +1,13 @@
+{
+  "tabWidth": 4,
+  "printWidth": 140,
+  "arrowParens": "avoid",
+  "trailingComma": "es5",
+  "endOfLine": "auto",
+  "overrides": [
+    {
+      "files": ["*.json", "*.md", "*.yml", "eslint.config.js", "rollup.config*.js"],
+      "options": { "tabWidth": 2 }
+    }
+  ]
+}
