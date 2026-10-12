@@ -314,7 +314,11 @@ export function computeScenarioTotals(
 /**
  * Create confidence bands specifically for waterfall financial projections
  * Combines multiple projection scenarios into visual uncertainty bands.
- * Scenario values are accumulated as described in {@link computeScenarioTotals}.
+ *
+ * Values are changes, accumulated into running totals per scenario. Scenario entries are
+ * matched to baseline items by label (falling back to position for entries without a label).
+ * Baseline items flagged `subtotal` show the running total without changing it; items flagged
+ * `start` reset every running total to their own (or the scenario's) value.
  */
 export function createWaterfallConfidenceBands(
     baselineData: ScenarioBaseline,
