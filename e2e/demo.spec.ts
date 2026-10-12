@@ -4,9 +4,13 @@ test.describe("demo page", () => {
     test("renders every chart without errors", async ({ page, errors }) => {
         await openDemo(page);
         const counts = await page.evaluate(() =>
-            ["pl", "stacked", "theme", "trend", "interact"].map(id => document.querySelectorAll(`#chart-${id} g.bar-group`).length)
+            ["pl", "stacked", "theme", "trend", "forecast", "interact"].map(
+                id => document.querySelectorAll(`#chart-${id} g.bar-group`).length
+            )
         );
-        expect(counts).toEqual([10, 6, 7, 12, 25]);
+        expect(counts).toEqual([10, 6, 7, 12, 6, 25]);
+        await expect(page.locator("#chart-forecast path.confidence-band")).toHaveCount(1);
+        await expect(page.locator("#chart-forecast path.milestone-marker")).toHaveCount(4);
         await expect(page.locator("#kpis .kpi")).toHaveCount(8);
         expect(errors).toEqual([]);
     });

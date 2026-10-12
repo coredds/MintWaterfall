@@ -12,7 +12,7 @@ test.describe("visual: demo charts", () => {
         await page.mouse.move(0, 0);
     });
 
-    for (const id of ["pl", "stacked", "trend", "interact"]) {
+    for (const id of ["pl", "stacked", "trend", "forecast", "interact"]) {
         test(id, async ({ page }) => {
             await shot(page.locator(`#chart-${id}`), `${id}.png`);
         });

@@ -115,6 +115,7 @@
     <a href="#stacked">Stacked segments</a>
     <a href="#themes">Themes</a>
     <a href="#trend">Trend lines</a>
+    <a href="#forecast">Forecast range</a>
     <a href="#interact">Brush, zoom &amp; export</a>
     <a href="#stats">Statistics</a>
   </nav>
@@ -191,6 +192,23 @@ d3.select(<span class="s">"#chart"</span>).datum([
     </div>
   </div>
   <div class="chart" id="chart-trend"></div>
+</section>
+
+<section class="card" id="forecast">
+  <div class="card-head">
+    <div>
+      <h2>Forecast range &amp; milestones</h2>
+      <p class="sub">A shaded band shows the running total under optimistic and pessimistic scenarios. Markers flag a target, a threshold, an alert and an achievement.</p>
+    </div>
+  </div>
+  <div class="chart" id="chart-forecast"></div>
+  <pre class="snippet">chart
+  .confidenceBands({ enabled: <span class="k">true</span>, showTrendLines: <span class="k">true</span>, scenarios: {
+    optimistic:  [{ label: <span class="s">"Q1"</span>, value: 1100 }, ...],  <span class="c">// per-bar changes, matched by label</span>
+    pessimistic: [{ label: <span class="s">"Q1"</span>, value: 500 }, ...]
+  } })
+  .enableMilestones(<span class="k">true</span>)
+  .addMilestone({ label: <span class="s">"Year-end"</span>, value: 4200, type: <span class="s">"target"</span> });</pre>
 </section>
 
 <section class="card" id="interact">
@@ -343,6 +361,37 @@ function bindSegmented(id, onSelect) {
     else chart.showTrendLine(true).trendLineType(t);
     sel.call(chart);
   });
+})();
+
+// ─── FORECAST RANGE & MILESTONES ─────────────────────────────────
+(function () {
+  var data = [
+    { label: "Opening", start: true, stacks: [{ value: 2000 }] },
+    { label: "Q1",      stacks: [{ value: 800 }] },
+    { label: "Q2",      stacks: [{ value: 450 }] },
+    { label: "Q3",      stacks: [{ value: -300 }] },
+    { label: "Q4",      stacks: [{ value: 650 }] }
+  ];
+  var chart = MW.waterfallChart()
+    .width(880).height(380)
+    .showTotal(true).totalLabel("Year-end")
+    .formatNumber(money)
+    .enableTooltips(true)
+    .responsive(true)
+    .confidenceBands({
+      enabled: true,
+      showTrendLines: true,
+      scenarios: {
+        optimistic:  [{ label: "Q1", value: 1100 }, { label: "Q2", value: 700 }, { label: "Q3", value: -50 },  { label: "Q4", value: 900 }],
+        pessimistic: [{ label: "Q1", value: 500 },  { label: "Q2", value: 150 }, { label: "Q3", value: -650 }, { label: "Q4", value: 300 }]
+      }
+    })
+    .enableMilestones(true)
+    .addMilestone({ label: "Q2", value: 3000, type: "threshold", description: "Break-even" })
+    .addMilestone({ label: "Q3", value: 2600, type: "alert", description: "Covenant floor" })
+    .addMilestone({ label: "Q1", value: 2400, type: "achievement", description: "Funding round" })
+    .addMilestone({ label: "Year-end", value: 4200, type: "target", description: "Plan" });
+  d3.select("#chart-forecast").datum(data).call(chart);
 })();
 
 // ─── BRUSH / ZOOM / EXPORT ───────────────────────────────────────
