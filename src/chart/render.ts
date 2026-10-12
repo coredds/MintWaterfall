@@ -17,7 +17,7 @@ import {
     isAnchoredBar,
 } from "./config.js";
 import { ResolvedStyle } from "./style.js";
-import { createWaterfallConfidenceBands, createWaterfallMilestones } from "../shapes.js";
+import { computeScenarioTotals, createWaterfallConfidenceBands, createWaterfallMilestones, ScenarioBaseline } from "../shapes.js";
 import { getAdvancedBarColor, getThemeColorPalette, ThemeCollection } from "../themes.js";
 
 export interface RenderContext {
@@ -800,6 +800,27 @@ export function drawTrendLine(container: AnySelection, ctx: RenderContext): void
         .attr("fill-opacity", config.trendLineOpacity);
 }
 
+function scenarioBaseline(data: ProcessedData[]): ScenarioBaseline {
+    return data.map(d => ({ label: d.label, value: d.barTotal, subtotal: Boolean(d.isSubtotal || d.isTotal), start: Boolean(d.isStart) }));
+}
+
+/**
+ * Values drawn by the confidence band and milestone overlays (vertical charts only),
+ * so the value axis can be widened to keep them inside the plot.
+ */
+export function overlayValues(data: ProcessedData[], config: ChartConfig): number[] {
+    const values: number[] = [];
+    const { scenarios } = config.confidenceBandConfig;
+    if (config.confidenceBandConfig.enabled && scenarios) {
+        for (const t of computeScenarioTotals(scenarioBaseline(data), scenarios)) values.push(t.optimistic, t.pessimistic);
+    }
+    if (config.milestoneConfig.enabled) {
+        const labels = new Set(data.map(d => d.label));
+        for (const m of config.milestoneConfig.milestones) if (labels.has(m.label)) values.push(m.value);
+    }
+    return values.filter(Number.isFinite);
+}
+
 export function drawConfidenceBands(container: AnySelection, ctx: RenderContext): void {
     const { config, data, yScale } = ctx;
     if (!config.confidenceBandConfig.enabled || !config.confidenceBandConfig.scenarios || ctx.horizontal) {
@@ -807,12 +828,7 @@ export function drawConfidenceBands(container: AnySelection, ctx: RenderContext)
         return;
     }
     const group = layer(container, "confidence-bands-group").attr("aria-hidden", "true");
-    const bands = createWaterfallConfidenceBands(
-        data.map(d => ({ label: d.label, value: d.barTotal, subtotal: Boolean(d.isSubtotal || d.isTotal), start: Boolean(d.isStart) })),
-        config.confidenceBandConfig.scenarios,
-        xCenter(ctx),
-        yScale
-    );
+    const bands = createWaterfallConfidenceBands(scenarioBaseline(data), config.confidenceBandConfig.scenarios, xCenter(ctx), yScale);
 
     const band = group.selectAll<SVGPathElement, string>("path.confidence-band").data([bands.confidencePath]);
     animate(band.enter().append("path").attr("class", "confidence-band").merge(band), ctx)

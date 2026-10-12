@@ -266,31 +266,24 @@ function centerOf(x: XPosition, label: string): number {
     return (x as (label: string) => number)(label);
 }
 
+export type ScenarioBaseline = Array<{ label: string; value: number; subtotal?: boolean; start?: boolean }>;
+export interface Scenarios {
+    optimistic: Array<{ label: string; value: number }>;
+    pessimistic: Array<{ label: string; value: number }>;
+}
+
 /**
- * Create confidence bands specifically for waterfall financial projections
- * Combines multiple projection scenarios into visual uncertainty bands.
+ * Running totals of the baseline and each scenario, one entry per baseline item.
  *
  * Values are changes, accumulated into running totals per scenario. Scenario entries are
  * matched to baseline items by label (falling back to position for entries without a label).
  * Baseline items flagged `subtotal` show the running total without changing it; items flagged
  * `start` reset every running total to their own (or the scenario's) value.
  */
-export function createWaterfallConfidenceBands(
-    baselineData: Array<{ label: string; value: number; subtotal?: boolean; start?: boolean }>,
-    scenarios: {
-        optimistic: Array<{ label: string; value: number }>;
-        pessimistic: Array<{ label: string; value: number }>;
-    },
-    xScale: XPosition,
-    yScale: d3.ScaleLinear<number, number>
-): {
-    confidencePath: string;
-    optimisticPath: string;
-    pessimisticPath: string;
-} {
-    const shapeGenerator = createShapeGenerators();
-
-    // Calculate cumulative values for each scenario
+export function computeScenarioTotals(
+    baselineData: ScenarioBaseline,
+    scenarios: Scenarios
+): Array<{ label: string; baseline: number; optimistic: number; pessimistic: number }> {
     let baselineCumulative = 0;
     let optimisticCumulative = 0;
     let pessimisticCumulative = 0;
@@ -303,7 +296,7 @@ export function createWaterfallConfidenceBands(
     const optimisticValue = lookup(scenarios.optimistic);
     const pessimisticValue = lookup(scenarios.pessimistic);
 
-    const confidenceData: ConfidenceBandData[] = baselineData.map((item, i) => {
+    return baselineData.map((item, i) => {
         if (item.start) {
             baselineCumulative = item.value;
             optimisticCumulative = optimisticValue(item, i) ?? item.value;
@@ -314,17 +307,34 @@ export function createWaterfallConfidenceBands(
             optimisticCumulative += optimisticValue(item, i) ?? item.value;
             pessimisticCumulative += pessimisticValue(item, i) ?? item.value;
         }
-
-        const x = centerOf(xScale, item.label);
-
-        return {
-            x,
-            y: yScale(baselineCumulative),
-            yUpper: yScale(optimisticCumulative),
-            yLower: yScale(pessimisticCumulative),
-            label: item.label,
-        };
+        return { label: item.label, baseline: baselineCumulative, optimistic: optimisticCumulative, pessimistic: pessimisticCumulative };
     });
+}
+
+/**
+ * Create confidence bands specifically for waterfall financial projections
+ * Combines multiple projection scenarios into visual uncertainty bands.
+ * Scenario values are accumulated as described in {@link computeScenarioTotals}.
+ */
+export function createWaterfallConfidenceBands(
+    baselineData: ScenarioBaseline,
+    scenarios: Scenarios,
+    xScale: XPosition,
+    yScale: d3.ScaleLinear<number, number>
+): {
+    confidencePath: string;
+    optimisticPath: string;
+    pessimisticPath: string;
+} {
+    const shapeGenerator = createShapeGenerators();
+
+    const confidenceData: ConfidenceBandData[] = computeScenarioTotals(baselineData, scenarios).map(t => ({
+        x: centerOf(xScale, t.label),
+        y: yScale(t.baseline),
+        yUpper: yScale(t.optimistic),
+        yLower: yScale(t.pessimistic),
+        label: t.label,
+    }));
 
     // Create trend lines for each scenario
     const optimisticTrendData = confidenceData.map(d => ({ x: d.x, y: d.yUpper }));

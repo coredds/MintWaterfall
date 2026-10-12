@@ -39,6 +39,7 @@ import {
     drawConnectors,
     drawTrendLine,
     drawConfidenceBands,
+    overlayValues,
     drawMilestones,
 } from "./render.js";
 import { createTooltipSystem, escapeHtml, TooltipSystem } from "../tooltip.js";
@@ -272,7 +273,14 @@ export function waterfallChart(): WaterfallChart {
         syncAutoTheme();
         const processed = prepareData(data, config);
         const style = resolveStyle(config);
+        const horizontal = config.orientation === "horizontal";
         const yDomain = computeYDomain(processed, config.stacked);
+        if (!horizontal) {
+            for (const v of overlayValues(processed, config)) {
+                yDomain[0] = Math.min(yDomain[0], v);
+                yDomain[1] = Math.max(yDomain[1], v);
+            }
+        }
         const labelText = (d: ProcessedData): string => {
             const text = formatBarValue(d, config.formatNumber);
             return config.valueLabel ? String(config.valueLabel(d, text) ?? "") : text;
@@ -283,7 +291,6 @@ export function waterfallChart(): WaterfallChart {
                   Math.max(60, width - Math.max(config.margin.left, 40) - config.margin.right)
               )
             : null;
-        const horizontal = config.orientation === "horizontal";
         if (horizontal) warnVerticalOnly();
         const layout = (horizontal ? computeHorizontalLayout : computeLayout)(
             processed,
@@ -413,14 +420,15 @@ export function waterfallChart(): WaterfallChart {
 
         const chartGroup = layer(root, "chart-group").attr("clip-path", `url(#${state.clipId})`);
         const brushLayer = layer(chartGroup, "brush-layer");
+        const underlayLayer = layer(chartGroup, "underlay-layer");
         const connectorsLayer = layer(chartGroup, "connectors-layer");
         const barsLayer = layer(chartGroup, "bars-layer");
         const overlayLayer = layer(chartGroup, "overlay-layer");
         const labelsLayer = layer(chartGroup, "labels-layer");
 
+        drawConfidenceBands(underlayLayer, ctx);
         drawConnectors(connectorsLayer, ctx);
         const bars = drawBars(barsLayer, ctx);
-        drawConfidenceBands(overlayLayer, ctx);
         drawTrendLine(overlayLayer, ctx);
         drawMilestones(overlayLayer, ctx);
         drawValueLabels(labelsLayer, ctx);

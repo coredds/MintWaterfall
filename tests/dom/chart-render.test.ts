@@ -753,6 +753,22 @@ describe("confidence bands", () => {
         bars(el).forEach((g, i) => expect(xs[i]).toBeCloseTo(barCenter(g), 3));
         expect(chart.enableConfidenceBands()).toBe(true);
     });
+
+    test("the value axis extends to cover scenarios beyond the bars", () => {
+        // optimistic peaks at 6000 (Revenue), above every bar (max 5200)
+        const { el, chart } = render(PL, c => c.confidenceBands({ enabled: true, scenarios, showTrendLines: true }));
+        const top = Math.min(...pathVertices(el.querySelector("path.optimistic-trend")!.getAttribute("d")!).map(p => p[1]));
+        expect(top).toBeGreaterThanOrEqual(chart.margin().top - 0.5);
+        const revenueTop = rectOf(bars(el)[0]).y;
+        expect(top).toBeLessThan(revenueTop);
+    });
+
+    test("is drawn behind the bars", () => {
+        const { el } = render(PL, c => c.confidenceBands({ enabled: true, scenarios }));
+        const band = el.querySelector(".confidence-bands-group")!;
+        const firstBar = bars(el)[0];
+        expect(band.compareDocumentPosition(firstBar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
 });
 
 describe("milestones", () => {
@@ -792,6 +808,29 @@ describe("milestones", () => {
             .datum(PL)
             .call(chart as any);
         expect(el.querySelector(".milestones-group")).toBeNull();
+    });
+
+    test("the value axis extends to cover milestones beyond the bars, and below zero", () => {
+        const { el, chart } = render(PL, c =>
+            c
+                .enableMilestones(true)
+                .addMilestone({ label: "Revenue", value: 8000, type: "target" })
+                .addMilestone({ label: "Opex", value: -500, type: "alert" })
+        );
+        const ys = Array.from(el.querySelectorAll("path.milestone-marker")).map(m =>
+            Number(m.getAttribute("transform")!.match(/translate\([-\d.]+, ?([-\d.]+)\)/)![1])
+        );
+        expect(ys[0]).toBeGreaterThanOrEqual(chart.margin().top - 0.5);
+        expect(ys[0]).toBeLessThan(rectOf(bars(el)[0]).y);
+        expect(ys[1]).toBeLessThanOrEqual(300 - chart.margin().bottom + 0.5);
+        const revenue = rectOf(bars(el)[0]);
+        expect(ys[1]).toBeGreaterThan(revenue.y + revenue.height); // below the zero baseline
+    });
+
+    test("disabled milestones don't affect the value axis", () => {
+        const a = render(PL);
+        const b = render(PL, c => c.addMilestone({ label: "Revenue", value: 8000, type: "target" }));
+        expect(rectOf(bars(b.el)[0])).toEqual(rectOf(bars(a.el)[0]));
     });
 
     test("milestone charts don't share state between instances", () => {

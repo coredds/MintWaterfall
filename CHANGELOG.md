@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- The value axis now covers confidence band scenarios and milestones. Values beyond the bars
+  (an optimistic scenario or a target above the highest bar, a floor below zero) were drawn
+  outside the plot or not at all.
+- Confidence bands are drawn behind the bars instead of on top of them.
+
+### Added
+
+- Demo section and visual test for confidence bands and milestones.
+
 ## [2.2.0] - 2026-10-10
 
 Bug-fix release. Confidence bands and milestones can be enabled again, and CSV export
